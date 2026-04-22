@@ -35,7 +35,6 @@ export function PhotoCapture({ photos, onChange, error }: PhotoCaptureProps) {
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         multiple
         className="hidden"
         onChange={handleFiles}
