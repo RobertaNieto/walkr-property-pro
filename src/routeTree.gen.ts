@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppConfigRouteImport } from './routes/_app.config'
 import { Route as AppAddressRouteImport } from './routes/_app.address'
 import { Route as AppWizardLockboxRouteImport } from './routes/_app.wizard.lockbox'
@@ -32,6 +33,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppConfigRoute = AppConfigRouteImport.update({
   id: '/config',
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/address': typeof AppAddressRoute
   '/config': typeof AppConfigRoute
+  '/profile': typeof AppProfileRoute
   '/wizard/complete': typeof AppWizardCompleteRoute
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/wizard/front-photo': typeof AppWizardFrontPhotoRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/address': typeof AppAddressRoute
   '/config': typeof AppConfigRoute
+  '/profile': typeof AppProfileRoute
   '/wizard/complete': typeof AppWizardCompleteRoute
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/wizard/front-photo': typeof AppWizardFrontPhotoRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/address': typeof AppAddressRoute
   '/_app/config': typeof AppConfigRoute
+  '/_app/profile': typeof AppProfileRoute
   '/_app/wizard/complete': typeof AppWizardCompleteRoute
   '/_app/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/_app/wizard/front-photo': typeof AppWizardFrontPhotoRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/address'
     | '/config'
+    | '/profile'
     | '/wizard/complete'
     | '/wizard/exterior-paint'
     | '/wizard/front-photo'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/address'
     | '/config'
+    | '/profile'
     | '/wizard/complete'
     | '/wizard/exterior-paint'
     | '/wizard/front-photo'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/address'
     | '/_app/config'
+    | '/_app/profile'
     | '/_app/wizard/complete'
     | '/_app/wizard/exterior-paint'
     | '/_app/wizard/front-photo'
@@ -158,6 +170,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/config': {
       id: '/_app/config'
@@ -207,6 +226,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAddressRoute: typeof AppAddressRoute
   AppConfigRoute: typeof AppConfigRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppWizardCompleteRoute: typeof AppWizardCompleteRoute
   AppWizardExteriorPaintRoute: typeof AppWizardExteriorPaintRoute
   AppWizardFrontPhotoRoute: typeof AppWizardFrontPhotoRoute
@@ -216,6 +236,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAddressRoute: AppAddressRoute,
   AppConfigRoute: AppConfigRoute,
+  AppProfileRoute: AppProfileRoute,
   AppWizardCompleteRoute: AppWizardCompleteRoute,
   AppWizardExteriorPaintRoute: AppWizardExteriorPaintRoute,
   AppWizardFrontPhotoRoute: AppWizardFrontPhotoRoute,
@@ -232,3 +253,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
