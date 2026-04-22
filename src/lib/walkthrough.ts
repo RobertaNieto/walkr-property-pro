@@ -44,6 +44,70 @@ export interface Walkthrough {
 
 const ACTIVE_KEY = "propertywalk:active-id";
 const CACHE_PREFIX = "propertywalk:cache:";
+const COMPLETED_KEY = "propertywalk_completed";
+const MAX_COMPLETED = 50;
+
+export interface CompletedRecord extends Walkthrough {
+  completedAt: number;
+  propertyAddress: string;
+  totalPhotos: number;
+  criticalFlags: { questionId: string; label?: string; rating?: Rating; notes?: string }[];
+}
+
+function formatAddress(a: PropertyAddress): string {
+  const street = [a.houseNumber, a.streetName].filter(Boolean).join(" ").trim();
+  return [street, a.city].filter(Boolean).join(", ");
+}
+
+function buildCompletedRecord(w: Walkthrough): CompletedRecord {
+  let totalPhotos = 0;
+  const criticalFlags: CompletedRecord["criticalFlags"] = [];
+  for (const [qid, ans] of Object.entries(w.answers ?? {})) {
+    if (ans.photos) totalPhotos += ans.photos.length;
+    // Rating of 1 = Poor → treat as critical flag
+    if (ans.rating === 1) {
+      criticalFlags.push({ questionId: qid, rating: ans.rating, notes: ans.notes });
+    }
+  }
+  return {
+    ...w,
+    completedAt: w.completedAt ?? Date.now(),
+    propertyAddress: formatAddress(w.address),
+    totalPhotos,
+    criticalFlags,
+  };
+}
+
+export function listCompletedLocal(): CompletedRecord[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(COMPLETED_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as CompletedRecord[];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCompletedLocal(w: Walkthrough): CompletedRecord {
+  const record = buildCompletedRecord(w);
+  if (typeof window === "undefined") return record;
+  const existing = listCompletedLocal().filter((r) => r.id !== record.id);
+  const next = [record, ...existing].slice(0, MAX_COMPLETED);
+  localStorage.setItem(COMPLETED_KEY, JSON.stringify(next));
+  return record;
+}
+
+export function getCompletedLocalById(id: string): CompletedRecord | null {
+  return listCompletedLocal().find((r) => r.id === id) ?? null;
+}
+
+export function removeCompletedLocal(id: string) {
+  if (typeof window === "undefined") return;
+  const next = listCompletedLocal().filter((r) => r.id !== id);
+  localStorage.setItem(COMPLETED_KEY, JSON.stringify(next));
+}
 
 // ---------- local cache helpers (fast UI, survives reload) ----------
 
