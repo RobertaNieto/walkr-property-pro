@@ -32,6 +32,8 @@ function WelcomeScreen() {
   const [existing, setExisting] = useState<Walkthrough | null>(null);
   const [loading, setLoading] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [confirmFresh, setConfirmFresh] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -61,7 +63,36 @@ function WelcomeScreen() {
 
   const resume = () => {
     if (!existing) return;
+    console.log("[walkthrough] resuming", { id: existing.id, lastRoute: existing.lastRoute });
     navigate({ to: existing.lastRoute ?? "/address" });
+  };
+
+  const handleStartFresh = () => {
+    if (existing) {
+      setConfirmFresh(true);
+    } else {
+      void startNew();
+    }
+  };
+
+  const confirmAndStartFresh = async () => {
+    if (!existing) {
+      setConfirmFresh(false);
+      await startNew();
+      return;
+    }
+    setClearing(true);
+    try {
+      await deleteWalkthrough(existing.id);
+      setExisting(null);
+      setConfirmFresh(false);
+      await startNew();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Could not clear walkthrough";
+      toast.error(msg);
+    } finally {
+      setClearing(false);
+    }
   };
 
   if (authLoading) {
