@@ -9,7 +9,7 @@ import { loadWalkthrough, setAnswer, updateWalkthrough, type Rating } from "@/li
 const QID = "front_of_house";
 const SECTION = 2;
 
-export const Route = createFileRoute("/wizard/front-photo")({
+export const Route = createFileRoute("/_app/wizard/front-photo")({
   component: FrontPhotoScreen,
 });
 

@@ -5,7 +5,7 @@ import { ChoiceGrid } from "@/components/ChoiceGrid";
 import { cn } from "@/lib/utils";
 import { loadWalkthrough, updateWalkthrough, type PreWalkConfig } from "@/lib/walkthrough";
 
-export const Route = createFileRoute("/config")({
+export const Route = createFileRoute("/_app/config")({
   component: ConfigScreen,
 });
 

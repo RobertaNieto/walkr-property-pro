@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { loadWalkthrough, updateWalkthrough, type PropertyAddress } from "@/lib/walkthrough";
 
-export const Route = createFileRoute("/address")({
+export const Route = createFileRoute("/_app/address")({
   component: AddressScreen,
 });
 

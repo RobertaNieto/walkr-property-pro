@@ -9,7 +9,7 @@ const QID = "lockbox_code";
 const SECTION = 1;
 const TOTAL_QUESTIONS_IN_SECTION = 1;
 
-export const Route = createFileRoute("/wizard/lockbox")({
+export const Route = createFileRoute("/_app/wizard/lockbox")({
   component: LockboxScreen,
 });
 

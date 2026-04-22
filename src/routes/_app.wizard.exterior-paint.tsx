@@ -9,7 +9,7 @@ import { loadWalkthrough, setAnswer, updateWalkthrough, type Rating } from "@/li
 const QID = "exterior_paint";
 const SECTION = 2;
 
-export const Route = createFileRoute("/wizard/exterior-paint")({
+export const Route = createFileRoute("/_app/wizard/exterior-paint")({
   component: ExteriorPaintScreen,
 });
 

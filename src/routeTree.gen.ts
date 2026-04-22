@@ -9,22 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ConfigRouteImport } from './routes/config'
-import { Route as AddressRouteImport } from './routes/address'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as WizardLockboxRouteImport } from './routes/wizard.lockbox'
-import { Route as WizardFrontPhotoRouteImport } from './routes/wizard.front-photo'
-import { Route as WizardExteriorPaintRouteImport } from './routes/wizard.exterior-paint'
-import { Route as WizardCompleteRouteImport } from './routes/wizard.complete'
+import { Route as AppConfigRouteImport } from './routes/_app.config'
+import { Route as AppAddressRouteImport } from './routes/_app.address'
+import { Route as AppWizardLockboxRouteImport } from './routes/_app.wizard.lockbox'
+import { Route as AppWizardFrontPhotoRouteImport } from './routes/_app.wizard.front-photo'
+import { Route as AppWizardExteriorPaintRouteImport } from './routes/_app.wizard.exterior-paint'
+import { Route as AppWizardCompleteRouteImport } from './routes/_app.wizard.complete'
 
-const ConfigRoute = ConfigRouteImport.update({
-  id: '/config',
-  path: '/config',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AddressRoute = AddressRouteImport.update({
-  id: '/address',
-  path: '/address',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -32,59 +33,74 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WizardLockboxRoute = WizardLockboxRouteImport.update({
+const AppConfigRoute = AppConfigRouteImport.update({
+  id: '/config',
+  path: '/config',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAddressRoute = AppAddressRouteImport.update({
+  id: '/address',
+  path: '/address',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWizardLockboxRoute = AppWizardLockboxRouteImport.update({
   id: '/wizard/lockbox',
   path: '/wizard/lockbox',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const WizardFrontPhotoRoute = WizardFrontPhotoRouteImport.update({
+const AppWizardFrontPhotoRoute = AppWizardFrontPhotoRouteImport.update({
   id: '/wizard/front-photo',
   path: '/wizard/front-photo',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const WizardExteriorPaintRoute = WizardExteriorPaintRouteImport.update({
+const AppWizardExteriorPaintRoute = AppWizardExteriorPaintRouteImport.update({
   id: '/wizard/exterior-paint',
   path: '/wizard/exterior-paint',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const WizardCompleteRoute = WizardCompleteRouteImport.update({
+const AppWizardCompleteRoute = AppWizardCompleteRouteImport.update({
   id: '/wizard/complete',
   path: '/wizard/complete',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/address': typeof AddressRoute
-  '/config': typeof ConfigRoute
-  '/wizard/complete': typeof WizardCompleteRoute
-  '/wizard/exterior-paint': typeof WizardExteriorPaintRoute
-  '/wizard/front-photo': typeof WizardFrontPhotoRoute
-  '/wizard/lockbox': typeof WizardLockboxRoute
+  '/auth': typeof AuthRoute
+  '/address': typeof AppAddressRoute
+  '/config': typeof AppConfigRoute
+  '/wizard/complete': typeof AppWizardCompleteRoute
+  '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
+  '/wizard/front-photo': typeof AppWizardFrontPhotoRoute
+  '/wizard/lockbox': typeof AppWizardLockboxRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/address': typeof AddressRoute
-  '/config': typeof ConfigRoute
-  '/wizard/complete': typeof WizardCompleteRoute
-  '/wizard/exterior-paint': typeof WizardExteriorPaintRoute
-  '/wizard/front-photo': typeof WizardFrontPhotoRoute
-  '/wizard/lockbox': typeof WizardLockboxRoute
+  '/auth': typeof AuthRoute
+  '/address': typeof AppAddressRoute
+  '/config': typeof AppConfigRoute
+  '/wizard/complete': typeof AppWizardCompleteRoute
+  '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
+  '/wizard/front-photo': typeof AppWizardFrontPhotoRoute
+  '/wizard/lockbox': typeof AppWizardLockboxRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/address': typeof AddressRoute
-  '/config': typeof ConfigRoute
-  '/wizard/complete': typeof WizardCompleteRoute
-  '/wizard/exterior-paint': typeof WizardExteriorPaintRoute
-  '/wizard/front-photo': typeof WizardFrontPhotoRoute
-  '/wizard/lockbox': typeof WizardLockboxRoute
+  '/_app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_app/address': typeof AppAddressRoute
+  '/_app/config': typeof AppConfigRoute
+  '/_app/wizard/complete': typeof AppWizardCompleteRoute
+  '/_app/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
+  '/_app/wizard/front-photo': typeof AppWizardFrontPhotoRoute
+  '/_app/wizard/lockbox': typeof AppWizardLockboxRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/address'
     | '/config'
     | '/wizard/complete'
@@ -94,6 +110,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/address'
     | '/config'
     | '/wizard/complete'
@@ -103,38 +120,36 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/address'
-    | '/config'
-    | '/wizard/complete'
-    | '/wizard/exterior-paint'
-    | '/wizard/front-photo'
-    | '/wizard/lockbox'
+    | '/_app'
+    | '/auth'
+    | '/_app/address'
+    | '/_app/config'
+    | '/_app/wizard/complete'
+    | '/_app/wizard/exterior-paint'
+    | '/_app/wizard/front-photo'
+    | '/_app/wizard/lockbox'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AddressRoute: typeof AddressRoute
-  ConfigRoute: typeof ConfigRoute
-  WizardCompleteRoute: typeof WizardCompleteRoute
-  WizardExteriorPaintRoute: typeof WizardExteriorPaintRoute
-  WizardFrontPhotoRoute: typeof WizardFrontPhotoRoute
-  WizardLockboxRoute: typeof WizardLockboxRoute
+  AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/config': {
-      id: '/config'
-      path: '/config'
-      fullPath: '/config'
-      preLoaderRoute: typeof ConfigRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/address': {
-      id: '/address'
-      path: '/address'
-      fullPath: '/address'
-      preLoaderRoute: typeof AddressRouteImport
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -144,46 +159,85 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/wizard/lockbox': {
-      id: '/wizard/lockbox'
+    '/_app/config': {
+      id: '/_app/config'
+      path: '/config'
+      fullPath: '/config'
+      preLoaderRoute: typeof AppConfigRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/address': {
+      id: '/_app/address'
+      path: '/address'
+      fullPath: '/address'
+      preLoaderRoute: typeof AppAddressRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/wizard/lockbox': {
+      id: '/_app/wizard/lockbox'
       path: '/wizard/lockbox'
       fullPath: '/wizard/lockbox'
-      preLoaderRoute: typeof WizardLockboxRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppWizardLockboxRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/wizard/front-photo': {
-      id: '/wizard/front-photo'
+    '/_app/wizard/front-photo': {
+      id: '/_app/wizard/front-photo'
       path: '/wizard/front-photo'
       fullPath: '/wizard/front-photo'
-      preLoaderRoute: typeof WizardFrontPhotoRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppWizardFrontPhotoRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/wizard/exterior-paint': {
-      id: '/wizard/exterior-paint'
+    '/_app/wizard/exterior-paint': {
+      id: '/_app/wizard/exterior-paint'
       path: '/wizard/exterior-paint'
       fullPath: '/wizard/exterior-paint'
-      preLoaderRoute: typeof WizardExteriorPaintRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppWizardExteriorPaintRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/wizard/complete': {
-      id: '/wizard/complete'
+    '/_app/wizard/complete': {
+      id: '/_app/wizard/complete'
       path: '/wizard/complete'
       fullPath: '/wizard/complete'
-      preLoaderRoute: typeof WizardCompleteRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppWizardCompleteRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
 
+interface AppRouteChildren {
+  AppAddressRoute: typeof AppAddressRoute
+  AppConfigRoute: typeof AppConfigRoute
+  AppWizardCompleteRoute: typeof AppWizardCompleteRoute
+  AppWizardExteriorPaintRoute: typeof AppWizardExteriorPaintRoute
+  AppWizardFrontPhotoRoute: typeof AppWizardFrontPhotoRoute
+  AppWizardLockboxRoute: typeof AppWizardLockboxRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAddressRoute: AppAddressRoute,
+  AppConfigRoute: AppConfigRoute,
+  AppWizardCompleteRoute: AppWizardCompleteRoute,
+  AppWizardExteriorPaintRoute: AppWizardExteriorPaintRoute,
+  AppWizardFrontPhotoRoute: AppWizardFrontPhotoRoute,
+  AppWizardLockboxRoute: AppWizardLockboxRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AddressRoute: AddressRoute,
-  ConfigRoute: ConfigRoute,
-  WizardCompleteRoute: WizardCompleteRoute,
-  WizardExteriorPaintRoute: WizardExteriorPaintRoute,
-  WizardFrontPhotoRoute: WizardFrontPhotoRoute,
-  WizardLockboxRoute: WizardLockboxRoute,
+  AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

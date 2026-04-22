@@ -3,7 +3,7 @@ import { CheckCircle2, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { clearWalkthrough } from "@/lib/walkthrough";
 
-export const Route = createFileRoute("/wizard/complete")({
+export const Route = createFileRoute("/_app/wizard/complete")({
   component: CompleteScreen,
 });
 
