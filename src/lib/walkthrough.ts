@@ -337,14 +337,17 @@ export async function completeWalkthrough(): Promise<Walkthrough | null> {
   if (!current) return null;
   const next = updateWalkthrough({ completedAt: Date.now() });
   if (next) {
-    // Flush pending writes to DB so the review screen can read it.
-    if (pending.has(next.id)) {
-      clearTimeout(pending.get(next.id)!);
-      await flush(next.id);
-    }
-    // Save a local snapshot of the completed walkthrough so the review screen
-    // and "My walkthroughs > Completed" tab work without a network round-trip.
+    // Save a local snapshot immediately so the UI can navigate without waiting
+    // on the network. Backend sync happens in the background.
     saveCompletedLocal(next);
+
+    if (pending.has(next.id) || queued.has(next.id)) {
+      if (pending.has(next.id)) {
+        clearTimeout(pending.get(next.id)!);
+      }
+      void flush(next.id);
+    }
+
     // NOTE: We intentionally do NOT clearCache(next.id) here. The active draft
     // is preserved until the user explicitly submits to Drive or starts fresh.
   }
