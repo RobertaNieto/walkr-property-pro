@@ -85,7 +85,7 @@ function WelcomeScreen() {
 
       <main className="relative flex flex-1 flex-col items-center justify-center px-6 pb-8">
         <div className="flex flex-col items-center text-center">
-          <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-white/5 p-3 ring-1 ring-white/10 backdrop-blur">
+          <div className="mb-6 flex h-48 w-48 items-center justify-center sm:h-64 sm:w-64">
             <img src={logo} alt="PropertyWalk logo" className="h-full w-full object-contain" />
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">PropertyWalk</h1>
