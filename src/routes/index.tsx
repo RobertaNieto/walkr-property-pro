@@ -31,6 +31,7 @@ function WelcomeScreen() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [existing, setExisting] = useState<Walkthrough | null>(null);
+  const [completed, setCompleted] = useState<Walkthrough[]>([]);
   const [loading, setLoading] = useState(false);
   const [starting, setStarting] = useState(false);
   const [confirmFresh, setConfirmFresh] = useState(false);
@@ -39,9 +40,10 @@ function WelcomeScreen() {
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-    fetchLatestInProgress(user.id)
-      .then((w) => {
+    Promise.all([fetchLatestInProgress(user.id), fetchCompleted(user.id)])
+      .then(([w, done]) => {
         setExisting(w);
+        setCompleted(done);
         if (typeof window !== "undefined") {
           const activeId = localStorage.getItem("propertywalk:active-id");
           const raw = activeId ? localStorage.getItem(`propertywalk:cache:${activeId}`) : null;
