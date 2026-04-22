@@ -17,6 +17,7 @@ import { useAuth } from "@/lib/auth";
 import {
   createWalkthrough,
   deleteWalkthrough,
+  fetchCompleted,
   fetchLatestInProgress,
   formatTimestamp,
   type Walkthrough,
