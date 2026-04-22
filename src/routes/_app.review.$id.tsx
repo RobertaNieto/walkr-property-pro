@@ -262,7 +262,7 @@ function ReviewScreen() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-background print:bg-white">
+    <div className="flex min-h-[100dvh] flex-col bg-background">
       {/* Top utility bar — hidden in print */}
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur print:hidden">
         <div className="mx-auto flex w-full max-w-3xl items-center gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
@@ -323,7 +323,7 @@ function ReviewScreen() {
         {critical.length > 0 && (
           <section
             ref={flagsRef}
-            className="mb-6 rounded-2xl border-2 border-critical bg-critical/10 p-4 sm:p-5 print:border print:border-red-500 print:bg-white"
+            className="mb-6 rounded-2xl border-2 border-critical bg-critical/10 p-4 sm:p-5"
           >
             <div className="flex items-center gap-2 text-critical">
               <AlertTriangle className="h-5 w-5" />
