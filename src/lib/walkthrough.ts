@@ -44,6 +44,70 @@ export interface Walkthrough {
 
 const ACTIVE_KEY = "propertywalk:active-id";
 const CACHE_PREFIX = "propertywalk:cache:";
+const COMPLETED_KEY = "propertywalk_completed";
+const MAX_COMPLETED = 50;
+
+export interface CompletedRecord extends Walkthrough {
+  completedAt: number;
+  propertyAddress: string;
+  totalPhotos: number;
+  criticalFlags: { questionId: string; label?: string; rating?: Rating; notes?: string }[];
+}
+
+function formatAddress(a: PropertyAddress): string {
+  const street = [a.houseNumber, a.streetName].filter(Boolean).join(" ").trim();
+  return [street, a.city].filter(Boolean).join(", ");
+}
+
+function buildCompletedRecord(w: Walkthrough): CompletedRecord {
+  let totalPhotos = 0;
+  const criticalFlags: CompletedRecord["criticalFlags"] = [];
+  for (const [qid, ans] of Object.entries(w.answers ?? {})) {
+    if (ans.photos) totalPhotos += ans.photos.length;
+    // Rating of 1 = Poor → treat as critical flag
+    if (ans.rating === 1) {
+      criticalFlags.push({ questionId: qid, rating: ans.rating, notes: ans.notes });
+    }
+  }
+  return {
+    ...w,
+    completedAt: w.completedAt ?? Date.now(),
+    propertyAddress: formatAddress(w.address),
+    totalPhotos,
+    criticalFlags,
+  };
+}
+
+export function listCompletedLocal(): CompletedRecord[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(COMPLETED_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as CompletedRecord[];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCompletedLocal(w: Walkthrough): CompletedRecord {
+  const record = buildCompletedRecord(w);
+  if (typeof window === "undefined") return record;
+  const existing = listCompletedLocal().filter((r) => r.id !== record.id);
+  const next = [record, ...existing].slice(0, MAX_COMPLETED);
+  localStorage.setItem(COMPLETED_KEY, JSON.stringify(next));
+  return record;
+}
+
+export function getCompletedLocalById(id: string): CompletedRecord | null {
+  return listCompletedLocal().find((r) => r.id === id) ?? null;
+}
+
+export function removeCompletedLocal(id: string) {
+  if (typeof window === "undefined") return;
+  const next = listCompletedLocal().filter((r) => r.id !== id);
+  localStorage.setItem(COMPLETED_KEY, JSON.stringify(next));
+}
 
 // ---------- local cache helpers (fast UI, survives reload) ----------
 
@@ -257,16 +321,31 @@ export async function completeWalkthrough(): Promise<Walkthrough | null> {
   if (!current) return null;
   const next = updateWalkthrough({ completedAt: Date.now() });
   if (next) {
-    // Flush pending writes immediately and wait for them to land in the DB so
-    // the review screen can read the completed record. Then drop local cache
-    // so the lockbox code is no longer sitting in browser storage.
+    // Flush pending writes to DB so the review screen can read it.
     if (pending.has(next.id)) {
       clearTimeout(pending.get(next.id)!);
       await flush(next.id);
     }
-    clearCache(next.id);
+    // Save a local snapshot of the completed walkthrough so the review screen
+    // and "My walkthroughs > Completed" tab work without a network round-trip.
+    saveCompletedLocal(next);
+    // NOTE: We intentionally do NOT clearCache(next.id) here. The active draft
+    // is preserved until the user explicitly submits to Drive or starts fresh.
   }
   return next;
+}
+
+// Called when the user explicitly submits to Drive (Phase 5) or after they
+// confirm they want to discard the active draft. Removes the in-progress
+// cache so sensitive data (lockbox code, etc.) is wiped from the device.
+export async function submitWalkthrough(): Promise<void> {
+  const current = loadActive();
+  if (!current) return;
+  if (pending.has(current.id)) {
+    clearTimeout(pending.get(current.id)!);
+    await flush(current.id);
+  }
+  clearCache(current.id);
 }
 
 export function discardActive() {

@@ -1,7 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, Eye, Trash2 } from "lucide-react";
+import { CheckCircle2, CloudUpload, Eye, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { completeWalkthrough, discardActive } from "@/lib/walkthrough";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { completeWalkthrough, submitWalkthrough } from "@/lib/walkthrough";
 
 export const Route = createFileRoute("/_app/wizard/complete")({
   component: CompleteScreen,
@@ -9,20 +19,28 @@ export const Route = createFileRoute("/_app/wizard/complete")({
 
 function CompleteScreen() {
   const navigate = useNavigate();
-  const [cleared, setCleared] = useState(false);
   const [walkId, setWalkId] = useState<string | null>(null);
+  const [confirmFresh, setConfirmFresh] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
-  // Mark complete in DB and clear local cache (removes lockbox code from device).
+  // Mark complete in DB and snapshot to local "completed" list.
+  // We DO NOT clear the active draft here — only after Submit-to-Drive or
+  // explicit "Start Fresh" so the review screen always has data to load.
   useEffect(() => {
     void completeWalkthrough().then((w) => {
       if (w) setWalkId(w.id);
-      setCleared(true);
     });
   }, []);
 
-  const handleClearAndExit = () => {
-    discardActive();
-    navigate({ to: "/" });
+  const handleStartFresh = async () => {
+    setClearing(true);
+    try {
+      await submitWalkthrough(); // clears active draft cache
+    } finally {
+      setClearing(false);
+      setConfirmFresh(false);
+      navigate({ to: "/" });
+    }
   };
 
   return (
@@ -31,19 +49,12 @@ function CompleteScreen() {
         <CheckCircle2 className="h-10 w-10 text-success" />
       </div>
       <h1 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
-        Phase 1 sample complete
+        Walkthrough complete
       </h1>
       <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-        You've completed the three sample wizard screens. The remaining 15 sections,
-        review, and Drive submission are coming in the next phase.
+        Your answers and photos are saved. Review the report below or upload it to Google Drive
+        when you're ready.
       </p>
-
-      {cleared && (
-        <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">
-          <Trash2 className="h-3.5 w-3.5" />
-          Lockbox code & walkthrough data cleared from this device
-        </p>
-      )}
 
       <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
         {walkId && (
@@ -56,20 +67,57 @@ function CompleteScreen() {
             Review walkthrough
           </Link>
         )}
+
+        <button
+          disabled
+          aria-disabled
+          title="Coming in Phase 5"
+          className="inline-flex h-12 cursor-not-allowed items-center justify-center gap-2 rounded-2xl border border-border bg-muted px-6 text-sm font-semibold text-muted-foreground"
+        >
+          <CloudUpload className="h-4 w-4" />
+          Submit to Google Drive (coming soon)
+        </button>
+
         <Link
           to="/"
           className="inline-flex h-12 items-center justify-center rounded-2xl border border-border bg-card px-6 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
         >
           Back to Home
         </Link>
+
         <button
-          onClick={handleClearAndExit}
+          onClick={() => setConfirmFresh(true)}
           className="inline-flex h-11 items-center justify-center gap-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
         >
           <Trash2 className="h-4 w-4" />
-          Clear data & start over
+          Start fresh & clear from device
         </button>
       </div>
+
+      <AlertDialog open={confirmFresh} onOpenChange={setConfirmFresh}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear walkthrough from device?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the lockbox code and active draft from this device. The completed
+              report will still be available in My Walkthroughs &gt; Completed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={clearing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleStartFresh();
+              }}
+              disabled={clearing}
+              className="bg-critical text-critical-foreground hover:bg-critical/90"
+            >
+              Clear & go home
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

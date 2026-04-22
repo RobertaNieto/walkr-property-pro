@@ -1,8 +1,13 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { fetchById, formatTimestamp, type Walkthrough } from "@/lib/walkthrough";
+import {
+  fetchById,
+  formatTimestamp,
+  getCompletedLocalById,
+  loadActive,
+  type Walkthrough,
+} from "@/lib/walkthrough";
 
 export const Route = createFileRoute("/_app/review/$id")({
   component: ReviewScreen,
@@ -30,12 +35,43 @@ function ReviewScreen() {
   const { id } = useParams({ from: "/_app/review/$id" });
   const [walk, setWalk] = useState<Walkthrough | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
+    // Source-of-truth order: localStorage completed → active draft cache → DB.
+    // Local sources are checked first so the review never goes blank waiting
+    // on a network round-trip and survives offline use.
+    const local = getCompletedLocalById(id);
+    if (local) {
+      setWalk(local);
+      setLoading(false);
+      return;
+    }
+    const active = loadActive();
+    if (active && active.id === id) {
+      setWalk(active);
+      setLoading(false);
+      return;
+    }
+
     fetchById(id)
-      .then((w) => setWalk(w))
-      .catch((e) => toast.error(e.message ?? "Could not load walkthrough"))
-      .finally(() => setLoading(false));
+      .then((w) => {
+        if (cancelled) return;
+        if (w) setWalk(w);
+        else setNotFound(true);
+      })
+      .catch(() => {
+        if (!cancelled) setNotFound(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (loading) {
@@ -46,11 +82,17 @@ function ReviewScreen() {
     );
   }
 
-  if (!walk) {
+  if (!walk || notFound) {
     return (
       <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-background px-6 text-center">
-        <p className="text-foreground">Walkthrough not found.</p>
-        <Link to="/" className="text-sm font-semibold text-accent underline">
+        <h1 className="text-xl font-bold text-foreground">Walkthrough unavailable</h1>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          No walkthrough data found. Please start a new walkthrough.
+        </p>
+        <Link
+          to="/"
+          className="mt-2 inline-flex h-12 items-center justify-center rounded-2xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-colors hover:bg-primary/90"
+        >
           Back to home
         </Link>
       </div>
