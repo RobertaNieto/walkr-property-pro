@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, Trash2 } from "lucide-react";
+import { CheckCircle2, Eye, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { completeWalkthrough, discardActive } from "@/lib/walkthrough";
 
@@ -10,11 +10,14 @@ export const Route = createFileRoute("/_app/wizard/complete")({
 function CompleteScreen() {
   const navigate = useNavigate();
   const [cleared, setCleared] = useState(false);
+  const [walkId, setWalkId] = useState<string | null>(null);
 
   // Mark complete in DB and clear local cache (removes lockbox code from device).
   useEffect(() => {
-    completeWalkthrough();
-    setCleared(true);
+    void completeWalkthrough().then((w) => {
+      if (w) setWalkId(w.id);
+      setCleared(true);
+    });
   }, []);
 
   const handleClearAndExit = () => {
@@ -43,15 +46,25 @@ function CompleteScreen() {
       )}
 
       <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
+        {walkId && (
+          <Link
+            to="/review/$id"
+            params={{ id: walkId }}
+            className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-primary px-8 text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-colors hover:bg-primary/90"
+          >
+            <Eye className="h-5 w-5" />
+            Review walkthrough
+          </Link>
+        )}
         <Link
           to="/"
-          className="inline-flex h-14 items-center justify-center rounded-2xl bg-primary px-8 text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-colors hover:bg-primary/90"
+          className="inline-flex h-12 items-center justify-center rounded-2xl border border-border bg-card px-6 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
         >
           Back to Home
         </Link>
         <button
           onClick={handleClearAndExit}
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-border bg-card px-6 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+          className="inline-flex h-11 items-center justify-center gap-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
         >
           <Trash2 className="h-4 w-4" />
           Clear data & start over

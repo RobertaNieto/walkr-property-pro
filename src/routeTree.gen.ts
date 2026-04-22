@@ -22,6 +22,7 @@ import { Route as AppWizardLockboxRouteImport } from './routes/_app.wizard.lockb
 import { Route as AppWizardFrontPhotoRouteImport } from './routes/_app.wizard.front-photo'
 import { Route as AppWizardExteriorPaintRouteImport } from './routes/_app.wizard.exterior-paint'
 import { Route as AppWizardCompleteRouteImport } from './routes/_app.wizard.complete'
+import { Route as AppReviewIdRouteImport } from './routes/_app.review.$id'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -87,6 +88,11 @@ const AppWizardCompleteRoute = AppWizardCompleteRouteImport.update({
   path: '/wizard/complete',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReviewIdRoute = AppReviewIdRouteImport.update({
+  id: '/review/$id',
+  path: '/review/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/address': typeof AppAddressRoute
   '/config': typeof AppConfigRoute
   '/profile': typeof AppProfileRoute
+  '/review/$id': typeof AppReviewIdRoute
   '/wizard/complete': typeof AppWizardCompleteRoute
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/wizard/front-photo': typeof AppWizardFrontPhotoRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/address': typeof AppAddressRoute
   '/config': typeof AppConfigRoute
   '/profile': typeof AppProfileRoute
+  '/review/$id': typeof AppReviewIdRoute
   '/wizard/complete': typeof AppWizardCompleteRoute
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/wizard/front-photo': typeof AppWizardFrontPhotoRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/_app/address': typeof AppAddressRoute
   '/_app/config': typeof AppConfigRoute
   '/_app/profile': typeof AppProfileRoute
+  '/_app/review/$id': typeof AppReviewIdRoute
   '/_app/wizard/complete': typeof AppWizardCompleteRoute
   '/_app/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/_app/wizard/front-photo': typeof AppWizardFrontPhotoRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/address'
     | '/config'
     | '/profile'
+    | '/review/$id'
     | '/wizard/complete'
     | '/wizard/exterior-paint'
     | '/wizard/front-photo'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/address'
     | '/config'
     | '/profile'
+    | '/review/$id'
     | '/wizard/complete'
     | '/wizard/exterior-paint'
     | '/wizard/front-photo'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/_app/address'
     | '/_app/config'
     | '/_app/profile'
+    | '/_app/review/$id'
     | '/_app/wizard/complete'
     | '/_app/wizard/exterior-paint'
     | '/_app/wizard/front-photo'
@@ -280,6 +292,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWizardCompleteRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/review/$id': {
+      id: '/_app/review/$id'
+      path: '/review/$id'
+      fullPath: '/review/$id'
+      preLoaderRoute: typeof AppReviewIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -287,6 +306,7 @@ interface AppRouteChildren {
   AppAddressRoute: typeof AppAddressRoute
   AppConfigRoute: typeof AppConfigRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppReviewIdRoute: typeof AppReviewIdRoute
   AppWizardCompleteRoute: typeof AppWizardCompleteRoute
   AppWizardExteriorPaintRoute: typeof AppWizardExteriorPaintRoute
   AppWizardFrontPhotoRoute: typeof AppWizardFrontPhotoRoute
@@ -297,6 +317,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAddressRoute: AppAddressRoute,
   AppConfigRoute: AppConfigRoute,
   AppProfileRoute: AppProfileRoute,
+  AppReviewIdRoute: AppReviewIdRoute,
   AppWizardCompleteRoute: AppWizardCompleteRoute,
   AppWizardExteriorPaintRoute: AppWizardExteriorPaintRoute,
   AppWizardFrontPhotoRoute: AppWizardFrontPhotoRoute,

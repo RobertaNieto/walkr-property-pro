@@ -17,6 +17,7 @@ import { useAuth } from "@/lib/auth";
 import {
   createWalkthrough,
   deleteWalkthrough,
+  fetchCompleted,
   fetchLatestInProgress,
   formatTimestamp,
   type Walkthrough,
@@ -30,6 +31,7 @@ function WelcomeScreen() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [existing, setExisting] = useState<Walkthrough | null>(null);
+  const [completed, setCompleted] = useState<Walkthrough[]>([]);
   const [loading, setLoading] = useState(false);
   const [starting, setStarting] = useState(false);
   const [confirmFresh, setConfirmFresh] = useState(false);
@@ -38,9 +40,10 @@ function WelcomeScreen() {
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-    fetchLatestInProgress(user.id)
-      .then((w) => {
+    Promise.all([fetchLatestInProgress(user.id), fetchCompleted(user.id)])
+      .then(([w, done]) => {
         setExisting(w);
+        setCompleted(done);
         if (typeof window !== "undefined") {
           const activeId = localStorage.getItem("propertywalk:active-id");
           const raw = activeId ? localStorage.getItem(`propertywalk:cache:${activeId}`) : null;
@@ -208,6 +211,35 @@ function WelcomeScreen() {
                 <Trash2 className="h-4 w-4" />
                 Start Fresh
               </button>
+
+              {completed.length > 0 && (
+                <div className="pt-2">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground/60">
+                    Recent walkthroughs
+                  </p>
+                  <ul className="space-y-2">
+                    {completed.slice(0, 5).map((w) => {
+                      const addr =
+                        [w.address.houseNumber, w.address.streetName].filter(Boolean).join(" ") ||
+                        "Untitled walkthrough";
+                      return (
+                        <li key={w.id}>
+                          <Link
+                            to="/review/$id"
+                            params={{ id: w.id }}
+                            className="flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-left text-sm font-semibold text-primary-foreground backdrop-blur transition-colors hover:bg-white/10"
+                          >
+                            <span className="truncate">{addr}</span>
+                            <span className="ml-3 shrink-0 text-xs font-normal text-primary-foreground/60">
+                              {formatTimestamp(w.completedAt ?? w.updatedAt)}
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
             </>
           )}
 

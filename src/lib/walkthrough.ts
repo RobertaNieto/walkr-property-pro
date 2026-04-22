@@ -148,6 +148,28 @@ export async function fetchLatestInProgress(userId: string): Promise<Walkthrough
   return w;
 }
 
+export async function fetchCompleted(userId: string): Promise<Walkthrough[]> {
+  const { data, error } = await supabase
+    .from("walkthroughs")
+    .select("*")
+    .eq("user_id", userId)
+    .not("completed_at", "is", null)
+    .order("completed_at", { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  return (data ?? []).map((r) => fromDb(r as DbRow));
+}
+
+export async function fetchById(id: string): Promise<Walkthrough | null> {
+  const { data, error } = await supabase
+    .from("walkthroughs")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? fromDb(data as DbRow) : null;
+}
+
 interface DbPatch {
   house_number?: string;
   street_name?: string;
@@ -162,24 +184,25 @@ interface DbPatch {
 const pending = new Map<string, ReturnType<typeof setTimeout>>();
 const queued = new Map<string, DbPatch>();
 
-function flush(id: string) {
+async function flush(id: string): Promise<void> {
   const patch = queued.get(id);
   queued.delete(id);
   pending.delete(id);
   if (!patch) return;
   // jsonb columns are typed as `Json` by generated types; our domain shapes
   // are JSON-serializable so we cast at the boundary.
-  void supabase
+  const { error } = await supabase
     .from("walkthroughs")
     .update(patch as unknown as never)
     .eq("id", id);
+  if (error) console.error("[walkthrough] flush failed", error);
 }
 
 function schedule(id: string, patch: DbPatch) {
   const merged = { ...(queued.get(id) ?? {}), ...patch };
   queued.set(id, merged);
   if (pending.has(id)) clearTimeout(pending.get(id)!);
-  pending.set(id, setTimeout(() => flush(id), 500));
+  pending.set(id, setTimeout(() => void flush(id), 500));
   console.log("[walkthrough] save scheduled", { id, keys: Object.keys(merged) });
 }
 
@@ -229,16 +252,17 @@ export function setAnswer(questionId: string, answer: WizardAnswer): Walkthrough
   return updateWalkthrough({ answers: nextAnswers });
 }
 
-export function completeWalkthrough(): Walkthrough | null {
+export async function completeWalkthrough(): Promise<Walkthrough | null> {
   const current = loadActive();
   if (!current) return null;
   const next = updateWalkthrough({ completedAt: Date.now() });
   if (next) {
-    // Flush pending writes immediately, then drop local cache so the lockbox
-    // code is no longer sitting in browser storage.
+    // Flush pending writes immediately and wait for them to land in the DB so
+    // the review screen can read the completed record. Then drop local cache
+    // so the lockbox code is no longer sitting in browser storage.
     if (pending.has(next.id)) {
       clearTimeout(pending.get(next.id)!);
-      flush(next.id);
+      await flush(next.id);
     }
     clearCache(next.id);
   }
