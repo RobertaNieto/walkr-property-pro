@@ -12,6 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ConfigRouteImport } from './routes/config'
 import { Route as AddressRouteImport } from './routes/address'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WizardLockboxRouteImport } from './routes/wizard.lockbox'
+import { Route as WizardFrontPhotoRouteImport } from './routes/wizard.front-photo'
+import { Route as WizardExteriorPaintRouteImport } from './routes/wizard.exterior-paint'
+import { Route as WizardCompleteRouteImport } from './routes/wizard.complete'
 
 const ConfigRoute = ConfigRouteImport.update({
   id: '/config',
@@ -28,35 +32,93 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WizardLockboxRoute = WizardLockboxRouteImport.update({
+  id: '/wizard/lockbox',
+  path: '/wizard/lockbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WizardFrontPhotoRoute = WizardFrontPhotoRouteImport.update({
+  id: '/wizard/front-photo',
+  path: '/wizard/front-photo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WizardExteriorPaintRoute = WizardExteriorPaintRouteImport.update({
+  id: '/wizard/exterior-paint',
+  path: '/wizard/exterior-paint',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WizardCompleteRoute = WizardCompleteRouteImport.update({
+  id: '/wizard/complete',
+  path: '/wizard/complete',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/address': typeof AddressRoute
   '/config': typeof ConfigRoute
+  '/wizard/complete': typeof WizardCompleteRoute
+  '/wizard/exterior-paint': typeof WizardExteriorPaintRoute
+  '/wizard/front-photo': typeof WizardFrontPhotoRoute
+  '/wizard/lockbox': typeof WizardLockboxRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/address': typeof AddressRoute
   '/config': typeof ConfigRoute
+  '/wizard/complete': typeof WizardCompleteRoute
+  '/wizard/exterior-paint': typeof WizardExteriorPaintRoute
+  '/wizard/front-photo': typeof WizardFrontPhotoRoute
+  '/wizard/lockbox': typeof WizardLockboxRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/address': typeof AddressRoute
   '/config': typeof ConfigRoute
+  '/wizard/complete': typeof WizardCompleteRoute
+  '/wizard/exterior-paint': typeof WizardExteriorPaintRoute
+  '/wizard/front-photo': typeof WizardFrontPhotoRoute
+  '/wizard/lockbox': typeof WizardLockboxRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/address' | '/config'
+  fullPaths:
+    | '/'
+    | '/address'
+    | '/config'
+    | '/wizard/complete'
+    | '/wizard/exterior-paint'
+    | '/wizard/front-photo'
+    | '/wizard/lockbox'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/address' | '/config'
-  id: '__root__' | '/' | '/address' | '/config'
+  to:
+    | '/'
+    | '/address'
+    | '/config'
+    | '/wizard/complete'
+    | '/wizard/exterior-paint'
+    | '/wizard/front-photo'
+    | '/wizard/lockbox'
+  id:
+    | '__root__'
+    | '/'
+    | '/address'
+    | '/config'
+    | '/wizard/complete'
+    | '/wizard/exterior-paint'
+    | '/wizard/front-photo'
+    | '/wizard/lockbox'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AddressRoute: typeof AddressRoute
   ConfigRoute: typeof ConfigRoute
+  WizardCompleteRoute: typeof WizardCompleteRoute
+  WizardExteriorPaintRoute: typeof WizardExteriorPaintRoute
+  WizardFrontPhotoRoute: typeof WizardFrontPhotoRoute
+  WizardLockboxRoute: typeof WizardLockboxRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +144,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/wizard/lockbox': {
+      id: '/wizard/lockbox'
+      path: '/wizard/lockbox'
+      fullPath: '/wizard/lockbox'
+      preLoaderRoute: typeof WizardLockboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wizard/front-photo': {
+      id: '/wizard/front-photo'
+      path: '/wizard/front-photo'
+      fullPath: '/wizard/front-photo'
+      preLoaderRoute: typeof WizardFrontPhotoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wizard/exterior-paint': {
+      id: '/wizard/exterior-paint'
+      path: '/wizard/exterior-paint'
+      fullPath: '/wizard/exterior-paint'
+      preLoaderRoute: typeof WizardExteriorPaintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wizard/complete': {
+      id: '/wizard/complete'
+      path: '/wizard/complete'
+      fullPath: '/wizard/complete'
+      preLoaderRoute: typeof WizardCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +179,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AddressRoute: AddressRoute,
   ConfigRoute: ConfigRoute,
+  WizardCompleteRoute: WizardCompleteRoute,
+  WizardExteriorPaintRoute: WizardExteriorPaintRoute,
+  WizardFrontPhotoRoute: WizardFrontPhotoRoute,
+  WizardLockboxRoute: WizardLockboxRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
