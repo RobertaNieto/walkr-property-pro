@@ -157,6 +157,17 @@ function AuthScreen() {
               )}
             </div>
 
+            {mode === "signin" && (
+              <div className="-mt-2 text-right">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm font-semibold text-primary-foreground/80 underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={submitting}
