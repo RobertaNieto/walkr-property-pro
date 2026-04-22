@@ -14,9 +14,10 @@ function CompleteScreen() {
 
   // Mark complete in DB and clear local cache (removes lockbox code from device).
   useEffect(() => {
-    const w = completeWalkthrough();
-    if (w) setWalkId(w.id);
-    setCleared(true);
+    void completeWalkthrough().then((w) => {
+      if (w) setWalkId(w.id);
+      setCleared(true);
+    });
   }, []);
 
   const handleClearAndExit = () => {
