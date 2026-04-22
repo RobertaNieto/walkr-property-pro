@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import {
   deleteWalkthrough,
+  fetchCompleted,
   fetchLatestInProgress,
   formatTimestamp,
   listCompletedLocal,
@@ -63,14 +64,72 @@ function WalkthroughsScreen() {
   const refresh = async () => {
     if (!user) return;
     setLoading(true);
-    // Always load local completed data first — works even if Supabase is unreachable
-    setCompleted(listCompletedLocal());
+
+    // Load local data immediately so UI isn't blank while Supabase loads
+    const local = listCompletedLocal();
+    setCompleted(local);
+
     try {
-      const draft = await fetchLatestInProgress(user.id);
+      const [draft, dbCompleted] = await Promise.all([
+        fetchLatestInProgress(user.id),
+        fetchCompleted(user.id),
+      ]);
+
       setInProgress(draft);
+
+      // Merge DB + local completed records.
+      // DB is source of truth. Local fills gaps for records not yet flushed to DB.
+      const dbIds = new Set(dbCompleted.map((w) => w.id));
+      const localOnly = listCompletedLocal().filter((r) => !dbIds.has(r.id));
+
+      const merged = [
+        ...dbCompleted.map((w) => ({
+          ...w,
+          completedAt: w.completedAt ?? w.updatedAt,
+          propertyAddress: [w.address.houseNumber, w.address.streetName, w.address.city]
+            .filter(Boolean)
+            .join(", "),
+          totalPhotos: Object.values(w.answers ?? {}).reduce(
+            (n, a) => n + (a.photos?.length ?? 0),
+            0
+          ),
+          criticalFlags: [] as { questionId: string; notes?: string }[],
+        })),
+        ...localOnly,
+      ] as typeof local;
+
+      // Sort newest first
+      merged.sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0));
+
+      setCompleted(merged);
+
+      // Backfill local storage with DB records so future loads work offline too
+      for (const w of dbCompleted) {
+        const exists = listCompletedLocal().find((r) => r.id === w.id);
+        if (!exists) {
+          const record = {
+            ...w,
+            completedAt: w.completedAt ?? w.updatedAt,
+            propertyAddress: [w.address.houseNumber, w.address.streetName, w.address.city]
+              .filter(Boolean)
+              .join(", "),
+            totalPhotos: Object.values(w.answers ?? {}).reduce(
+              (n, a) => n + (a.photos?.length ?? 0),
+              0
+            ),
+            criticalFlags: [],
+          };
+          const existing = listCompletedLocal().filter((r) => r.id !== record.id);
+          localStorage.setItem(
+            "propertywalk_completed",
+            JSON.stringify([record, ...existing].slice(0, 50))
+          );
+        }
+      }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not load in-progress walkthrough";
+      const msg = e instanceof Error ? e.message : "Could not load walkthroughs";
       toast.error(msg);
+      // Keep showing local data if DB fails
     } finally {
       setLoading(false);
     }
