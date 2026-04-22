@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Loader2, LogIn, Trash2, User as UserIcon } from "lucide-react";
+import { Loader2, LogIn, Settings, Trash2, User as UserIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
@@ -39,7 +39,14 @@ function WelcomeScreen() {
     if (!user) return;
     setLoading(true);
     fetchLatestInProgress(user.id)
-      .then(setExisting)
+      .then((w) => {
+        setExisting(w);
+        if (typeof window !== "undefined") {
+          const activeId = localStorage.getItem("propertywalk:active-id");
+          const raw = activeId ? localStorage.getItem(`propertywalk:cache:${activeId}`) : null;
+          console.log("LOADED DRAFT:", raw ? JSON.parse(raw) : null);
+        }
+      })
       .catch((e) => toast.error(e.message ?? "Could not load walkthroughs"))
       .finally(() => setLoading(false));
   }, [user]);
@@ -63,8 +70,17 @@ function WelcomeScreen() {
 
   const resume = () => {
     if (!existing) return;
-    console.log("[walkthrough] resuming", { id: existing.id, lastRoute: existing.lastRoute });
-    navigate({ to: existing.lastRoute ?? "/address" });
+    const target = existing.lastRoute ?? "/address";
+    console.log("RESUMING TO:", { route: target, walkthroughId: existing.id });
+    console.log("RESTORED:", {
+      id: existing.id,
+      address: existing.address,
+      configKeys: Object.keys(existing.config ?? {}),
+      answerKeys: Object.keys(existing.answers ?? {}),
+      lastRoute: existing.lastRoute,
+      updatedAt: existing.updatedAt,
+    });
+    navigate({ to: target });
   };
 
   const handleStartFresh = () => {
@@ -113,8 +129,8 @@ function WelcomeScreen() {
         }}
       />
 
-      {user && (
-        <div className="relative flex justify-end px-4 pt-[max(env(safe-area-inset-top),0.75rem)]">
+      <div className="relative flex justify-end gap-2 px-4 pt-[max(env(safe-area-inset-top),0.75rem)]">
+        {user && (
           <Link
             to="/profile"
             aria-label="Profile"
@@ -122,8 +138,15 @@ function WelcomeScreen() {
           >
             <UserIcon className="h-5 w-5" />
           </Link>
-        </div>
-      )}
+        )}
+        <Link
+          to="/debug"
+          aria-label="Debug"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-primary-foreground ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
+        >
+          <Settings className="h-4 w-4" />
+        </Link>
+      </div>
 
       <main className="relative flex flex-1 flex-col items-center justify-center px-6 pb-8">
         <div className="flex flex-col items-center text-center">
