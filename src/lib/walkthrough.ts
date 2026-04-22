@@ -199,6 +199,13 @@ export function updateWalkthrough(patch: Partial<Walkthrough>): Walkthrough | nu
   return next;
 }
 
+// Cast helper: jsonb columns are typed as Json by the generated types but
+// our domain types are plain objects/arrays — they're JSON-serializable.
+type DbUpdate = Parameters<ReturnType<typeof supabase.from<"walkthroughs">>["update"]>[0];
+function asDbUpdate(p: DbPatch): DbUpdate {
+  return p as unknown as DbUpdate;
+}
+
 export function setAnswer(questionId: string, answer: WizardAnswer): Walkthrough | null {
   const current = loadActive();
   if (!current) return null;
