@@ -95,14 +95,32 @@ function ReviewScreen() {
   const flagsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const local = getCompletedLocalById(id) ?? getLatestCompletedLocal();
-    if (local) {
-      setWalk(local);
-      setNotFound(false);
-    } else {
-      setNotFound(true);
-    }
-    setLoading(false);
+    const load = async () => {
+      setLoading(true);
+      try {
+        // Try local first (has photo data)
+        const local = getCompletedLocalById(id) ?? getLatestCompletedLocal();
+        if (local) {
+          setWalk(enrichPhotos(local));
+          setNotFound(false);
+          setLoading(false);
+          return;
+        }
+        // Fall back to Supabase
+        const remote = await fetchById(id);
+        if (remote) {
+          setWalk(enrichPhotos(remote));
+          setNotFound(false);
+        } else {
+          setNotFound(true);
+        }
+      } catch {
+        setNotFound(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void load();
   }, [id]);
 
   const ctx: SkipContext | null = useMemo(
