@@ -184,17 +184,18 @@ interface DbPatch {
 const pending = new Map<string, ReturnType<typeof setTimeout>>();
 const queued = new Map<string, DbPatch>();
 
-function flush(id: string) {
+async function flush(id: string): Promise<void> {
   const patch = queued.get(id);
   queued.delete(id);
   pending.delete(id);
   if (!patch) return;
   // jsonb columns are typed as `Json` by generated types; our domain shapes
   // are JSON-serializable so we cast at the boundary.
-  void supabase
+  const { error } = await supabase
     .from("walkthroughs")
     .update(patch as unknown as never)
     .eq("id", id);
+  if (error) console.error("[walkthrough] flush failed", error);
 }
 
 function schedule(id: string, patch: DbPatch) {
