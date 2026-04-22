@@ -22,11 +22,27 @@ export interface PreWalkConfig {
   laundry?: string;
 }
 
+export interface WizardPhoto {
+  src: string; // data URL
+  filename: string; // e.g. EXTERIOR_FRONT.jpg
+}
+
 export interface WizardAnswer {
   text?: string;
   rating?: Rating;
   notes?: string;
+  // Photos can be either legacy string data-URLs (older drafts) or rich
+  // objects with auto-generated filenames. Stored as strings here for
+  // backward compatibility with PhotoCapture; filenames are tracked on
+  // a parallel object map keyed by question id.
   photos?: string[];
+  photoNames?: string[]; // index-aligned with photos
+  bool?: boolean;
+  choice?: string;
+  choices?: string[];
+  number?: number;
+  // Section 17 final checklist items (id -> checked).
+  checklist?: Record<string, boolean>;
 }
 
 export type WizardAnswers = Record<string, WizardAnswer>;
