@@ -279,14 +279,14 @@ function ReviewScreen() {
       </header>
 
       {/* Navy hero header with property + meta */}
-      <section className="bg-primary text-primary-foreground print:bg-white print:text-black">
+      <section className="bg-primary text-primary-foreground">
         <div className="mx-auto w-full max-w-3xl px-5 py-7 sm:py-9">
           <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{streetLine}</h1>
-          {cityLine && <p className="mt-1 text-base text-primary-foreground/80 print:text-gray-700">{cityLine}</p>}
-          <p className="mt-3 text-sm text-primary-foreground/80 print:text-gray-700">
+          {cityLine && <p className="mt-1 text-base text-primary-foreground/80">{cityLine}</p>}
+          <p className="mt-3 text-sm text-primary-foreground/80">
             Completed {walk.completedAt ? formatDateTime(walk.completedAt) : "—"}
           </p>
-          <p className="text-sm text-primary-foreground/70 print:text-gray-700">By {completedBy}</p>
+          <p className="text-sm text-primary-foreground/70">By {completedBy}</p>
         </div>
 
         {/* Stats pill row */}
