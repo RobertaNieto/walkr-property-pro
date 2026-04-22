@@ -10,10 +10,9 @@ import {
 import { cn } from "@/lib/utils";
 import { resolvePhotoSrc } from "@/lib/photo-store";
 import {
-  fetchById,
   formatTimestamp,
   getCompletedLocalById,
-  loadActive,
+  getLatestCompletedLocal,
   type Walkthrough,
   type WizardAnswer,
 } from "@/lib/walkthrough";
@@ -46,32 +45,17 @@ function ReviewScreen() {
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    const local = getCompletedLocalById(id);
+    const local = getCompletedLocalById(id) ?? getLatestCompletedLocal();
     if (local) {
       setWalk(local);
+      setNotFound(false);
       setLoading(false);
-      // If the walkthrough was just completed (within last 60s), show banner.
       if (local.completedAt && Date.now() - local.completedAt < 60_000) setShowBanner(true);
       return;
     }
-    const active = loadActive();
-    if (active && active.id === id) {
-      setWalk(active);
-      setLoading(false);
-      return;
-    }
-    fetchById(id)
-      .then((w) => {
-        if (cancelled) return;
-        if (w) setWalk(w);
-        else setNotFound(true);
-      })
-      .catch(() => !cancelled && setNotFound(true))
-      .finally(() => !cancelled && setLoading(false));
-    return () => {
-      cancelled = true;
-    };
+
+    setNotFound(true);
+    setLoading(false);
   }, [id]);
 
   const ctx: SkipContext | null = useMemo(
@@ -109,15 +93,15 @@ function ReviewScreen() {
   if (!walk || !ctx || notFound) {
     return (
       <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-background px-6 text-center">
-        <h1 className="text-xl font-bold text-foreground">Walkthrough unavailable</h1>
+        <h1 className="text-xl font-bold text-foreground">No completed walkthrough found</h1>
         <p className="max-w-sm text-sm text-muted-foreground">
-          No walkthrough data found. Please start a new walkthrough.
+          We couldn't find a completed walkthrough on this device.
         </p>
         <Link
           to="/"
           className="mt-2 inline-flex h-12 items-center justify-center rounded-2xl bg-primary px-6 text-sm font-semibold text-primary-foreground"
         >
-          Back to home
+          Go Home
         </Link>
       </div>
     );
@@ -142,13 +126,14 @@ function ReviewScreen() {
     <div className="flex min-h-[100dvh] flex-col bg-background">
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
-          <Link
-            to="/walkthroughs"
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/walkthroughs", search: { tab: "completed" } as never, replace: true })}
             aria-label="Back"
             className="-ml-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-foreground hover:bg-secondary"
           >
             <ArrowLeft className="h-5 w-5" />
-          </Link>
+          </button>
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-accent">Review</p>
             <h1 className="truncate text-lg font-bold text-foreground">{fullAddress || "Walkthrough"}</h1>
@@ -160,7 +145,7 @@ function ReviewScreen() {
         {showBanner && (
           <div className="mb-4 flex items-start gap-2 rounded-2xl bg-success/10 p-4 text-sm text-success">
             <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0" />
-            <p className="font-semibold">Walkthrough complete! Review your report below.</p>
+            <p className="font-semibold">✓ Walkthrough complete! Review your report below.</p>
           </div>
         )}
 
