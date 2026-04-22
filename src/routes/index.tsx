@@ -70,8 +70,17 @@ function WelcomeScreen() {
 
   const resume = () => {
     if (!existing) return;
-    console.log("[walkthrough] resuming", { id: existing.id, lastRoute: existing.lastRoute });
-    navigate({ to: existing.lastRoute ?? "/address" });
+    const target = existing.lastRoute ?? "/address";
+    console.log("RESUMING TO:", { route: target, walkthroughId: existing.id });
+    console.log("RESTORED:", {
+      id: existing.id,
+      address: existing.address,
+      configKeys: Object.keys(existing.config ?? {}),
+      answerKeys: Object.keys(existing.answers ?? {}),
+      lastRoute: existing.lastRoute,
+      updatedAt: existing.updatedAt,
+    });
+    navigate({ to: target });
   };
 
   const handleStartFresh = () => {
