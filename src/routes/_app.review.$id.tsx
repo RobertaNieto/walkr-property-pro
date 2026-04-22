@@ -27,6 +27,7 @@ import { useAuth } from "@/lib/auth";
 import { resolvePhotoSrc } from "@/lib/photo-store";
 import { cn } from "@/lib/utils";
 import {
+  fetchById,
   getCompletedLocalById,
   getLatestCompletedLocal,
   type Walkthrough,
@@ -75,6 +76,40 @@ function formatPropertyValue(v: string | undefined): string {
   return v;
 }
 
+// Resolve photo filenames in answers against the local photo store. When the
+// walkthrough is loaded from Supabase, photos[] contains only filenames —
+// this re-attaches data URLs so <img> tags render. Entries not found locally
+// are left as-is (resolvePhotoSrc returns undefined and UI shows a fallback).
+function enrichPhotos(w: Walkthrough): Walkthrough {
+  if (!w.answers) return w;
+  let changed = false;
+  const nextAnswers: Record<string, WizardAnswer> = {};
+  for (const [qid, ans] of Object.entries(w.answers)) {
+    if (!ans?.photos || ans.photos.length === 0) {
+      nextAnswers[qid] = ans;
+      continue;
+    }
+    const resolved = ans.photos.map((entry) => {
+      if (!entry) return entry;
+      if (
+        entry.startsWith("data:") ||
+        entry.startsWith("blob:") ||
+        entry.startsWith("http")
+      ) {
+        return entry;
+      }
+      const src = resolvePhotoSrc(entry);
+      if (src && src !== entry) {
+        changed = true;
+        return src;
+      }
+      return entry;
+    });
+    nextAnswers[qid] = { ...ans, photos: resolved };
+  }
+  return changed ? { ...w, answers: nextAnswers } : w;
+}
+
 function ReviewScreen() {
   const { id } = useParams({ from: "/_app/review/$id" });
   const navigate = useNavigate();
@@ -94,14 +129,32 @@ function ReviewScreen() {
   const flagsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const local = getCompletedLocalById(id) ?? getLatestCompletedLocal();
-    if (local) {
-      setWalk(local);
-      setNotFound(false);
-    } else {
-      setNotFound(true);
-    }
-    setLoading(false);
+    const load = async () => {
+      setLoading(true);
+      try {
+        // Try local first (has photo data)
+        const local = getCompletedLocalById(id) ?? getLatestCompletedLocal();
+        if (local) {
+          setWalk(enrichPhotos(local));
+          setNotFound(false);
+          setLoading(false);
+          return;
+        }
+        // Fall back to Supabase
+        const remote = await fetchById(id);
+        if (remote) {
+          setWalk(enrichPhotos(remote));
+          setNotFound(false);
+        } else {
+          setNotFound(true);
+        }
+      } catch {
+        setNotFound(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void load();
   }, [id]);
 
   const ctx: SkipContext | null = useMemo(
