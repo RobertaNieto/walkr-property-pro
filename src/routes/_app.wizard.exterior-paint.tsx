@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { NotesField } from "@/components/NotesField";
 import { RatingButtons } from "@/components/RatingButtons";
 import { WizardLayout } from "@/components/WizardLayout";
-import { loadWalkthrough, setAnswer, updateWalkthrough, type Rating } from "@/lib/walkthrough";
+import { loadActive, setAnswer, updateWalkthrough, type Rating } from "@/lib/walkthrough";
 
 const QID = "exterior_paint";
 const SECTION = 2;
@@ -21,7 +21,7 @@ function ExteriorPaintScreen() {
   const [savedAt, setSavedAt] = useState<number | undefined>();
 
   useEffect(() => {
-    const w = loadWalkthrough();
+    const w = loadActive();
     if (w?.answers[QID]) {
       setRating(w.answers[QID].rating);
       setNotes(w.answers[QID].notes ?? "");

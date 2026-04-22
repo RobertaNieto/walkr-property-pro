@@ -4,7 +4,7 @@ import { NotesField } from "@/components/NotesField";
 import { PhotoCapture } from "@/components/PhotoCapture";
 import { RatingButtons } from "@/components/RatingButtons";
 import { WizardLayout } from "@/components/WizardLayout";
-import { loadWalkthrough, setAnswer, updateWalkthrough, type Rating } from "@/lib/walkthrough";
+import { loadActive, setAnswer, updateWalkthrough, type Rating } from "@/lib/walkthrough";
 
 const QID = "front_of_house";
 const SECTION = 2;
@@ -22,7 +22,7 @@ function FrontPhotoScreen() {
   const [savedAt, setSavedAt] = useState<number | undefined>();
 
   useEffect(() => {
-    const w = loadWalkthrough();
+    const w = loadActive();
     if (w?.answers[QID]) {
       setPhotos(w.answers[QID].photos ?? []);
       setRating(w.answers[QID].rating);
