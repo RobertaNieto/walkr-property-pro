@@ -24,8 +24,8 @@ import { Route as AppWizardFrontPhotoRouteImport } from './routes/_app.wizard.fr
 import { Route as AppWizardExteriorPaintRouteImport } from './routes/_app.wizard.exterior-paint'
 import { Route as AppWizardCompleteRouteImport } from './routes/_app.wizard.complete'
 import { Route as AppWizardChecklistRouteImport } from './routes/_app.wizard.checklist'
-import { Route as AppWizardQQidRouteImport } from './routes/_app.wizard.q.$qid'
 import { Route as AppReviewIdRouteImport } from './routes/_app.review.$id'
+import { Route as AppWizardQQidRouteImport } from './routes/_app.wizard.q.$qid'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -101,14 +101,14 @@ const AppWizardChecklistRoute = AppWizardChecklistRouteImport.update({
   path: '/wizard/checklist',
   getParentRoute: () => AppRoute,
 } as any)
-const AppWizardQQidRoute = AppWizardQQidRouteImport.update({
-  id: '/wizard/q/$qid',
-  path: '/wizard/q/$qid',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppReviewIdRoute = AppReviewIdRouteImport.update({
   id: '/review/$id',
   path: '/review/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWizardQQidRoute = AppWizardQQidRouteImport.update({
+  id: '/wizard/q/$qid',
+  path: '/wizard/q/$qid',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -123,12 +123,12 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AppProfileRoute
   '/walkthroughs': typeof AppWalkthroughsRoute
   '/review/$id': typeof AppReviewIdRoute
-  '/wizard/q/$qid': typeof AppWizardQQidRoute
   '/wizard/checklist': typeof AppWizardChecklistRoute
   '/wizard/complete': typeof AppWizardCompleteRoute
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/wizard/front-photo': typeof AppWizardFrontPhotoRoute
   '/wizard/lockbox': typeof AppWizardLockboxRoute
+  '/wizard/q/$qid': typeof AppWizardQQidRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -141,12 +141,12 @@ export interface FileRoutesByTo {
   '/profile': typeof AppProfileRoute
   '/walkthroughs': typeof AppWalkthroughsRoute
   '/review/$id': typeof AppReviewIdRoute
-  '/wizard/q/$qid': typeof AppWizardQQidRoute
   '/wizard/checklist': typeof AppWizardChecklistRoute
   '/wizard/complete': typeof AppWizardCompleteRoute
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/wizard/front-photo': typeof AppWizardFrontPhotoRoute
   '/wizard/lockbox': typeof AppWizardLockboxRoute
+  '/wizard/q/$qid': typeof AppWizardQQidRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -161,12 +161,12 @@ export interface FileRoutesById {
   '/_app/profile': typeof AppProfileRoute
   '/_app/walkthroughs': typeof AppWalkthroughsRoute
   '/_app/review/$id': typeof AppReviewIdRoute
-  '/_app/wizard/q/$qid': typeof AppWizardQQidRoute
   '/_app/wizard/checklist': typeof AppWizardChecklistRoute
   '/_app/wizard/complete': typeof AppWizardCompleteRoute
   '/_app/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/_app/wizard/front-photo': typeof AppWizardFrontPhotoRoute
   '/_app/wizard/lockbox': typeof AppWizardLockboxRoute
+  '/_app/wizard/q/$qid': typeof AppWizardQQidRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -181,12 +181,12 @@ export interface FileRouteTypes {
     | '/profile'
     | '/walkthroughs'
     | '/review/$id'
-    | '/wizard/q/$qid'
     | '/wizard/checklist'
     | '/wizard/complete'
     | '/wizard/exterior-paint'
     | '/wizard/front-photo'
     | '/wizard/lockbox'
+    | '/wizard/q/$qid'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -199,12 +199,12 @@ export interface FileRouteTypes {
     | '/profile'
     | '/walkthroughs'
     | '/review/$id'
-    | '/wizard/q/$qid'
     | '/wizard/checklist'
     | '/wizard/complete'
     | '/wizard/exterior-paint'
     | '/wizard/front-photo'
     | '/wizard/lockbox'
+    | '/wizard/q/$qid'
   id:
     | '__root__'
     | '/'
@@ -218,12 +218,12 @@ export interface FileRouteTypes {
     | '/_app/profile'
     | '/_app/walkthroughs'
     | '/_app/review/$id'
-    | '/_app/wizard/q/$qid'
     | '/_app/wizard/checklist'
     | '/_app/wizard/complete'
     | '/_app/wizard/exterior-paint'
     | '/_app/wizard/front-photo'
     | '/_app/wizard/lockbox'
+    | '/_app/wizard/q/$qid'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -342,18 +342,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWizardChecklistRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/wizard/q/$qid': {
-      id: '/_app/wizard/q/$qid'
-      path: '/wizard/q/$qid'
-      fullPath: '/wizard/q/$qid'
-      preLoaderRoute: typeof AppWizardQQidRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/review/$id': {
       id: '/_app/review/$id'
       path: '/review/$id'
       fullPath: '/review/$id'
       preLoaderRoute: typeof AppReviewIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/wizard/q/$qid': {
+      id: '/_app/wizard/q/$qid'
+      path: '/wizard/q/$qid'
+      fullPath: '/wizard/q/$qid'
+      preLoaderRoute: typeof AppWizardQQidRouteImport
       parentRoute: typeof AppRoute
     }
   }
@@ -365,12 +365,12 @@ interface AppRouteChildren {
   AppProfileRoute: typeof AppProfileRoute
   AppWalkthroughsRoute: typeof AppWalkthroughsRoute
   AppReviewIdRoute: typeof AppReviewIdRoute
-  AppWizardQQidRoute: typeof AppWizardQQidRoute
   AppWizardChecklistRoute: typeof AppWizardChecklistRoute
   AppWizardCompleteRoute: typeof AppWizardCompleteRoute
   AppWizardExteriorPaintRoute: typeof AppWizardExteriorPaintRoute
   AppWizardFrontPhotoRoute: typeof AppWizardFrontPhotoRoute
   AppWizardLockboxRoute: typeof AppWizardLockboxRoute
+  AppWizardQQidRoute: typeof AppWizardQQidRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -379,12 +379,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppProfileRoute: AppProfileRoute,
   AppWalkthroughsRoute: AppWalkthroughsRoute,
   AppReviewIdRoute: AppReviewIdRoute,
-  AppWizardQQidRoute: AppWizardQQidRoute,
   AppWizardChecklistRoute: AppWizardChecklistRoute,
   AppWizardCompleteRoute: AppWizardCompleteRoute,
   AppWizardExteriorPaintRoute: AppWizardExteriorPaintRoute,
   AppWizardFrontPhotoRoute: AppWizardFrontPhotoRoute,
   AppWizardLockboxRoute: AppWizardLockboxRoute,
+  AppWizardQQidRoute: AppWizardQQidRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
