@@ -202,7 +202,7 @@ function schedule(id: string, patch: DbPatch) {
   const merged = { ...(queued.get(id) ?? {}), ...patch };
   queued.set(id, merged);
   if (pending.has(id)) clearTimeout(pending.get(id)!);
-  pending.set(id, setTimeout(() => flush(id), 500));
+  pending.set(id, setTimeout(() => void flush(id), 500));
   console.log("[walkthrough] save scheduled", { id, keys: Object.keys(merged) });
 }
 
