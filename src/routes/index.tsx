@@ -211,6 +211,35 @@ function WelcomeScreen() {
                 <Trash2 className="h-4 w-4" />
                 Start Fresh
               </button>
+
+              {completed.length > 0 && (
+                <div className="pt-2">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground/60">
+                    Recent walkthroughs
+                  </p>
+                  <ul className="space-y-2">
+                    {completed.slice(0, 5).map((w) => {
+                      const addr =
+                        [w.address.houseNumber, w.address.streetName].filter(Boolean).join(" ") ||
+                        "Untitled walkthrough";
+                      return (
+                        <li key={w.id}>
+                          <Link
+                            to="/review/$id"
+                            params={{ id: w.id }}
+                            className="flex items-center justify-between rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-left text-sm font-semibold text-primary-foreground backdrop-blur transition-colors hover:bg-white/10"
+                          >
+                            <span className="truncate">{addr}</span>
+                            <span className="ml-3 shrink-0 text-xs font-normal text-primary-foreground/60">
+                              {formatTimestamp(w.completedAt ?? w.updatedAt)}
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
             </>
           )}
 
