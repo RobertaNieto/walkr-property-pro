@@ -97,6 +97,16 @@ function FrontPhotoScreen() {
           </label>
           <NotesField value={notes} onChange={setNotes} placeholder="What stands out?" />
         </div>
+
+        {attempted && !valid && (
+          <p className="text-sm font-medium text-critical">
+            {!photosOk && !ratingOk
+              ? "Add at least one photo and select a condition rating to continue."
+              : !photosOk
+                ? "Add at least one photo to continue."
+                : "Select a condition rating to continue."}
+          </p>
+        )}
       </div>
     </WizardLayout>
   );
