@@ -385,7 +385,9 @@ function FieldRenderer({
               </p>
               <PhotoCapture
                 photos={value.photos ?? []}
-                onChange={(photos) => onChange((d) => syncPhotoNames(d, photos, q.withPhoto!.name, false))}
+                filenames={value.photoNames ?? []}
+                baseName={q.withPhoto.name}
+                onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
                 error={attempted && (value.photos?.length ?? 0) < (q.withPhoto.min ?? 1)}
               />
             </div>
@@ -399,17 +401,15 @@ function FieldRenderer({
       return (
         <PhotoCapture
           photos={value.photos ?? []}
-          onChange={(photos) => onChange((d) => syncPhotoNames(d, photos, q.photoName ?? q.id.toUpperCase(), isVideo))}
+          filenames={value.photoNames ?? []}
+          baseName={q.photoName ?? q.id.toUpperCase()}
+          isVideo={isVideo}
+          onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
           error={errored}
         />
       );
     }
   }
-}
-
-function syncPhotoNames(d: WizardAnswer, photos: string[], baseName: string, isVideo: boolean): WizardAnswer {
-  const photoNames = photos.map((_, i) => namePhoto(baseName, i, isVideo));
-  return { ...d, photos, photoNames };
 }
 
 function isAnsweredLocal(q: QuestionDef, ans: WizardAnswer): boolean {
