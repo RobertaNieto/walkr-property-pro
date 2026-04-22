@@ -344,12 +344,12 @@ export async function completeWalkthrough(): Promise<Walkthrough | null> {
   if (next) {
     saveCompletedLocal(next);
 
-    if (pending.has(next.id) || queued.has(next.id)) {
-      if (pending.has(next.id)) {
-        clearTimeout(pending.get(next.id)!);
-      }
-      void flush(next.id);
+    // Await the DB write so completed_at is set in Supabase before we navigate away
+    if (pending.has(next.id)) {
+      clearTimeout(pending.get(next.id)!);
     }
+    // Always flush regardless of pending state
+    await flush(next.id);
 
     clearCache(next.id);
     if (typeof window !== "undefined") {

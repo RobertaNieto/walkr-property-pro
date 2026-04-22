@@ -137,7 +137,7 @@ function WelcomeScreen() {
   };
 
   // Stats: prefer DB-backed counts, fall back to local snapshot for photos.
-  const completedCount = completed.length || completedLocal.length;
+  const completedCount = Math.max(completed.length, completedLocal.length);
   const inProgressCount = existing ? 1 : 0;
   const totalPhotos = (() => {
     if (completedLocal.length > 0) {
@@ -160,9 +160,9 @@ function WelcomeScreen() {
 
   const resumeAddr = existing ? formatAddress(existing) : null;
 
-  // Two most recent completed previews — prefer local snapshot (richer data).
+  // Two most recent completed previews — prefer source with more entries.
   const recentPreview: { id: string; address: string; completedAt: number }[] =
-    completedLocal.length > 0
+    completedLocal.length >= completed.length
       ? completedLocal.slice(0, 2).map((r) => ({
           id: r.id,
           address: r.propertyAddress || "Untitled walkthrough",
