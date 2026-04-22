@@ -220,10 +220,12 @@ export function updateWalkthrough(patch: Partial<Walkthrough>): Walkthrough | nu
 export function setAnswer(questionId: string, answer: WizardAnswer): Walkthrough | null {
   const current = loadActive();
   if (!current) return null;
+  const merged = { ...current.answers[questionId], ...answer };
   const nextAnswers = {
     ...current.answers,
-    [questionId]: { ...current.answers[questionId], ...answer },
+    [questionId]: merged,
   };
+  console.log(`SAVED: ${questionId} =`, merged);
   return updateWalkthrough({ answers: nextAnswers });
 }
 
