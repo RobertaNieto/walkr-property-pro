@@ -92,7 +92,7 @@ function AuthScreen() {
       <main className="relative flex flex-1 flex-col px-6 pb-8 pt-[max(env(safe-area-inset-top),3rem)]">
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
           <div className="flex flex-col items-center text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 p-2 ring-1 ring-white/10 backdrop-blur">
+            <div className="mb-4 flex h-32 w-32 items-center justify-center">
               <img src={logo} alt="PropertyWalk" className="h-full w-full object-contain" />
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight">
