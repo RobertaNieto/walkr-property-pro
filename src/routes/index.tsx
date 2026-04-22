@@ -39,7 +39,14 @@ function WelcomeScreen() {
     if (!user) return;
     setLoading(true);
     fetchLatestInProgress(user.id)
-      .then(setExisting)
+      .then((w) => {
+        setExisting(w);
+        if (typeof window !== "undefined") {
+          const activeId = localStorage.getItem("propertywalk:active-id");
+          const raw = activeId ? localStorage.getItem(`propertywalk:cache:${activeId}`) : null;
+          console.log("LOADED DRAFT:", raw ? JSON.parse(raw) : null);
+        }
+      })
       .catch((e) => toast.error(e.message ?? "Could not load walkthroughs"))
       .finally(() => setLoading(false));
   }, [user]);
