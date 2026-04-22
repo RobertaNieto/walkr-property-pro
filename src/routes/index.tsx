@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Loader2, LogIn, Settings, Trash2, User as UserIcon } from "lucide-react";
+import { ListChecks, Loader2, LogIn, Settings, Trash2, User as UserIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
@@ -134,13 +134,22 @@ function WelcomeScreen() {
 
       <div className="relative flex justify-end gap-2 px-4 pt-[max(env(safe-area-inset-top),0.75rem)]">
         {user && (
-          <Link
-            to="/profile"
-            aria-label="Profile"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-primary-foreground ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
-          >
-            <UserIcon className="h-5 w-5" />
-          </Link>
+          <>
+            <Link
+              to="/walkthroughs"
+              aria-label="My walkthroughs"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-primary-foreground ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
+            >
+              <ListChecks className="h-5 w-5" />
+            </Link>
+            <Link
+              to="/profile"
+              aria-label="Profile"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-primary-foreground ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
+            >
+              <UserIcon className="h-5 w-5" />
+            </Link>
+          </>
         )}
         <Link
           to="/debug"

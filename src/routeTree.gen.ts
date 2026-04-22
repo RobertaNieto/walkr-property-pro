@@ -15,6 +15,7 @@ import { Route as DebugRouteImport } from './routes/debug'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppWalkthroughsRouteImport } from './routes/_app.walkthroughs'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppConfigRouteImport } from './routes/_app.config'
 import { Route as AppAddressRouteImport } from './routes/_app.address'
@@ -52,6 +53,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppWalkthroughsRoute = AppWalkthroughsRouteImport.update({
+  id: '/walkthroughs',
+  path: '/walkthroughs',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/address': typeof AppAddressRoute
   '/config': typeof AppConfigRoute
   '/profile': typeof AppProfileRoute
+  '/walkthroughs': typeof AppWalkthroughsRoute
   '/review/$id': typeof AppReviewIdRoute
   '/wizard/complete': typeof AppWizardCompleteRoute
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/address': typeof AppAddressRoute
   '/config': typeof AppConfigRoute
   '/profile': typeof AppProfileRoute
+  '/walkthroughs': typeof AppWalkthroughsRoute
   '/review/$id': typeof AppReviewIdRoute
   '/wizard/complete': typeof AppWizardCompleteRoute
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/_app/address': typeof AppAddressRoute
   '/_app/config': typeof AppConfigRoute
   '/_app/profile': typeof AppProfileRoute
+  '/_app/walkthroughs': typeof AppWalkthroughsRoute
   '/_app/review/$id': typeof AppReviewIdRoute
   '/_app/wizard/complete': typeof AppWizardCompleteRoute
   '/_app/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
@@ -152,6 +161,7 @@ export interface FileRouteTypes {
     | '/address'
     | '/config'
     | '/profile'
+    | '/walkthroughs'
     | '/review/$id'
     | '/wizard/complete'
     | '/wizard/exterior-paint'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/address'
     | '/config'
     | '/profile'
+    | '/walkthroughs'
     | '/review/$id'
     | '/wizard/complete'
     | '/wizard/exterior-paint'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/_app/address'
     | '/_app/config'
     | '/_app/profile'
+    | '/_app/walkthroughs'
     | '/_app/review/$id'
     | '/_app/wizard/complete'
     | '/_app/wizard/exterior-paint'
@@ -242,6 +254,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/walkthroughs': {
+      id: '/_app/walkthroughs'
+      path: '/walkthroughs'
+      fullPath: '/walkthroughs'
+      preLoaderRoute: typeof AppWalkthroughsRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/profile': {
       id: '/_app/profile'
@@ -306,6 +325,7 @@ interface AppRouteChildren {
   AppAddressRoute: typeof AppAddressRoute
   AppConfigRoute: typeof AppConfigRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppWalkthroughsRoute: typeof AppWalkthroughsRoute
   AppReviewIdRoute: typeof AppReviewIdRoute
   AppWizardCompleteRoute: typeof AppWizardCompleteRoute
   AppWizardExteriorPaintRoute: typeof AppWizardExteriorPaintRoute
@@ -317,6 +337,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAddressRoute: AppAddressRoute,
   AppConfigRoute: AppConfigRoute,
   AppProfileRoute: AppProfileRoute,
+  AppWalkthroughsRoute: AppWalkthroughsRoute,
   AppReviewIdRoute: AppReviewIdRoute,
   AppWizardCompleteRoute: AppWizardCompleteRoute,
   AppWizardExteriorPaintRoute: AppWizardExteriorPaintRoute,
@@ -337,3 +358,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
