@@ -61,6 +61,7 @@ export interface Walkthrough {
 const ACTIVE_KEY = "propertywalk:active-id";
 const CACHE_PREFIX = "propertywalk:cache:";
 const COMPLETED_KEY = "propertywalk_completed";
+export const COMPLETING_KEY = "propertywalk_completing";
 const MAX_COMPLETED = 50;
 
 export interface CompletedRecord extends Walkthrough {
@@ -117,6 +118,10 @@ export function saveCompletedLocal(w: Walkthrough): CompletedRecord {
 
 export function getCompletedLocalById(id: string): CompletedRecord | null {
   return listCompletedLocal().find((r) => r.id === id) ?? null;
+}
+
+export function getLatestCompletedLocal(): CompletedRecord | null {
+  return listCompletedLocal()[0] ?? null;
 }
 
 export function removeCompletedLocal(id: string) {
@@ -337,8 +342,6 @@ export async function completeWalkthrough(): Promise<Walkthrough | null> {
   if (!current) return null;
   const next = updateWalkthrough({ completedAt: Date.now() });
   if (next) {
-    // Save a local snapshot immediately so the UI can navigate without waiting
-    // on the network. Backend sync happens in the background.
     saveCompletedLocal(next);
 
     if (pending.has(next.id) || queued.has(next.id)) {
@@ -348,8 +351,10 @@ export async function completeWalkthrough(): Promise<Walkthrough | null> {
       void flush(next.id);
     }
 
-    // NOTE: We intentionally do NOT clearCache(next.id) here. The active draft
-    // is preserved until the user explicitly submits to Drive or starts fresh.
+    clearCache(next.id);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("propertywalk_draft");
+    }
   }
   return next;
 }

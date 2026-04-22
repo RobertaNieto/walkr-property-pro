@@ -1,9 +1,15 @@
-import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Check } from "lucide-react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { completeWalkthrough, loadActive, setAnswer, type WizardAnswer } from "@/lib/walkthrough";
+import {
+  COMPLETING_KEY,
+  completeWalkthrough,
+  loadActive,
+  setAnswer,
+  type WizardAnswer,
+} from "@/lib/walkthrough";
 import { FINAL_CHECKLIST_ITEMS } from "@/lib/wizard-schema";
 
 const QID = "s17_final_checklist";
@@ -13,11 +19,11 @@ export const Route = createFileRoute("/_app/wizard/checklist")({
 });
 
 function ChecklistScreen() {
-  const navigate = useNavigate();
   const router = useRouter();
   const w = useMemo(() => loadActive(), []);
   const [items, setItems] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [completing, setCompleting] = useState(false);
 
   const visibleItems = useMemo(
     () => FINAL_CHECKLIST_ITEMS.filter((it) => !it.visible || it.visible(w?.config ?? {})),
@@ -28,6 +34,11 @@ function ChecklistScreen() {
     const existing = (w?.answers?.[QID] as WizardAnswer | undefined)?.checklist ?? {};
     setItems(existing);
   }, [w?.id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setCompleting(localStorage.getItem(COMPLETING_KEY) === "true");
+  }, []);
 
   // Auto-save
   useEffect(() => {
@@ -44,26 +55,46 @@ function ChecklistScreen() {
   const handleComplete = async () => {
     if (!allChecked || submitting) return;
     setSubmitting(true);
+    setCompleting(true);
+
     try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(COMPLETING_KEY, "true");
+      }
+
       setAnswer(QID, { checklist: items });
       const done = await completeWalkthrough();
-      if (done) {
-        navigate({ to: "/review/$id", params: { id: done.id } });
+
+      if (!done) {
+        throw new Error("No completed walkthrough returned");
+      }
+
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(COMPLETING_KEY);
+        window.location.replace(`/review/${done.id}`);
         return;
       }
 
-      const active = loadActive();
-      if (active) {
-        navigate({ to: "/review/$id", params: { id: active.id } });
-      } else {
-        alert("Could not complete walkthrough. Please go back and try again.");
-      }
+      router.navigate({ to: "/review/$id", params: { id: done.id }, replace: true });
     } catch {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(COMPLETING_KEY);
+      }
+      setCompleting(false);
       alert("Failed to complete walkthrough. Please check your connection and try again.");
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (completing) {
+    return (
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-3 bg-background px-6 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-base font-semibold text-foreground">Saving...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background">
@@ -116,7 +147,6 @@ function ChecklistScreen() {
                       {checked && <Check className="h-4 w-4" />}
                     </span>
                     <span className="text-base font-semibold text-foreground">{it.label}</span>
-                    {/* Hidden checkbox for a11y */}
                     <Checkbox checked={checked} className="sr-only" tabIndex={-1} aria-hidden />
                   </button>
                 </li>
@@ -139,7 +169,7 @@ function ChecklistScreen() {
                 : "bg-muted text-muted-foreground",
             )}
           >
-            {submitting ? "Saving…" : "Complete Walkthrough"}
+            {submitting ? "Saving..." : "Complete Walkthrough"}
           </button>
         </div>
       </footer>
