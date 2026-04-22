@@ -1,11 +1,22 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Loader2, LogIn, User as UserIcon } from "lucide-react";
+import { Loader2, LogIn, Trash2, User as UserIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth";
 import {
   createWalkthrough,
+  deleteWalkthrough,
   fetchLatestInProgress,
   formatTimestamp,
   type Walkthrough,
@@ -21,6 +32,8 @@ function WelcomeScreen() {
   const [existing, setExisting] = useState<Walkthrough | null>(null);
   const [loading, setLoading] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [confirmFresh, setConfirmFresh] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -50,7 +63,36 @@ function WelcomeScreen() {
 
   const resume = () => {
     if (!existing) return;
+    console.log("[walkthrough] resuming", { id: existing.id, lastRoute: existing.lastRoute });
     navigate({ to: existing.lastRoute ?? "/address" });
+  };
+
+  const handleStartFresh = () => {
+    if (existing) {
+      setConfirmFresh(true);
+    } else {
+      void startNew();
+    }
+  };
+
+  const confirmAndStartFresh = async () => {
+    if (!existing) {
+      setConfirmFresh(false);
+      await startNew();
+      return;
+    }
+    setClearing(true);
+    try {
+      await deleteWalkthrough(existing.id);
+      setExisting(null);
+      setConfirmFresh(false);
+      await startNew();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Could not clear walkthrough";
+      toast.error(msg);
+    } finally {
+      setClearing(false);
+    }
   };
 
   if (authLoading) {
@@ -107,35 +149,42 @@ function WelcomeScreen() {
             </Link>
           ) : (
             <>
-              <button
-                onClick={startNew}
-                disabled={starting}
-                className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-accent text-base font-semibold text-accent-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-accent/90 active:scale-[0.99] disabled:opacity-60"
-              >
-                {starting ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  "Start New Walkthrough"
-                )}
-              </button>
-
               {loading ? (
                 <div className="flex h-14 w-full items-center justify-center rounded-2xl border border-white/15 bg-white/5">
                   <Loader2 className="h-5 w-5 animate-spin text-primary-foreground/60" />
                 </div>
+              ) : existing ? (
+                <button
+                  onClick={resume}
+                  className="inline-flex h-14 w-full flex-col items-center justify-center rounded-2xl bg-accent text-sm font-semibold text-accent-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-accent/90 active:scale-[0.99]"
+                >
+                  <span className="text-base">Resume Previous Walkthrough</span>
+                  <span className="text-xs font-normal text-accent-foreground/70">
+                    Last saved {formatTimestamp(existing.updatedAt)}
+                  </span>
+                </button>
               ) : (
-                existing && (
-                  <button
-                    onClick={resume}
-                    className="inline-flex h-14 w-full flex-col items-center justify-center rounded-2xl border border-white/15 bg-white/5 text-sm font-semibold text-primary-foreground backdrop-blur transition-all hover:bg-white/10 active:scale-[0.99]"
-                  >
-                    <span className="text-base">Resume Previous Walkthrough</span>
-                    <span className="text-xs font-normal text-primary-foreground/60">
-                      Last saved {formatTimestamp(existing.updatedAt)}
-                    </span>
-                  </button>
-                )
+                <button
+                  onClick={startNew}
+                  disabled={starting}
+                  className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-accent text-base font-semibold text-accent-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-accent/90 active:scale-[0.99] disabled:opacity-60"
+                >
+                  {starting ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    "Start New Walkthrough"
+                  )}
+                </button>
               )}
+
+              <button
+                onClick={handleStartFresh}
+                disabled={starting || clearing}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 text-sm font-semibold text-primary-foreground backdrop-blur transition-all hover:bg-white/10 active:scale-[0.99] disabled:opacity-60"
+              >
+                <Trash2 className="h-4 w-4" />
+                Start Fresh
+              </button>
             </>
           )}
 
@@ -144,6 +193,31 @@ function WelcomeScreen() {
           </p>
         </div>
       </footer>
+
+      <AlertDialog open={confirmFresh} onOpenChange={setConfirmFresh}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard saved walkthrough?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes your in-progress walkthrough, including all answers and
+              photos. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={clearing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmAndStartFresh();
+              }}
+              disabled={clearing}
+              className="bg-critical text-critical-foreground hover:bg-critical/90"
+            >
+              {clearing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Discard & start fresh"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

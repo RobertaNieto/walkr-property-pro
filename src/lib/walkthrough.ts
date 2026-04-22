@@ -180,6 +180,19 @@ function schedule(id: string, patch: DbPatch) {
   queued.set(id, merged);
   if (pending.has(id)) clearTimeout(pending.get(id)!);
   pending.set(id, setTimeout(() => flush(id), 500));
+  console.log("[walkthrough] save scheduled", { id, keys: Object.keys(merged) });
+}
+
+export async function deleteWalkthrough(id: string): Promise<void> {
+  if (pending.has(id)) {
+    clearTimeout(pending.get(id)!);
+    pending.delete(id);
+    queued.delete(id);
+  }
+  const { error } = await supabase.from("walkthroughs").delete().eq("id", id);
+  if (error) throw error;
+  clearCache(id);
+  console.log("[walkthrough] deleted", id);
 }
 
 export function updateWalkthrough(patch: Partial<Walkthrough>): Walkthrough | null {
