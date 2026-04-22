@@ -148,6 +148,28 @@ export async function fetchLatestInProgress(userId: string): Promise<Walkthrough
   return w;
 }
 
+export async function fetchCompleted(userId: string): Promise<Walkthrough[]> {
+  const { data, error } = await supabase
+    .from("walkthroughs")
+    .select("*")
+    .eq("user_id", userId)
+    .not("completed_at", "is", null)
+    .order("completed_at", { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  return (data ?? []).map((r) => fromDb(r as DbRow));
+}
+
+export async function fetchById(id: string): Promise<Walkthrough | null> {
+  const { data, error } = await supabase
+    .from("walkthroughs")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? fromDb(data as DbRow) : null;
+}
+
 interface DbPatch {
   house_number?: string;
   street_name?: string;
