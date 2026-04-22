@@ -42,29 +42,23 @@ function ChecklistScreen() {
   const toggle = (id: string) => setItems((m) => ({ ...m, [id]: !m[id] }));
 
   const handleComplete = async () => {
-    if (!allChecked || submitting) {
-      console.warn("[checklist] complete blocked", { allChecked, submitting, items, visibleCount: visibleItems.length });
-      return;
-    }
+    if (!allChecked || submitting) return;
     setSubmitting(true);
     try {
-      console.log("[checklist] completing walkthrough");
       setAnswer(QID, { checklist: items });
       const done = await completeWalkthrough();
-      console.log("[checklist] completeWalkthrough returned", done?.id);
       if (done) {
         navigate({ to: "/review/$id", params: { id: done.id } });
-      } else {
-        // Fallback: no active walkthrough in cache. Try active id from storage.
-        const active = loadActive();
-        if (active) {
-          navigate({ to: "/review/$id", params: { id: active.id } });
-        } else {
-          alert("Could not complete walkthrough — no active draft found. Please return home and try again.");
-        }
+        return;
       }
-    } catch (e) {
-      console.error("[checklist] complete failed", e);
+
+      const active = loadActive();
+      if (active) {
+        navigate({ to: "/review/$id", params: { id: active.id } });
+      } else {
+        alert("Could not complete walkthrough. Please go back and try again.");
+      }
+    } catch {
       alert("Failed to complete walkthrough. Please check your connection and try again.");
     } finally {
       setSubmitting(false);
