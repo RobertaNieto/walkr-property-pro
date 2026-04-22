@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { NotesField } from "@/components/NotesField";
+import { PhotoCapture } from "@/components/PhotoCapture";
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
 import { loadActive, setAnswer, updateWalkthrough } from "@/lib/walkthrough";
@@ -17,6 +18,7 @@ function LockboxScreen() {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
   const [notes, setNotes] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
   const [attempted, setAttempted] = useState(false);
   const [savedAt, setSavedAt] = useState<number | undefined>();
 
@@ -25,22 +27,25 @@ function LockboxScreen() {
     if (w?.answers[QID]) {
       setCode(w.answers[QID].text ?? "");
       setNotes(w.answers[QID].notes ?? "");
+      setPhotos(w.answers[QID].photos ?? []);
     }
     if (w) updateWalkthrough({ lastRoute: "/wizard/lockbox" });
   }, []);
 
   useEffect(() => {
     const t = setTimeout(() => {
-      const w = setAnswer(QID, { text: code, notes });
+      const w = setAnswer(QID, { text: code, notes, photos });
       if (w) setSavedAt(w.updatedAt);
     }, 200);
     return () => clearTimeout(t);
-  }, [code, notes]);
+  }, [code, notes, photos]);
 
-  const valid = code.trim().length > 0;
+  const codeOk = code.trim().length > 0;
+  const photoOk = photos.length >= 1;
+  const valid = codeOk && photoOk;
 
   const handleNext = () => {
-    setAnswer(QID, { text: code, notes });
+    setAnswer(QID, { text: code, notes, photos });
     updateWalkthrough({ lastRoute: "/wizard/front-photo" });
     navigate({ to: "/wizard/front-photo" });
   };
@@ -57,23 +62,39 @@ function LockboxScreen() {
       onNext={handleNext}
       onAttemptNext={() => setAttempted(true)}
     >
-      <h2 className="text-2xl font-bold leading-tight text-foreground">Lockbox code</h2>
+      <h2 className="text-2xl font-bold leading-tight text-foreground">Lockbox code & location</h2>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Enter the access code provided by the listing agent.
+        Photograph the lockbox in context — show where it's attached so the next person can find it.
       </p>
 
-      <div className="mt-6 space-y-4">
-        <input
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder="e.g. 4827"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          className={cn(
-            "h-14 w-full rounded-2xl border-2 bg-card px-4 text-lg font-semibold tracking-wider text-foreground placeholder:font-normal placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-            attempted && !valid ? "field-error" : "border-input"
-          )}
-        />
+      <div className="mt-6 space-y-5">
+        <div>
+          <label className="mb-1.5 block text-sm font-semibold text-foreground">
+            Lockbox code <span className="text-critical">*</span>
+          </label>
+          <input
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="e.g. 4827"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            className={cn(
+              "h-14 w-full rounded-2xl border-2 bg-card px-4 text-lg font-semibold tracking-wider text-foreground placeholder:font-normal placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
+              attempted && !codeOk ? "field-error" : "border-input"
+            )}
+          />
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm font-semibold text-foreground">
+            Lockbox location photo <span className="text-critical">*</span>
+          </p>
+          <PhotoCapture
+            photos={photos}
+            onChange={setPhotos}
+            error={attempted && !photoOk}
+          />
+        </div>
 
         <div>
           <label className="mb-1.5 block text-sm font-semibold text-foreground">
