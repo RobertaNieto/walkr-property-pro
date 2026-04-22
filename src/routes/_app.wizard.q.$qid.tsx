@@ -8,6 +8,7 @@ import { RatingButtons } from "@/components/RatingButtons";
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
 import { loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer } from "@/lib/walkthrough";
+// loadActive is used in the initial state hydration (via useMemo above).
 import {
   buildQuestionList,
   isQuestionAnswered,
@@ -102,12 +103,12 @@ function QuestionScreen() {
       setAttempted(true);
       return;
     }
-    // Persist immediately and recompute next question against fresh state.
-    setAnswer(qid, draft);
-    const refreshed = loadActive();
+    // Compute next question against the current in-memory draft so navigation
+    // is instant. The persistent save is deferred to a macrotask after
+    // navigation commits — never block the UI thread on a write.
     const freshCtx: SkipContext = {
-      config: refreshed?.config ?? {},
-      answers: (refreshed?.answers ?? {}) as SkipContext["answers"],
+      config: ctx.config,
+      answers: { ...ctx.answers, [qid]: draft as SkipContext["answers"][string] },
     };
     const refreshedList = buildQuestionList(freshCtx);
     const here = refreshedList.findIndex((x) => x.id === qid);
@@ -117,6 +118,9 @@ function QuestionScreen() {
     } else {
       navigate({ to: "/wizard/checklist" });
     }
+    setTimeout(() => {
+      setAnswer(qid, draft);
+    }, 0);
   };
 
   return (
@@ -209,10 +213,6 @@ function pickValue(q: QuestionDef, ans: WizardAnswer): unknown {
   }
 }
 
-function namePhoto(base: string, idx: number, isVideo: boolean): string {
-  const ext = isVideo ? "mp4" : "jpg";
-  return idx === 0 ? `${base}.${ext}` : `${base}_${idx + 1}.${ext}`;
-}
 
 function FieldRenderer({
   q,
@@ -382,7 +382,9 @@ function FieldRenderer({
               </p>
               <PhotoCapture
                 photos={value.photos ?? []}
-                onChange={(photos) => onChange((d) => syncPhotoNames(d, photos, q.withPhoto!.name, false))}
+                filenames={value.photoNames ?? []}
+                baseName={q.withPhoto.name}
+                onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
                 error={attempted && (value.photos?.length ?? 0) < (q.withPhoto.min ?? 1)}
               />
             </div>
@@ -396,17 +398,15 @@ function FieldRenderer({
       return (
         <PhotoCapture
           photos={value.photos ?? []}
-          onChange={(photos) => onChange((d) => syncPhotoNames(d, photos, q.photoName ?? q.id.toUpperCase(), isVideo))}
+          filenames={value.photoNames ?? []}
+          baseName={q.photoName ?? q.id.toUpperCase()}
+          isVideo={isVideo}
+          onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
           error={errored}
         />
       );
     }
   }
-}
-
-function syncPhotoNames(d: WizardAnswer, photos: string[], baseName: string, isVideo: boolean): WizardAnswer {
-  const photoNames = photos.map((_, i) => namePhoto(baseName, i, isVideo));
-  return { ...d, photos, photoNames };
 }
 
 function isAnsweredLocal(q: QuestionDef, ans: WizardAnswer): boolean {
@@ -440,7 +440,9 @@ function FollowUpRenderer({
       {fu.field === "photo" && (
         <PhotoCapture
           photos={value.photos ?? []}
-          onChange={(photos) => onChange((d) => syncPhotoNames(d, photos, fu.photoName ?? "FOLLOWUP", false))}
+          filenames={value.photoNames ?? []}
+          baseName={fu.photoName ?? "FOLLOWUP"}
+          onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
           error={attempted && fu.required && (value.photos?.length ?? 0) < 1}
         />
       )}
