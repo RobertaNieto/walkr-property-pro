@@ -27,6 +27,7 @@ import { useAuth } from "@/lib/auth";
 import { resolvePhotoSrc } from "@/lib/photo-store";
 import { cn } from "@/lib/utils";
 import {
+  fetchById,
   getCompletedLocalById,
   getLatestCompletedLocal,
   type Walkthrough,
