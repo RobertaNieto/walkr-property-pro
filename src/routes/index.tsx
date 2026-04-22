@@ -286,6 +286,7 @@ function WelcomeScreen() {
           <div className="mx-auto mt-6 w-full max-w-md">
             <Link
               to="/walkthroughs"
+              search={{ tab: "completed" } as never}
               className="block rounded-2xl bg-card p-5 text-card-foreground shadow-[var(--shadow-elevated)] transition-transform hover:scale-[1.01] active:scale-[0.99]"
             >
               <div className="flex items-center justify-between">

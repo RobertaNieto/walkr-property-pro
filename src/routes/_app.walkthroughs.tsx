@@ -44,7 +44,8 @@ function WalkthroughsScreen() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { tab } = Route.useSearch();
-  const [activeTab, setActiveTab] = useState<"in-progress" | "completed">(tab);
+  const resolvedTab: "in-progress" | "completed" = tab === "completed" ? "completed" : "in-progress";
+  const [activeTab, setActiveTab] = useState<"in-progress" | "completed">(resolvedTab);
   const [inProgress, setInProgress] = useState<Walkthrough | null>(null);
   const [completed, setCompleted] = useState<CompletedRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,8 +57,8 @@ function WalkthroughsScreen() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    setActiveTab(tab);
-  }, [tab]);
+    setActiveTab(resolvedTab);
+  }, [resolvedTab]);
 
   const refresh = async () => {
     if (!user) return;
