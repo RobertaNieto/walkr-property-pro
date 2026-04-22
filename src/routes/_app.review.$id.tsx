@@ -8,6 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
+import { resolvePhotoSrc } from "@/lib/photo-store";
 import {
   fetchById,
   formatTimestamp,
@@ -312,15 +313,18 @@ function AnswerRow({ q, a }: { q: QuestionDef; a: WizardAnswer | undefined }) {
       </div>
       {a?.photos && a.photos.length > 0 && (
         <div className="mt-2 grid grid-cols-3 gap-2">
-          {a.photos.map((src, i) => (
-            <div key={i} className="relative aspect-square overflow-hidden rounded-lg bg-secondary">
-              {q.field === "video" ? (
-                <video src={src} className="h-full w-full object-cover" controls />
-              ) : (
-                <img src={src} alt={a.photoNames?.[i] ?? `${q.label} ${i + 1}`} className="h-full w-full object-cover" />
-              )}
-            </div>
-          ))}
+          {a.photos.map((entry, i) => {
+            const src = resolvePhotoSrc(entry);
+            return (
+              <div key={i} className="relative aspect-square overflow-hidden rounded-lg bg-secondary">
+                {src && (q.field === "video" ? (
+                  <video src={src} className="h-full w-full object-cover" controls />
+                ) : (
+                  <img src={src} alt={a.photoNames?.[i] ?? `${q.label} ${i + 1}`} className="h-full w-full object-cover" />
+                ))}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
