@@ -102,12 +102,12 @@ function QuestionScreen() {
       setAttempted(true);
       return;
     }
-    // Persist immediately and recompute next question against fresh state.
-    setAnswer(qid, draft);
-    const refreshed = loadActive();
+    // Compute next question against the current in-memory draft so navigation
+    // is instant. The persistent save is deferred to a macrotask after
+    // navigation commits — never block the UI thread on a write.
     const freshCtx: SkipContext = {
-      config: refreshed?.config ?? {},
-      answers: (refreshed?.answers ?? {}) as SkipContext["answers"],
+      config: ctx.config,
+      answers: { ...ctx.answers, [qid]: draft as SkipContext["answers"][string] },
     };
     const refreshedList = buildQuestionList(freshCtx);
     const here = refreshedList.findIndex((x) => x.id === qid);
@@ -117,6 +117,9 @@ function QuestionScreen() {
     } else {
       navigate({ to: "/wizard/checklist" });
     }
+    setTimeout(() => {
+      setAnswer(qid, draft);
+    }, 0);
   };
 
   return (
