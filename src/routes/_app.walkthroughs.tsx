@@ -63,12 +63,13 @@ function WalkthroughsScreen() {
   const refresh = async () => {
     if (!user) return;
     setLoading(true);
+    // Always load local completed data first — works even if Supabase is unreachable
+    setCompleted(listCompletedLocal());
     try {
-      const [draft] = await Promise.all([fetchLatestInProgress(user.id)]);
+      const draft = await fetchLatestInProgress(user.id);
       setInProgress(draft);
-      setCompleted(listCompletedLocal());
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not load walkthroughs";
+      const msg = e instanceof Error ? e.message : "Could not load in-progress walkthrough";
       toast.error(msg);
     } finally {
       setLoading(false);

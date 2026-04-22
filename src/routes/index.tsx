@@ -57,7 +57,19 @@ function WelcomeScreen() {
   const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
-    setCompletedLocal(listCompletedLocal());
+    const refresh = () => {
+      setCompletedLocal(listCompletedLocal());
+    };
+    const onVisibility = () => {
+      if (!document.hidden) refresh();
+    };
+    refresh();
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   useEffect(() => {
@@ -67,6 +79,7 @@ function WelcomeScreen() {
       .then(([w, done]) => {
         setExisting(w);
         setCompleted(done);
+        setCompletedLocal(listCompletedLocal());
       })
       .catch((e) => toast.error(e.message ?? "Could not load walkthroughs"))
       .finally(() => setLoading(false));
@@ -297,21 +310,25 @@ function WelcomeScreen() {
               {recentPreview.length > 0 ? (
                 <ul className="mt-3 space-y-2">
                   {recentPreview.map((p) => (
-                    <li
-                      key={p.id}
-                      className="flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2.5"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-semibold text-foreground">
-                          {p.address}
+                    <li key={p.id}>
+                      <Link
+                        to="/review/$id"
+                        params={{ id: p.id }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2.5 transition-colors hover:bg-muted"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-semibold text-foreground">
+                            {p.address}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {formatTimestamp(p.completedAt)}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatTimestamp(p.completedAt)}
-                        </div>
-                      </div>
-                      <span className="ml-3 shrink-0 text-xs font-semibold text-accent">
-                        View Report
-                      </span>
+                        <span className="ml-3 shrink-0 text-xs font-semibold text-accent">
+                          View Report
+                        </span>
+                      </Link>
                     </li>
                   ))}
                 </ul>

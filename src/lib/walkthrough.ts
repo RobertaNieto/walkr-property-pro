@@ -82,7 +82,7 @@ function buildCompletedRecord(w: Walkthrough): CompletedRecord {
   for (const [qid, ans] of Object.entries(w.answers ?? {})) {
     if (ans.photos) totalPhotos += ans.photos.length;
     // Rating of 1 = Poor → treat as critical flag
-    if (ans.rating === 1) {
+    if (ans.rating === 3) {
       criticalFlags.push({ questionId: qid, rating: ans.rating, notes: ans.notes });
     }
   }
