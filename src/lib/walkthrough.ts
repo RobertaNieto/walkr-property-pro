@@ -252,16 +252,17 @@ export function setAnswer(questionId: string, answer: WizardAnswer): Walkthrough
   return updateWalkthrough({ answers: nextAnswers });
 }
 
-export function completeWalkthrough(): Walkthrough | null {
+export async function completeWalkthrough(): Promise<Walkthrough | null> {
   const current = loadActive();
   if (!current) return null;
   const next = updateWalkthrough({ completedAt: Date.now() });
   if (next) {
-    // Flush pending writes immediately, then drop local cache so the lockbox
-    // code is no longer sitting in browser storage.
+    // Flush pending writes immediately and wait for them to land in the DB so
+    // the review screen can read the completed record. Then drop local cache
+    // so the lockbox code is no longer sitting in browser storage.
     if (pending.has(next.id)) {
       clearTimeout(pending.get(next.id)!);
-      flush(next.id);
+      await flush(next.id);
     }
     clearCache(next.id);
   }
