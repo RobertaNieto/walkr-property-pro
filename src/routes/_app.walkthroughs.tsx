@@ -25,10 +25,12 @@ import {
 } from "@/lib/walkthrough";
 
 export const Route = createFileRoute("/_app/walkthroughs")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: search.tab === "completed" ? "completed" : "in-progress",
+  }),
   component: WalkthroughsScreen,
 });
 
-// 18 sections × ~1 question avg in Phase 1. Used only as a rough hint.
 const TOTAL_QUESTIONS = 18;
 
 function completionPercent(w: Walkthrough): number {
@@ -41,6 +43,8 @@ function completionPercent(w: Walkthrough): number {
 function WalkthroughsScreen() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { tab } = Route.useSearch();
+  const [activeTab, setActiveTab] = useState<"in-progress" | "completed">(tab);
   const [inProgress, setInProgress] = useState<Walkthrough | null>(null);
   const [completed, setCompleted] = useState<CompletedRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +54,10 @@ function WalkthroughsScreen() {
     | null
   >(null);
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    setActiveTab(tab);
+  }, [tab]);
 
   const refresh = async () => {
     if (!user) return;
@@ -108,7 +116,15 @@ function WalkthroughsScreen() {
       </header>
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-5">
-        <Tabs defaultValue="in-progress" className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => {
+            const next = value === "completed" ? "completed" : "in-progress";
+            setActiveTab(next);
+            navigate({ to: "/walkthroughs", search: { tab: next } as never, replace: true });
+          }}
+          className="w-full"
+        >
           <TabsList className="grid h-11 w-full grid-cols-2">
             <TabsTrigger value="in-progress" className="text-sm font-semibold">
               In progress
