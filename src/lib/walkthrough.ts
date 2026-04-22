@@ -167,7 +167,12 @@ function flush(id: string) {
   queued.delete(id);
   pending.delete(id);
   if (!patch) return;
-  void supabase.from("walkthroughs").update(patch).eq("id", id);
+  // jsonb columns are typed as `Json` by generated types; our domain shapes
+  // are JSON-serializable so we cast at the boundary.
+  void supabase
+    .from("walkthroughs")
+    .update(patch as unknown as never)
+    .eq("id", id);
 }
 
 function schedule(id: string, patch: DbPatch) {
@@ -197,13 +202,6 @@ export function updateWalkthrough(patch: Partial<Walkthrough>): Walkthrough | nu
   }
   if (Object.keys(dbPatch).length > 0) schedule(next.id, dbPatch);
   return next;
-}
-
-// Cast helper: jsonb columns are typed as Json by the generated types but
-// our domain types are plain objects/arrays — they're JSON-serializable.
-type DbUpdate = Parameters<ReturnType<typeof supabase.from<"walkthroughs">>["update"]>[0];
-function asDbUpdate(p: DbPatch): DbUpdate {
-  return p as unknown as DbUpdate;
 }
 
 export function setAnswer(questionId: string, answer: WizardAnswer): Walkthrough | null {
