@@ -38,6 +38,7 @@ export function WizardLayout({
       {/* Sticky top */}
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto w-full max-w-2xl px-4 pb-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
+          {/* Row 1: back + progress bar */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.history.back()}
@@ -59,13 +60,23 @@ export function WizardLayout({
             </div>
           </div>
 
-          <div className="mt-3 space-y-0.5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-accent">
-              Section {sectionIndex} of {totalSections} — {sectionName}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Question {questionIndex} of {totalQuestions}
-            </p>
+          {/* Row 2: large navy section banner — chapter heading */}
+          <div
+            className="mt-3 flex min-h-14 items-center justify-between gap-3 rounded-2xl bg-[oklch(0.28_0.07_255)] p-4 text-white shadow-[var(--shadow-soft)]"
+            role="heading"
+            aria-level={2}
+          >
+            <div className="min-w-0">
+              <p className="text-[18px] font-bold leading-tight">
+                Section {sectionIndex} of {totalSections}
+              </p>
+              <p className="mt-0.5 truncate text-[15px] font-semibold uppercase tracking-wide text-white/85">
+                {sectionName}
+              </p>
+            </div>
+            <div className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-[13px] font-bold tracking-wide">
+              Q {questionIndex} of {totalQuestions}
+            </div>
           </div>
         </div>
       </header>
