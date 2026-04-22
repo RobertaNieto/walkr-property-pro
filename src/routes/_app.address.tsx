@@ -2,9 +2,9 @@ import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { loadWalkthrough, updateWalkthrough, type PropertyAddress } from "@/lib/walkthrough";
+import { loadActive, updateWalkthrough, type PropertyAddress } from "@/lib/walkthrough";
 
-export const Route = createFileRoute("/address")({
+export const Route = createFileRoute("/_app/address")({
   component: AddressScreen,
 });
 
@@ -19,14 +19,14 @@ function AddressScreen() {
   const [attempted, setAttempted] = useState(false);
 
   useEffect(() => {
-    const w = loadWalkthrough();
+    const w = loadActive();
     if (w) setAddress(w.address);
   }, []);
 
   // Auto-save on each keystroke
   useEffect(() => {
     const t = setTimeout(() => {
-      if (loadWalkthrough()) updateWalkthrough({ address, lastRoute: "/address" });
+      if (loadActive()) updateWalkthrough({ address, lastRoute: "/address" });
     }, 200);
     return () => clearTimeout(t);
   }, [address]);

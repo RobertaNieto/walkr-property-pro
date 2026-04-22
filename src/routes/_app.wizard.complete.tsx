@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { CheckCircle2, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { clearWalkthrough } from "@/lib/walkthrough";
+import { completeWalkthrough, discardActive } from "@/lib/walkthrough";
 
-export const Route = createFileRoute("/wizard/complete")({
+export const Route = createFileRoute("/_app/wizard/complete")({
   component: CompleteScreen,
 });
 
@@ -11,15 +11,14 @@ function CompleteScreen() {
   const navigate = useNavigate();
   const [cleared, setCleared] = useState(false);
 
-  // Auto-clear sensitive data (lockbox code, address, photos) from localStorage
-  // as soon as the walkthrough is complete.
+  // Mark complete in DB and clear local cache (removes lockbox code from device).
   useEffect(() => {
-    clearWalkthrough();
+    completeWalkthrough();
     setCleared(true);
   }, []);
 
   const handleClearAndExit = () => {
-    clearWalkthrough();
+    discardActive();
     navigate({ to: "/" });
   };
 

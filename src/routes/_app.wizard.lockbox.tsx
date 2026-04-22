@@ -3,13 +3,13 @@ import { useEffect, useState } from "react";
 import { NotesField } from "@/components/NotesField";
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
-import { loadWalkthrough, setAnswer, updateWalkthrough } from "@/lib/walkthrough";
+import { loadActive, setAnswer, updateWalkthrough } from "@/lib/walkthrough";
 
 const QID = "lockbox_code";
 const SECTION = 1;
 const TOTAL_QUESTIONS_IN_SECTION = 1;
 
-export const Route = createFileRoute("/wizard/lockbox")({
+export const Route = createFileRoute("/_app/wizard/lockbox")({
   component: LockboxScreen,
 });
 
@@ -21,7 +21,7 @@ function LockboxScreen() {
   const [savedAt, setSavedAt] = useState<number | undefined>();
 
   useEffect(() => {
-    const w = loadWalkthrough();
+    const w = loadActive();
     if (w?.answers[QID]) {
       setCode(w.answers[QID].text ?? "");
       setNotes(w.answers[QID].notes ?? "");

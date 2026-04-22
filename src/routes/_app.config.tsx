@@ -3,9 +3,9 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ChoiceGrid } from "@/components/ChoiceGrid";
 import { cn } from "@/lib/utils";
-import { loadWalkthrough, updateWalkthrough, type PreWalkConfig } from "@/lib/walkthrough";
+import { loadActive, updateWalkthrough, type PreWalkConfig } from "@/lib/walkthrough";
 
-export const Route = createFileRoute("/config")({
+export const Route = createFileRoute("/_app/config")({
   component: ConfigScreen,
 });
 
@@ -15,13 +15,13 @@ function ConfigScreen() {
   const [config, setConfig] = useState<PreWalkConfig>({});
 
   useEffect(() => {
-    const w = loadWalkthrough();
+    const w = loadActive();
     if (w) setConfig(w.config);
   }, []);
 
   useEffect(() => {
     const t = setTimeout(() => {
-      if (loadWalkthrough()) updateWalkthrough({ config, lastRoute: "/config" });
+      if (loadActive()) updateWalkthrough({ config, lastRoute: "/config" });
     }, 150);
     return () => clearTimeout(t);
   }, [config]);
