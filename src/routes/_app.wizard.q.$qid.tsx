@@ -8,6 +8,7 @@ import { RatingButtons } from "@/components/RatingButtons";
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
 import { loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer } from "@/lib/walkthrough";
+// loadActive is used in the initial state hydration (via useMemo above).
 import {
   buildQuestionList,
   isQuestionAnswered,
@@ -212,10 +213,6 @@ function pickValue(q: QuestionDef, ans: WizardAnswer): unknown {
   }
 }
 
-function namePhoto(base: string, idx: number, isVideo: boolean): string {
-  const ext = isVideo ? "mp4" : "jpg";
-  return idx === 0 ? `${base}.${ext}` : `${base}_${idx + 1}.${ext}`;
-}
 
 function FieldRenderer({
   q,
@@ -443,7 +440,9 @@ function FollowUpRenderer({
       {fu.field === "photo" && (
         <PhotoCapture
           photos={value.photos ?? []}
-          onChange={(photos) => onChange((d) => syncPhotoNames(d, photos, fu.photoName ?? "FOLLOWUP", false))}
+          filenames={value.photoNames ?? []}
+          baseName={fu.photoName ?? "FOLLOWUP"}
+          onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
           error={attempted && fu.required && (value.photos?.length ?? 0) < 1}
         />
       )}
