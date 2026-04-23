@@ -282,9 +282,9 @@ function ReviewScreen() {
 
   const cfg = walk.config ?? {};
   // Pull a few schema-derived overview values so users see them at a glance.
-  const foundation = (walk.answers?.["s2_foundation"] as WizardAnswer | undefined)?.choice;
-  const roofType = (walk.answers?.["s5_roof_type"] as WizardAnswer | undefined)?.choice;
-  const siding = (walk.answers?.["s2_siding"] as WizardAnswer | undefined)?.choice;
+  const foundation = (walk.answers?.["s2_foundation_type"] as WizardAnswer | undefined)?.choice;
+  const roofType = (walk.answers?.["s5_type"] as WizardAnswer | undefined)?.choice;
+  const siding = (walk.answers?.["s2_siding_type"] as WizardAnswer | undefined)?.choice;
 
   const totalSections = grouped.length + 1; // include checklist
 
