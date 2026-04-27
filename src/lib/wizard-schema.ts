@@ -50,6 +50,9 @@ export interface QuestionDef {
   // Whether a photo is also required alongside the main field (e.g. stove
   // requires photo + rating).
   withPhoto?: { name: string; min?: number };
+  // Auto-generated photo filename used when the user selects rating 3 (Poor).
+  // Applies to both `field: "rating"` and `withRating` choice fields.
+  poorPhotoName?: string;
   // Conditional follow-ups (e.g. Yes -> require notes/photo).
   followUp?: FollowUp;
   // Hide question when this returns false. Evaluated against config + answers.
@@ -74,7 +77,7 @@ export type AnswerValue = unknown;
 
 export interface SkipContext {
   config: PreWalkConfig;
-  answers: Record<string, { text?: string; rating?: 1 | 2 | 3; notes?: string; photos?: string[]; choice?: string; choices?: string[]; bool?: boolean; number?: number }>;
+  answers: Record<string, { text?: string; rating?: 1 | 2 | 3; notes?: string; photos?: string[]; photoNames?: string[]; poorPhotos?: string[]; poorPhotoNames?: string[]; choice?: string; choices?: string[]; bool?: boolean; number?: number }>;
 }
 
 // ---------- helpers ----------
@@ -1295,7 +1298,111 @@ export function buildQuestionList(ctx: SkipContext): QuestionDef[] {
       list.push(q);
     }
   }
+  applyPoorPhotoNames(list);
   return applyCompanions(list, ctx);
+}
+
+// Map of explicit question id -> photo basename for the Poor (rating === 3)
+// auto photo capture. Any rating / withRating question NOT in this map gets
+// a fallback name of `${q.id.toUpperCase()}_POOR`.
+const POOR_PHOTO_NAME_OVERRIDES: Record<string, string> = {
+  s2_exterior_paint: "EXTERIOR_PAINT_POOR",
+  s2_siding_type: "SIDING_POOR",
+  s2_foundation_type: "FOUNDATION_POOR",
+  s2_driveway_condition: "DRIVEWAY_POOR",
+  s2_landscape: "LANDSCAPE_POOR",
+  s3_fence: "FENCE_POOR",
+  s5_condition: "ROOF_POOR",
+  s6_pool_clean: "POOL_CLEAN_POOR",
+  s6_spa_condition: "SPA_POOR",
+  s8_floor_type: "LIVING_FLOOR_POOR",
+  s8_window_condition: "LIVING_WINDOWS_POOR",
+  s8_lights: "LIVING_LIGHTS_POOR",
+  s8_baseboards: "LIVING_BASEBOARDS_POOR",
+  s8_paint: "LIVING_PAINT_POOR",
+  s9_stove: "KITCHEN_STOVE_POOR",
+  s9_fridge: "KITCHEN_FRIDGE_POOR",
+  s9_dishwasher: "KITCHEN_DISHWASHER_POOR",
+  s9_microwave_rating: "KITCHEN_MICROWAVE_POOR",
+  s9_cab_overall: "KITCHEN_CABINETS_POOR",
+  s9_counters_cond: "KITCHEN_COUNTERS_POOR",
+  s9_sink_cond: "KITCHEN_SINK_POOR",
+  s9_faucet_cond: "KITCHEN_FAUCET_POOR",
+  s9_floor_cond: "KITCHEN_FLOOR_POOR",
+  s9_lights: "KITCHEN_LIGHTS_POOR",
+  s9_baseboards: "KITCHEN_BASEBOARDS_POOR",
+  s10_floor: "HALLWAY_FLOOR_POOR",
+  s10_lights: "HALLWAY_LIGHTS_POOR",
+  s10_baseboards: "HALLWAY_BASEBOARDS_POOR",
+  s10_paint: "HALLWAY_PAINT_POOR",
+  s13_condition: "LAUNDRY_POOR",
+  s14_hvac_cond: "HVAC_POOR",
+  s14_furnace_cond: "FURNACE_POOR",
+  s14_thermo_cond: "THERMOSTAT_POOR",
+};
+
+function deriveBathPoorName(qid: string): string | undefined {
+  // pattern: s11_b{n}_{key}
+  const m = qid.match(/^s11_b(\d+)_(.+)$/);
+  if (!m) return undefined;
+  const n = m[1];
+  const key = m[2];
+  const map: Record<string, string> = {
+    tub_cond: "TUB",
+    shower_cond: "SHOWER",
+    sink_cond: "SINK",
+    toilet_cond: "TOILET",
+    floor: "FLOOR",
+    window: "WINDOW",
+    lights: "LIGHTS",
+    baseboards: "BASEBOARDS",
+  };
+  const item = map[key];
+  return item ? `BATHROOM${n}_${item}_POOR` : undefined;
+}
+
+function deriveBedPoorName(qid: string): string | undefined {
+  // pattern: s12_b{n}_{key}
+  const m = qid.match(/^s12_b(\d+)_(.+)$/);
+  if (!m) return undefined;
+  const n = m[1];
+  const key = m[2];
+  const map: Record<string, string> = {
+    floor: "FLOOR",
+    closet_cond: "CLOSET",
+    window_cond: "WINDOW",
+    lights: "LIGHTS",
+    baseboards: "BASEBOARDS",
+    paint: "PAINT",
+  };
+  const item = map[key];
+  return item ? `BEDROOM${n}_${item}_POOR` : undefined;
+}
+
+function applyPoorPhotoNames(list: QuestionDef[]): void {
+  for (const q of list) {
+    const eligible =
+      q.field === "rating" ||
+      ((q.field === "choice" || q.field === "text") && q.withRating === true);
+    if (!eligible) continue;
+    if (q.poorPhotoName) continue;
+    const override = POOR_PHOTO_NAME_OVERRIDES[q.id];
+    if (override) {
+      q.poorPhotoName = override;
+      continue;
+    }
+    const bath = deriveBathPoorName(q.id);
+    if (bath) {
+      q.poorPhotoName = bath;
+      continue;
+    }
+    const bed = deriveBedPoorName(q.id);
+    if (bed) {
+      q.poorPhotoName = bed;
+      continue;
+    }
+    q.poorPhotoName = `${q.id.toUpperCase()}_POOR`;
+  }
 }
 
 // Static companion groupings keyed by primary question id. Per-bedroom and
@@ -1409,12 +1516,14 @@ export function isQuestionAnswered(q: QuestionDef, ans: SkipContext["answers"][s
     case "choice":
       if (q.required && !ans.choice) return false;
       if (q.withRating && ans.rating === undefined) return false;
+      if (q.withRating && ans.rating === 3 && q.poorPhotoName && (ans.poorPhotos?.length ?? 0) < 1) return false;
       break;
     case "multichoice":
       if (q.required && (!ans.choices || ans.choices.length === 0)) return false;
       break;
     case "rating":
       if (q.required && ans.rating === undefined) return false;
+      if (ans.rating === 3 && q.poorPhotoName && (ans.poorPhotos?.length ?? 0) < 1) return false;
       // notes-required-if-3
       if (q.notes === "required-if-rating-3" && ans.rating === 3 && (!ans.notes || ans.notes.trim().length === 0)) {
         // notes are not strictly required-if-rating-3 in schema (followUp handles photo)
@@ -1430,6 +1539,7 @@ export function isQuestionAnswered(q: QuestionDef, ans: SkipContext["answers"][s
 
   // text-with-rating (e.g. flooring type and condition)
   if (q.field === "text" && q.withRating && ans.rating === undefined) return false;
+  if (q.field === "text" && q.withRating && ans.rating === 3 && q.poorPhotoName && (ans.poorPhotos?.length ?? 0) < 1) return false;
   // rating-with-photo (e.g. stove)
   if (q.field === "rating" && q.withPhoto) {
     const min = q.withPhoto.min ?? 1;
