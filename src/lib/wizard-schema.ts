@@ -1543,17 +1543,29 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s4_door_works: ["s4_remotes_count", "s4_remotes_location"],
     // Section 5
     s5_overall: ["s5_type", "s5_condition"],
-    // Section 8
-    s8_floor_photo: ["s8_floor_type"],
-    s8_windows_photo: ["s8_window_type", "s8_window_condition", "s8_window_coverings"],
-    s8_ceiling_photo: ["s8_lights"],
-    // Section 9 (real schema ids)
-    s9_cab_closed: ["s9_cab_open_1", "s9_cab_overall"],
-    s9_counters_photo: ["s9_counters_cond"],
-    s9_sink_photo: ["s9_sink_cond", "s9_faucet_cond"],
-    s9_floor_photo: ["s9_floor_cond"],
-    // Section 10
-    s10_wide: ["s10_floor", "s10_lights", "s10_baseboards", "s10_paint"],
+    // Section 8 — Living Room: photos stay grouped with their photo screens;
+    // condition ratings are consolidated under s8_floor_type as primary.
+    s8_floor_photo: [],
+    s8_windows_photo: ["s8_window_type", "s8_window_coverings"],
+    s8_ceiling_photo: [],
+    s8_floor_type: ["s8_window_condition", "s8_lights", "s8_baseboards", "s8_paint"],
+    // Section 9 — Kitchen: consolidate all surface/fixture condition ratings
+    // under s9_cab_overall as primary.
+    s9_cab_closed: ["s9_cab_open_1"],
+    s9_counters_photo: [],
+    s9_sink_photo: [],
+    s9_floor_photo: [],
+    s9_cab_overall: [
+      "s9_counters_cond",
+      "s9_sink_cond",
+      "s9_faucet_cond",
+      "s9_floor_cond",
+      "s9_lights",
+      "s9_baseboards",
+    ],
+    // Section 10 — Hallways: consolidate ratings under s10_floor.
+    s10_wide: [],
+    s10_floor: ["s10_lights", "s10_baseboards", "s10_paint"],
     // Section 13
     s13_wide: ["s13_hookups", "s13_hookup_type", "s13_condition"],
     // Section 14
@@ -1574,7 +1586,8 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     groups[id("sink")] = [id("sink_cond")];
     groups[id("toilet")] = [id("toilet_cond")];
     groups[id("water_pooling")] = [id("active_leaks")];
-    groups[id("lights")] = [id("baseboards")];
+    // Core bathroom surface ratings consolidated under flooring as primary.
+    groups[id("floor")] = [id("lights"), id("baseboards")];
   }
 
   // Bedrooms (section 12) per-loop
