@@ -1566,7 +1566,7 @@ export function isQuestionAnswered(q: QuestionDef, ansMaybe: SkipContext["answer
   // TESTING MODE — remove before launch
   return true;
   // eslint-disable-next-line @typescript-eslint/no-unreachable-code
-  const ans = ansMaybe as NonNullable<typeof ansMaybe>;
+  const ans = ansMaybe as any;
   if (!q.required && q.field !== "rating") {
     // optional fields don't block progress
     return true;
