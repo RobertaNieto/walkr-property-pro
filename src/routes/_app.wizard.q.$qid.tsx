@@ -225,7 +225,7 @@ function QuestionScreen() {
           />
         )}
 
-        {q.field !== "longtext" && (
+        {q.field !== "longtext" && (!q.companions || q.companions.length === 0) && (
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-foreground">
               Notes & Observations <span className="font-normal text-muted-foreground">(optional)</span>
@@ -276,24 +276,22 @@ function QuestionScreen() {
                   attempted={attempted}
                 />
               )}
-              {c.field !== "longtext" && (
-                <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-foreground">
-                    Notes & Observations{" "}
-                    <span className="font-normal text-muted-foreground">(optional)</span>
-                  </label>
-                  <NotesField
-                    value={cVal.notes ?? ""}
-                    onChange={(v) => setCVal((d) => ({ ...d, notes: v }))}
-                    placeholder={
-                      c.notesPlaceholder ?? "Add any notes or observations here (optional)"
-                    }
-                  />
-                </div>
-              )}
             </div>
           );
         })}
+
+        {q.companions && q.companions.length > 0 && q.field !== "longtext" && (
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-foreground">
+              Notes & Observations <span className="font-normal text-muted-foreground">(optional)</span>
+            </label>
+            <NotesField
+              value={draft.notes ?? ""}
+              onChange={(v) => setDraft((d) => ({ ...d, notes: v }))}
+              placeholder="Add any notes or observations here (optional)"
+            />
+          </div>
+        )}
 
         {!q.critical && q.field !== "yesno" && (
           <div className="flex items-start gap-2 rounded-xl bg-accent/5 p-3 text-xs text-accent">
