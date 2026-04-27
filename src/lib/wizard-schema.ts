@@ -50,6 +50,9 @@ export interface QuestionDef {
   // Whether a photo is also required alongside the main field (e.g. stove
   // requires photo + rating).
   withPhoto?: { name: string; min?: number };
+  // Auto-generated photo filename used when the user selects rating 3 (Poor).
+  // Applies to both `field: "rating"` and `withRating` choice fields.
+  poorPhotoName?: string;
   // Conditional follow-ups (e.g. Yes -> require notes/photo).
   followUp?: FollowUp;
   // Hide question when this returns false. Evaluated against config + answers.
