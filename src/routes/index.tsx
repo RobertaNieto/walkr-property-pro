@@ -294,10 +294,9 @@ function WelcomeScreen() {
         {/* 5. My Walkthroughs card */}
         {user && (
           <div className="mx-auto mt-6 w-full max-w-md">
-            <Link
-              to="/walkthroughs"
-              search={{ tab: "completed" } as never}
-              className="block rounded-2xl bg-card p-5 text-card-foreground shadow-[var(--shadow-elevated)] transition-transform hover:scale-[1.01] active:scale-[0.99]"
+            <div
+              onClick={() => navigate({ to: "/walkthroughs", search: { tab: "completed" } as never })}
+              className="block rounded-2xl bg-card p-5 text-card-foreground shadow-[var(--shadow-elevated)] transition-transform hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
             >
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold">My Walkthroughs</h2>
@@ -334,7 +333,7 @@ function WelcomeScreen() {
                   No completed walkthroughs yet. Finished properties will appear here.
                 </p>
               )}
-            </Link>
+            </div>
           </div>
         )}
 
