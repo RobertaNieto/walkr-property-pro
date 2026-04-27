@@ -77,12 +77,12 @@ function ExteriorPaintScreen() {
 
         <div>
           <label className="mb-1.5 block text-sm font-semibold text-foreground">
-            Notes <span className="font-normal text-muted-foreground">(optional)</span>
+            Notes & Observations <span className="font-normal text-muted-foreground">(optional)</span>
           </label>
           <NotesField
             value={notes}
             onChange={setNotes}
-            placeholder="Peeling, fading, recent paint, etc."
+            placeholder="Add any notes or observations here (optional)"
           />
         </div>
 
