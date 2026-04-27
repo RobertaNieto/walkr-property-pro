@@ -120,7 +120,7 @@ export function PhotoCapture({
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {photos.map((entry, i) => {
-            const src = resolvePhotoSrc(entry);
+            const src = resolvePhotoSrc(entry) ?? localCache.current[entry];
             return (
               <div key={i} className="relative aspect-square overflow-hidden rounded-xl bg-secondary">
                 {src && (isVideo ? (
