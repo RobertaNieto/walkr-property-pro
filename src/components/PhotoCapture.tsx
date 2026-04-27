@@ -36,11 +36,21 @@ export function PhotoCapture({
   const inputRef = useRef<HTMLInputElement>(null);
   const localCache = useRef<Record<string, string>>({});
   const [processing, setProcessing] = useState(false);
+  const [orientationError, setOrientationError] = useState(false);
+
+  const getDimensions = (dataUrl: string) =>
+    new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => reject(new Error("decode failed"));
+      img.src = dataUrl;
+    });
 
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
     setProcessing(true);
+    setOrientationError(false);
     try {
       const startIdx = photos.length;
       const newPhotos: string[] = [];
@@ -55,6 +65,18 @@ export function PhotoCapture({
               r.readAsDataURL(file);
             })
           : await compressImage(file);
+        // Enforce landscape orientation for photos.
+        if (!isVideo) {
+          try {
+            const { width, height } = await getDimensions(compressed);
+            if (height > width) {
+              setOrientationError(true);
+              continue;
+            }
+          } catch {
+            // If dimension check fails, allow through.
+          }
+        }
         const name = baseName
           ? makeName(baseName, startIdx + i, !!isVideo)
           : `PHOTO_${Date.now()}_${i}.${isVideo ? "mp4" : "jpg"}`;
@@ -67,7 +89,9 @@ export function PhotoCapture({
         newPhotos.push(name);
         newNames.push(name);
       }
-      onChange([...photos, ...newPhotos], [...(filenames ?? photos), ...newNames]);
+      if (newPhotos.length > 0) {
+        onChange([...photos, ...newPhotos], [...(filenames ?? photos), ...newNames]);
+      }
     } finally {
       setProcessing(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -98,7 +122,7 @@ export function PhotoCapture({
         disabled={processing}
         onClick={() => inputRef.current?.click()}
         className={cn(
-          "flex h-16 w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed text-base font-semibold transition-colors active:scale-[0.99] disabled:opacity-60",
+          "flex min-h-16 w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-3 py-2 text-base font-semibold transition-colors active:scale-[0.99] disabled:opacity-60",
           error
             ? "field-error border-critical bg-critical/5 text-critical"
             : "border-accent/40 bg-accent/5 text-accent hover:border-accent hover:bg-accent/10"
@@ -109,13 +133,30 @@ export function PhotoCapture({
             <Loader2 className="h-6 w-6 animate-spin" />
             Processing photo…
           </>
-        ) : (
+        ) : isVideo ? (
           <>
             <Camera className="h-6 w-6" />
-            {isVideo ? "Add Video" : "Add Photo"}
+            Add Video
           </>
+        ) : (
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-base font-bold">📷 Add Photo</span>
+            <span className="text-xs font-normal opacity-75">
+              🔄 Landscape orientation required
+            </span>
+          </div>
         )}
       </button>
+
+      {orientationError && !isVideo && (
+        <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm font-medium text-destructive">
+          <span className="text-lg">📱➡️</span>
+          <span>
+            Portrait photo detected.<br />
+            <strong>Please rotate your phone sideways</strong> and retake.
+          </span>
+        </div>
+      )}
 
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
