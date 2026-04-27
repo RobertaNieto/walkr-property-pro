@@ -39,6 +39,7 @@ interface WizardLayoutProps {
   canContinue: boolean;
   onNext: () => void;
   onAttemptNext?: () => void;
+  onBack?: () => void;
   nextLabel?: string;
   children: ReactNode;
 }
@@ -54,6 +55,7 @@ export function WizardLayout({
   canContinue,
   onNext,
   onAttemptNext,
+  onBack,
   nextLabel,
   children,
 }: WizardLayoutProps) {
@@ -67,7 +69,7 @@ export function WizardLayout({
           {/* Row 1: back + progress bar */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.history.back()}
+              onClick={() => (onBack ? onBack() : router.history.back())}
               aria-label="Back"
               className="-ml-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary active:bg-secondary"
             >
@@ -95,7 +97,7 @@ export function WizardLayout({
           >
             <div className="flex items-center justify-between gap-3">
               <p className="text-[12px] font-semibold uppercase tracking-wide text-white/60">
-                📍 Section {sectionIndex} of {totalSections}
+                Section {sectionIndex} of {totalSections}
               </p>
               <div className="shrink-0 rounded-full bg-white/15 px-2.5 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-white/85">
                 Q {questionIndex} of {totalQuestions}
