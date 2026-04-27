@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   Camera,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   CloudUpload,
