@@ -152,9 +152,8 @@ const S2: SectionDef = {
     photoQ("s2_front_straight", 2, "Exterior Front", "Straight-on front photo", "EXTERIOR_FRONT"),
     photoQ("s2_front_left", 2, "Exterior Front", "Front left angle photo", "EXTERIOR_FRONT_LEFT"),
     photoQ("s2_front_right", 2, "Exterior Front", "Front right angle photo", "EXTERIOR_FRONT_RIGHT"),
-    photoQ("s2_roofline", 2, "Exterior Front", "Roofline and fascia close-up", "EXTERIOR_ROOFLINE"),
     photoQ("s2_frontdoor", 2, "Exterior Front", "Front door close-up", "EXTERIOR_FRONTDOOR"),
-    photoQ("s2_driveway_photo", 2, "Exterior Front", "Driveway full view", "EXTERIOR_DRIVEWAY"),
+    photoQ("s2_roofline", 2, "Exterior Front", "Roofline and fascia close-up", "EXTERIOR_ROOFLINE"),
     {
       id: "s2_exterior_paint",
       sectionIndex: 2,
@@ -165,6 +164,7 @@ const S2: SectionDef = {
       required: true,
       notes: "optional",
     },
+    photoQ("s2_siding_photo", 2, "Exterior Front", "Siding photo", "EXTERIOR_SIDING"),
     {
       id: "s2_siding_type",
       sectionIndex: 2,
@@ -185,6 +185,7 @@ const S2: SectionDef = {
       required: true,
       withRating: true,
     },
+    photoQ("s2_driveway_photo", 2, "Exterior Front", "Driveway full view", "EXTERIOR_DRIVEWAY"),
     {
       id: "s2_driveway_condition",
       sectionIndex: 2,
