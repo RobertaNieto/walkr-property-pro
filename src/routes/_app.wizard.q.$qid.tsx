@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
-import { AlertTriangle, CheckCircle2, Menu } from "lucide-react";
+import { createFileRoute, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Menu } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ChoiceGrid } from "@/components/ChoiceGrid";
 import { NotesField } from "@/components/NotesField";
