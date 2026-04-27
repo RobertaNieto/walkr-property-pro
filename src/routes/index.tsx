@@ -6,7 +6,7 @@ import {
   Loader2,
   LogIn,
   RefreshCw,
-  Settings,
+  
   Trash2,
   User as UserIcon,
 } from "lucide-react";
@@ -194,13 +194,6 @@ function WelcomeScreen() {
             <UserIcon className="h-5 w-5" />
           </Link>
         )}
-        <Link
-          to="/debug"
-          aria-label="Debug"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-primary-foreground ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
-        >
-          <Settings className="h-4 w-4" />
-        </Link>
       </div>
 
       <main className="relative flex flex-1 flex-col px-6 pb-6">
@@ -249,58 +242,61 @@ function WelcomeScreen() {
               <LogIn className="h-5 w-5" />
               Sign in to get started
             </Link>
-          ) : (
+          ) : loading ? (
+            <div className="flex h-14 w-full items-center justify-center rounded-2xl border border-white/15 bg-white/5">
+              <Loader2 className="h-5 w-5 animate-spin text-primary-foreground/60" />
+            </div>
+          ) : existing ? (
             <>
               <button
-                onClick={startNew}
-                disabled={starting}
-                className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-accent text-base font-semibold text-accent-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-accent/90 active:scale-[0.99] disabled:opacity-60"
+                onClick={resume}
+                className="flex w-full items-center justify-between gap-3 rounded-2xl bg-accent px-4 py-3 text-left text-accent-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-accent/90 active:scale-[0.99]"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-base font-semibold">
+                    Resume: {resumeAddr}
+                  </div>
+                  <div className="text-xs opacity-80">
+                    Last saved {formatTimestamp(existing.updatedAt)}
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 shrink-0 opacity-80" />
+              </button>
+
+              <button
+                onClick={handleStartFresh}
+                disabled={starting || clearing}
+                className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-white/20 bg-transparent text-sm font-semibold text-primary-foreground transition-all hover:bg-white/10 active:scale-[0.99] disabled:opacity-60"
               >
                 {starting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Start New Walkthrough"}
               </button>
 
-              {loading ? (
-                <div className="flex h-14 w-full items-center justify-center rounded-2xl border border-white/15 bg-white/5">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary-foreground/60" />
-                </div>
-              ) : existing ? (
-                <button
-                  onClick={resume}
-                  className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-left backdrop-blur transition-colors hover:bg-white/15 active:scale-[0.99]"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold text-primary-foreground">
-                      Resume: {resumeAddr}
-                    </div>
-                    <div className="text-xs text-primary-foreground/60">
-                      Last saved {formatTimestamp(existing.updatedAt)}
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-primary-foreground/70" />
-                </button>
-              ) : null}
-
-              {existing && (
-                <button
-                  onClick={handleStartFresh}
-                  disabled={starting || clearing}
-                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent text-xs font-medium text-primary-foreground/80 transition-all hover:bg-white/5 active:scale-[0.99] disabled:opacity-60"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Discard draft & start fresh
-                </button>
-              )}
+              <button
+                onClick={handleStartFresh}
+                disabled={starting || clearing}
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border-0 bg-transparent text-xs font-medium text-primary-foreground/80 transition-all hover:bg-white/5 active:scale-[0.99] disabled:opacity-60"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Discard draft & start fresh
+              </button>
             </>
+          ) : (
+            <button
+              onClick={startNew}
+              disabled={starting}
+              className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-accent text-base font-semibold text-accent-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-accent/90 active:scale-[0.99] disabled:opacity-60"
+            >
+              {starting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Start New Walkthrough"}
+            </button>
           )}
         </div>
 
         {/* 5. My Walkthroughs card */}
         {user && (
           <div className="mx-auto mt-6 w-full max-w-md">
-            <Link
-              to="/walkthroughs"
-              search={{ tab: "completed" } as never}
-              className="block rounded-2xl bg-card p-5 text-card-foreground shadow-[var(--shadow-elevated)] transition-transform hover:scale-[1.01] active:scale-[0.99]"
+            <div
+              onClick={() => navigate({ to: "/walkthroughs", search: { tab: "completed" } as never })}
+              className="block rounded-2xl bg-card p-5 text-card-foreground shadow-[var(--shadow-elevated)] transition-transform hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
             >
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold">My Walkthroughs</h2>
@@ -337,13 +333,18 @@ function WelcomeScreen() {
                   No completed walkthroughs yet. Finished properties will appear here.
                 </p>
               )}
-            </Link>
+            </div>
           </div>
         )}
 
-        <p className="mx-auto mt-auto pt-6 text-center text-[11px] text-primary-foreground/40">
-          Auto-saves to your secure account
-        </p>
+        <div className="mx-auto mt-auto pt-6 text-center space-y-1">
+          <p className="text-[11px] text-primary-foreground/40">
+            Auto-saves to your secure account
+          </p>
+          <p className="text-[11px] text-primary-foreground/40">
+            © 2026 WeConnect. All rights reserved.
+          </p>
+        </div>
       </main>
 
       <div className="pb-[max(env(safe-area-inset-bottom),1rem)]" />
