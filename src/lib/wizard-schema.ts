@@ -241,14 +241,7 @@ const S3: SectionDef = {
       ...photoQ("s3_yard_houseview", 3, "Exterior Sides & Back", "Backyard looking at house", "BACKYARD_HOUSEVIEW"),
       helper: "Stand at the back of the yard, photograph back toward the house",
     },
-    {
-      id: "s3_back_irrigation",
-      sectionIndex: 3,
-      sectionName: "Exterior Sides & Back",
-      label: "Back-yard irrigation present",
-      field: "yesno",
-      required: true,
-    },
+    photoQ("s3_fence_photo", 3, "Exterior Sides & Back", "Fence photo", "EXTERIOR_FENCE"),
     {
       id: "s3_fence",
       sectionIndex: 3,
@@ -258,6 +251,14 @@ const S3: SectionDef = {
       required: true,
       notes: "optional",
       notesPlaceholder: "Note material and any damage",
+    },
+    {
+      id: "s3_back_irrigation",
+      sectionIndex: 3,
+      sectionName: "Exterior Sides & Back",
+      label: "Back-yard irrigation present",
+      field: "yesno",
+      required: true,
     },
     {
       id: "s3_outbuildings",
