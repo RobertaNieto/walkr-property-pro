@@ -60,23 +60,24 @@ export function WizardLayout({
             </div>
           </div>
 
-          {/* Row 2: large navy section banner — chapter heading */}
+          {/* Row 2: color-coded section banner — chapter heading */}
           <div
-            className="mt-3 flex min-h-14 items-center justify-between gap-3 rounded-2xl bg-[oklch(0.28_0.07_255)] p-4 text-white shadow-[var(--shadow-soft)]"
+            className="mt-3 flex min-h-[80px] flex-col justify-center gap-2 rounded-2xl p-4 pl-4 text-white shadow-[var(--shadow-soft)] transition-[background-color] duration-300"
+            style={{ backgroundColor: getSectionColor(sectionIndex) }}
             role="heading"
             aria-level={2}
           >
-            <div className="min-w-0">
-              <p className="text-[18px] font-bold leading-tight">
-                Section {sectionIndex} of {totalSections}
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[12px] font-semibold uppercase tracking-wide text-white/60">
+                📍 Section {sectionIndex} of {totalSections}
               </p>
-              <p className="mt-0.5 truncate text-[15px] font-semibold uppercase tracking-wide text-white/85">
-                {sectionName}
-              </p>
+              <div className="shrink-0 rounded-full bg-white/15 px-2.5 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-white/85">
+                Q {questionIndex} of {totalQuestions}
+              </div>
             </div>
-            <div className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-[13px] font-bold tracking-wide">
-              Q {questionIndex} of {totalQuestions}
-            </div>
+            <p className="truncate text-[28px] font-bold uppercase leading-tight tracking-tight text-white">
+              {sectionName}
+            </p>
           </div>
         </div>
       </header>
