@@ -158,6 +158,34 @@ function ReviewScreen() {
     void load();
   }, [id]);
 
+  // Photos may have been written to IndexedDB in a previous session and not
+  // yet loaded into the in-memory cache. Preload everything referenced by
+  // this walkthrough, then bump photoTick to force thumbnails to re-render.
+  useEffect(() => {
+    if (!walk?.answers) return;
+    const filenames: string[] = [];
+    for (const ans of Object.values(walk.answers)) {
+      const a = ans as WizardAnswer;
+      for (const p of [...(a.photos ?? []), ...(a.poorPhotos ?? [])]) {
+        if (
+          p &&
+          !p.startsWith("data:") &&
+          !p.startsWith("blob:") &&
+          !p.startsWith("http")
+        ) {
+          filenames.push(p);
+        }
+      }
+    }
+    if (filenames.length === 0) {
+      setPhotoTick((t) => t + 1);
+      return;
+    }
+    void Promise.all(filenames.map((f) => preloadPhoto(f))).then(() =>
+      setPhotoTick((t) => t + 1),
+    );
+  }, [walk]);
+
   const ctx: SkipContext | null = useMemo(
     () =>
       walk
