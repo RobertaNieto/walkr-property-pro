@@ -964,6 +964,29 @@ function bathroomQuestions(n: number, total: number): QuestionDef[] {
       },
     },
   ];
+  if (n === 1) return questions;
+  // Bathrooms 2+ open with a "present" yes/no; if No, all loop questions hide.
+  const existsId = id("exists");
+  const isPresent = (ctx: SkipContext) =>
+    ctx.answers?.[existsId]?.bool === true;
+  const gated: QuestionDef[] = questions.map((q) => {
+    const prev = q.visible;
+    return {
+      ...q,
+      visible: (ctx: SkipContext) =>
+        isPresent(ctx) && (prev ? prev(ctx) : true),
+    };
+  });
+  const existsQ: QuestionDef = {
+    id: existsId,
+    sectionIndex: 11,
+    sectionName: tag,
+    label: `Bathroom ${n} present`,
+    helper: `Does this property have a Bathroom ${n}?`,
+    field: "yesno",
+    required: true,
+  };
+  return [existsQ, ...gated];
 }
 
 const S11: SectionDef = {
