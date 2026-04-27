@@ -292,21 +292,14 @@ const S4: SectionDef = {
         required: true,
       },
       {
-        id: "s4_remotes_count",
+        id: "s4_additional",
         sectionIndex: 4,
         sectionName: "Garage",
-        label: "Number of remotes",
-        field: "number",
-        required: true,
-      },
-      {
-        id: "s4_remotes_location",
-        sectionIndex: 4,
-        sectionName: "Garage",
-        label: "Remote location",
-        helper: "Where are the remotes stored?",
-        field: "text",
-        required: true,
+        label: "Additional garage details",
+        helper:
+          "Note anything relevant: number of remotes and where they are stored, storage in garage, EV charging, attic access, or any other garage details",
+        field: "longtext",
+        required: false,
       },
     ];
   },
