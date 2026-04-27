@@ -1,5 +1,5 @@
-import { useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Save } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { Save } from "lucide-react";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { formatTimestamp } from "@/lib/walkthrough";
@@ -59,32 +59,31 @@ export function WizardLayout({
   nextLabel,
   children,
 }: WizardLayoutProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate({ to: "/wizard/menu" });
+    }
+  };
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background">
       {/* Sticky top */}
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto w-full max-w-2xl px-4 pb-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
-          {/* Row 1: back + progress bar */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => (onBack ? onBack() : router.history.back())}
-              aria-label="Back"
-              className="-ml-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary active:bg-secondary"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <div className="min-w-0 flex-1">
-              <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                <div
-                  className="h-full rounded-full bg-accent transition-all duration-300"
-                  style={{ width: `${Math.max(2, Math.min(100, progress))}%` }}
-                />
-              </div>
-              <div className="mt-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                {Math.round(progress)}% complete
-              </div>
+          {/* Row 1: progress bar */}
+          <div className="min-w-0 flex-1">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-300"
+                style={{ width: `${Math.max(2, Math.min(100, progress))}%` }}
+              />
+            </div>
+            <div className="mt-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {Math.round(progress)}% complete
             </div>
           </div>
 
@@ -124,18 +123,26 @@ export function WizardLayout({
               <span>Saved {formatTimestamp(lastSavedAt)}</span>
             </div>
           )}
-          <button
-            onClick={() => (canContinue ? onNext() : onAttemptNext?.())}
-            aria-disabled={!canContinue}
-            className={cn(
-              "inline-flex h-14 w-full items-center justify-center rounded-2xl text-base font-semibold transition-all",
-              canContinue
-                ? "bg-primary text-primary-foreground shadow-[var(--shadow-elevated)] hover:bg-primary/90 active:scale-[0.99]"
-                : "bg-muted text-muted-foreground"
-            )}
-          >
-            {nextLabel ?? "Next →"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleBack}
+              className="inline-flex h-14 w-[30%] items-center justify-center rounded-2xl border-2 border-primary bg-background text-base font-semibold text-primary transition-all hover:bg-secondary active:scale-[0.99]"
+            >
+              ← Back
+            </button>
+            <button
+              onClick={() => (canContinue ? onNext() : onAttemptNext?.())}
+              aria-disabled={!canContinue}
+              className={cn(
+                "inline-flex h-14 flex-1 items-center justify-center rounded-2xl text-base font-semibold transition-all",
+                canContinue
+                  ? "bg-primary text-primary-foreground shadow-[var(--shadow-elevated)] hover:bg-primary/90 active:scale-[0.99]"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              {nextLabel ?? "Next →"}
+            </button>
+          </div>
         </div>
       </footer>
     </div>
