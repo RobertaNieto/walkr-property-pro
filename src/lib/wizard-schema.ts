@@ -41,6 +41,8 @@ export interface QuestionDef {
   photoName?: string; // base filename, e.g. "EXTERIOR_FRONT" — extension auto-added
   minPhotos?: number; // photo only
   maxPhotos?: number; // photo only
+  videoName?: string; // base filename for video uploads (Section 15)
+  minDuration?: number; // minimum video duration in seconds (Phase 6 validation)
   critical?: boolean; // ⚠️ red border + icon
   notes?: "optional" | "required-if-yes" | "required-if-rating-3"; // notes field behaviour
   notesPlaceholder?: string;
