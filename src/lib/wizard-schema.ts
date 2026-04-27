@@ -602,7 +602,6 @@ const S9: SectionDef = {
       visible: (ctx) => ctx.answers?.s9_pantry_exists?.bool === true,
     },
     photoQ("s9_bases", 9, "Kitchen", "Cabinet bases photo", "KITCHEN_BASES"),
-    photoQ("s9_sink_photo", 9, "Kitchen", "Kitchen sink and faucet photo", "KITCHEN_SINK"),
     photoQ("s9_counters_photo", 9, "Kitchen", "Counters photo", "KITCHEN_COUNTERS"),
     {
       id: "s9_counters_cond",
@@ -614,6 +613,7 @@ const S9: SectionDef = {
       notes: "optional",
       notesPlaceholder: "Describe material type",
     },
+    photoQ("s9_sink_photo", 9, "Kitchen", "Kitchen sink and faucet photo", "KITCHEN_SINK"),
     {
       id: "s9_sink_cond",
       sectionIndex: 9,
@@ -622,6 +622,7 @@ const S9: SectionDef = {
       field: "rating",
       required: true,
     },
+    photoQ("s9_floor_photo", 9, "Kitchen", "Kitchen flooring photo", "KITCHEN_FLOOR"),
     {
       id: "s9_floor_cond",
       sectionIndex: 9,
@@ -632,30 +633,6 @@ const S9: SectionDef = {
       notes: "optional",
       notesPlaceholder: "Describe stains or damage",
     },
-    {
-      id: "s9_lights",
-      sectionIndex: 9,
-      sectionName: "Kitchen",
-      label: "Light fixtures condition",
-      field: "rating",
-      required: true,
-    },
-    {
-      id: "s9_baseboards",
-      sectionIndex: 9,
-      sectionName: "Kitchen",
-      label: "Baseboards condition",
-      field: "rating",
-      required: true,
-      followUp: {
-        when: (v) => v === 3,
-        field: "photo",
-        required: true,
-        label: "Baseboard photo",
-        photoName: "KITCHEN_BASEBOARDS",
-      },
-    },
-    photoQ("s9_floor_photo", 9, "Kitchen", "Kitchen flooring photo", "KITCHEN_FLOOR"),
     {
       id: "s9_stove",
       sectionIndex: 9,
@@ -706,6 +683,29 @@ const S9: SectionDef = {
       field: "rating",
       required: true,
       visible: (ctx) => ctx.answers["s9_microwave"]?.bool === true,
+    },
+    {
+      id: "s9_lights",
+      sectionIndex: 9,
+      sectionName: "Kitchen",
+      label: "Light fixtures condition",
+      field: "rating",
+      required: true,
+    },
+    {
+      id: "s9_baseboards",
+      sectionIndex: 9,
+      sectionName: "Kitchen",
+      label: "Baseboards condition",
+      field: "rating",
+      required: true,
+      followUp: {
+        when: (v) => v === 3,
+        field: "photo",
+        required: true,
+        label: "Baseboard photo",
+        photoName: "KITCHEN_BASEBOARDS",
+      },
     },
     {
       id: "s9_additional",
@@ -1473,19 +1473,25 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s2_siding_photo: ["s2_siding_type"],
     s2_driveway_photo: ["s2_driveway_condition"],
     // Section 3
+    s3_fence_photo: [],
     // Section 4
     s4_exterior: ["s4_attached"],
+    s4_door_works: [],
     // Section 5
     s5_overall: ["s5_type", "s5_condition"],
-    // Section 8 — Living Room: floor photo carries floor type + room conditions grid.
-    s8_floor_photo: ["s8_floor_type"],
+    // Section 8 — Living Room: photos stay grouped with their photo screens;
+    // condition ratings are consolidated under s8_floor_type as primary.
+    s8_floor_photo: [],
     s8_windows_photo: ["s8_window_type"],
+    s8_ceiling_photo: [],
     s8_floor_type: ["s8_window_condition", "s8_lights", "s8_baseboards", "s8_paint"],
-    // Section 9 — Kitchen: cabinets closed groups closed+open+overall;
-    // bases groups with sink photo; counters photo carries the conditions grid.
-    s9_cab_closed: ["s9_cab_open_1", "s9_cab_overall"],
-    s9_bases: ["s9_sink_photo"],
-    s9_counters_photo: [
+    // Section 9 — Kitchen: consolidate all surface/fixture condition ratings
+    // under s9_cab_overall as primary.
+    s9_cab_closed: ["s9_cab_open_1"],
+    s9_counters_photo: [],
+    s9_sink_photo: [],
+    s9_floor_photo: [],
+    s9_cab_overall: [
       "s9_counters_cond",
       "s9_sink_cond",
       "s9_floor_cond",
@@ -1493,6 +1499,7 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
       "s9_baseboards",
     ],
     // Section 10 — Hallways: consolidate ratings under s10_floor.
+    s10_wide: [],
     s10_floor: ["s10_lights", "s10_baseboards", "s10_paint"],
     // Section 13
     s13_wide: ["s13_hookups", "s13_condition"],
@@ -1513,11 +1520,7 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     groups[id("shower")] = [id("shower_cond")];
     groups[id("sink")] = [id("sink_cond")];
     groups[id("toilet")] = [id("toilet_cond")];
-    groups[id("water_pooling")] = [
-      id("active_leaks"),
-      id("smells"),
-      id("microbial"),
-    ];
+    groups[id("water_pooling")] = [id("active_leaks")];
     // Core bathroom surface ratings consolidated under flooring as primary.
     groups[id("floor")] = [id("lights"), id("baseboards")];
   }
