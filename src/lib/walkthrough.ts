@@ -156,38 +156,106 @@ export function removeCompletedLocal(id: string) {
 }
 
 // ---------- local cache helpers (fast UI, survives reload) ----------
+//
+// PERFORMANCE: We keep an in-memory mirror of the active walkthrough so that
+// hot paths (loadActive on every render via useMemo, setAnswer on every
+// keystroke) don't have to JSON.parse / JSON.stringify the entire walkthrough
+// against localStorage. Without this, a walkthrough with many answers would
+// block the main thread for hundreds of ms per keystroke on mobile and cause
+// the app to appear frozen.
 
 function cacheKey(id: string) {
   return `${CACHE_PREFIX}${id}`;
 }
 
+// In-memory mirror. Source of truth for the running session; localStorage is
+// only used for cross-reload survival.
+const memCache = new Map<string, Walkthrough>();
+
+// Strip embedded data: / blob: photo URLs before persisting. Photos belong in
+// IndexedDB (photo-store). Any data URL that slipped into answers (legacy
+// drafts or capture races) would balloon the cached JSON past the 5MB iOS
+// quota and throw on every save.
+function stripEmbeddedPhotos(w: Walkthrough): Walkthrough {
+  if (!w.answers) return w;
+  let touched = false;
+  const nextAnswers: WizardAnswers = {};
+  for (const [qid, ans] of Object.entries(w.answers)) {
+    let nextAns = ans;
+    const cleanList = (list?: string[]) => {
+      if (!list || list.length === 0) return list;
+      const cleaned = list.filter(
+        (p) => !!p && !p.startsWith("data:") && !p.startsWith("blob:"),
+      );
+      return cleaned.length === list.length ? list : cleaned;
+    };
+    const photos = cleanList(ans.photos);
+    const poorPhotos = cleanList(ans.poorPhotos);
+    if (photos !== ans.photos || poorPhotos !== ans.poorPhotos) {
+      nextAns = { ...ans, photos, poorPhotos };
+      touched = true;
+    }
+    nextAnswers[qid] = nextAns;
+  }
+  return touched ? { ...w, answers: nextAnswers } : w;
+}
+
 function readCache(id: string): Walkthrough | null {
+  const mem = memCache.get(id);
+  if (mem) return mem;
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(cacheKey(id));
-    return raw ? (JSON.parse(raw) as Walkthrough) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Walkthrough;
+    memCache.set(id, parsed);
+    return parsed;
   } catch {
     return null;
   }
 }
 
 function writeCache(w: Walkthrough) {
+  // Always update the in-memory mirror first so subsequent reads are
+  // consistent even when the localStorage write fails.
+  memCache.set(w.id, w);
   if (typeof window === "undefined") return;
-  localStorage.setItem(cacheKey(w.id), JSON.stringify(w));
-  localStorage.setItem(ACTIVE_KEY, w.id);
+  try {
+    const safe = stripEmbeddedPhotos(w);
+    localStorage.setItem(cacheKey(w.id), JSON.stringify(safe));
+    localStorage.setItem(ACTIVE_KEY, w.id);
+  } catch (e) {
+    // Quota exceeded or storage unavailable — Supabase remains the source
+    // of truth; in-memory mirror keeps the UI responsive for this session.
+    console.warn("[walkthrough] writeCache failed (quota?)", e);
+    try {
+      localStorage.setItem(ACTIVE_KEY, w.id);
+    } catch {
+      // ignore
+    }
+  }
 }
 
 function clearCache(id: string) {
+  memCache.delete(id);
   if (typeof window === "undefined") return;
-  localStorage.removeItem(cacheKey(id));
-  if (localStorage.getItem(ACTIVE_KEY) === id) {
-    localStorage.removeItem(ACTIVE_KEY);
+  try {
+    localStorage.removeItem(cacheKey(id));
+    if (localStorage.getItem(ACTIVE_KEY) === id) {
+      localStorage.removeItem(ACTIVE_KEY);
+    }
+  } catch {
+    // ignore
   }
 }
 
 export function getActiveId(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(ACTIVE_KEY);
+  try {
+    return localStorage.getItem(ACTIVE_KEY);
+  } catch {
+    return null;
+  }
 }
 
 export function loadActive(): Walkthrough | null {
