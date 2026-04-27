@@ -133,15 +133,8 @@ function ReviewScreen() {
     const load = async () => {
       setLoading(true);
       try {
-        // Try local first (has photo data)
-        const local = getCompletedLocalById(id) ?? getLatestCompletedLocal();
-        if (local) {
-          setWalk(enrichPhotos(local));
-          setNotFound(false);
-          setLoading(false);
-          return;
-        }
-        // Fall back to Supabase
+        // Full walkthrough data (with answers + photos) lives in Supabase.
+        // localStorage only stores lightweight summaries for list display.
         const remote = await fetchById(id);
         if (remote) {
           setWalk(enrichPhotos(remote));
