@@ -132,7 +132,7 @@ export function WizardLayout({
                 : "bg-muted text-muted-foreground"
             )}
           >
-            Next →
+            {nextLabel ?? "Next →"}
           </button>
         </div>
       </footer>
