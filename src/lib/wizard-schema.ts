@@ -1189,38 +1189,18 @@ const S15: SectionDef = {
       id: "s15_exterior_brief",
       sectionIndex: 15,
       sectionName: "Walkthrough Videos",
-      label: "Exterior walkthrough video",
+      label: "Exterior video (60-90 seconds)",
       field: "video",
       required: true,
-      helper: `Record a continuous narrated video of the exterior. Follow this script as you record:
+      helper: `Record a short narrated video of the exterior — aim for 60 to 90 seconds.
 
-START at the front curb facing the house. Say:
-"This is [address]. I am now walking the exterior."
+Walk this path while narrating:
 
-FRONT: Pan slowly across the entire front. Narrate:
-• Roof condition and type
-• Siding material and condition
-• Windows — any issues visible
-• Paint condition
-• Driveway condition
-• Landscaping condition
+Start at the front curb. Say the address out loud. Pan slowly across the front of the home narrating what you see — roof condition, siding, paint, driveway.
 
-LEFT SIDE: Walk to left side. Narrate anything you observe.
+Walk to the left side, right side, and back. Call out anything notable as you go. End at the front door.
 
-BACK: Walk the back of property. Narrate:
-• Back of house condition
-• Yard condition
-• Any outbuildings
-• Pool or spa if present
-• Irrigation visible
-
-RIGHT SIDE: Walk right side back to front. Narrate anything notable.
-
-END at front door. Say:
-"Exterior walkthrough complete."
-
-Minimum length: 2 minutes.
-Maximum length: 10 minutes.`,
+Keep it moving — one steady walk through, no stopping. 90 seconds is enough.`,
       videoName: "EXTERIOR_WALKTHROUGH",
       photoName: "EXTERIOR_WALKTHROUGH",
       minDuration: 120,
@@ -1231,37 +1211,16 @@ Maximum length: 10 minutes.`,
       id: "s15_interior_video",
       sectionIndex: 15,
       sectionName: "Walkthrough Videos",
-      label: "Interior walkthrough video",
+      label: "Interior video (2-3 minutes)",
       field: "video",
       required: true,
-      helper: `Record a continuous narrated video of the entire interior. Follow this script:
+      helper: `Record a short narrated video of the interior — aim for 2 to 3 minutes.
 
-START at the front door (outside). Say: "I am now entering the property at [address]."
+Start at the front door. Say the address out loud. Walk through every room in order. As you enter each room say its name out loud, do a slow pan showing all four walls, then move on.
 
-ENTRY: Step inside. Describe:
-• First impressions
-• Any smells immediately noticed
-• Flooring type visible
+Call out anything you notice — damage, smells, condition issues, anything unusual. Open closet doors as you pass them. Show under sinks briefly. Keep moving — do not linger in any one spot.
 
-For EVERY ROOM say the room name out loud as you enter. Show:
-• All four walls (pan slowly)
-• Ceiling and light fixtures
-• Floor condition
-• Windows — open coverings to show
-• Any damage, stains, or issues
-• Closets — open and show inside
-
-KITCHEN: Open every cabinet. Show appliances. Run the faucet. Narrate condition of everything.
-
-BATHROOMS: Show tub, shower, sink, toilet. Flush the toilet. Run the water. Check under sink. Narrate any issues.
-
-MECHANICAL: Show water heater, furnace, HVAC. Point out straps on water heater.
-
-END in last room. Say:
-"Interior walkthrough complete for [address]. This concludes the property inspection."
-
-Minimum length: 3 minutes.
-Maximum length: 20 minutes.`,
+2 to 3 minutes covers a typical home if you keep a steady pace.`,
       videoName: "INTERIOR_WALKTHROUGH",
       photoName: "INTERIOR_WALKTHROUGH",
       minDuration: 180,
@@ -1271,11 +1230,11 @@ Maximum length: 20 minutes.`,
       id: "s15_critical_videos",
       sectionIndex: 15,
       sectionName: "Walkthrough Videos",
-      label: "Critical issue close-up videos",
+      label: "Issue close-ups (30 sec each)",
       field: "video",
       required: false,
       helper:
-        "Record short close-up videos of any critical issues found — leaks, damage, mold, safety concerns. Narrate what you are showing and its location in the home. Add as many as needed.",
+        "Short close-up clips of any issues found — leaks, damage, mold, safety concerns. Keep each clip under 30 seconds. Narrate what you are showing and where it is located. Add one clip per issue.",
       videoName: "CRITICAL_VIDEO",
       photoName: "CRITICAL_VIDEO",
       maxPhotos: 5,
