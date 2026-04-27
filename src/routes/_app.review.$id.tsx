@@ -398,11 +398,31 @@ function ReviewScreen() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 print:max-w-none">
         {/* Missing required items */}
         {(() => {
-          const missing = allQuestions.filter(
-            (qq) =>
-              qq.required &&
-              !isQuestionAnswered(qq, walk.answers?.[qq.id] as SkipContext["answers"][string] | undefined),
-          );
+          const completedAt = walk.completedAt ?? null;
+          const ageMs = completedAt ? Date.now() - completedAt : 0;
+          const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+          const isOld = completedAt != null && ageMs > SEVEN_DAYS;
+
+          if (isOld) {
+            return (
+              <section className="mb-6 rounded-2xl border border-border bg-muted/40 p-4 sm:p-5 print:hidden">
+                <p className="text-xs text-muted-foreground">
+                  This walkthrough was completed with an earlier version of the checklist.
+                </p>
+              </section>
+            );
+          }
+
+          const missing = allQuestions.filter((qq) => {
+            if (!qq.required) return false;
+            // Filter out questions added after this walkthrough was completed.
+            const addedAt = (qq as unknown as { addedAt?: number }).addedAt;
+            if (addedAt && completedAt && addedAt > completedAt) return false;
+            return !isQuestionAnswered(
+              qq,
+              walk.answers?.[qq.id] as SkipContext["answers"][string] | undefined,
+            );
+          });
           if (missing.length === 0) {
             return (
               <section className="mb-6 rounded-2xl border-2 border-success bg-success/10 p-4 sm:p-5 print:hidden">
@@ -416,6 +436,9 @@ function ReviewScreen() {
               </section>
             );
           }
+          const MAX_DISPLAY = 20;
+          const displayed = missing.slice(0, MAX_DISPLAY);
+          const overflow = missing.length - displayed.length;
           return (
             <section className="mb-6 rounded-2xl border-2 border-warning bg-warning/10 p-4 sm:p-5 print:hidden">
               <div className="flex items-center gap-2 text-warning-foreground">
@@ -425,7 +448,7 @@ function ReviewScreen() {
                 </h2>
               </div>
               <ul className="mt-3 space-y-2">
-                {missing.map((mq) => (
+                {displayed.map((mq) => (
                   <li
                     key={mq.id}
                     className="flex flex-col gap-2 rounded-xl border border-warning/30 bg-card p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
@@ -453,9 +476,13 @@ function ReviewScreen() {
                           ? allQuestions.find((x) => x.companions?.includes(mq.id))?.id ?? mq.id
                           : mq.id;
                         navigate({
-                          to: "/wizard/q/$qid",
+                          to: "/_app/wizard/q/$qid",
                           params: { qid: targetId },
-                          search: { from: "review", reviewId: walk.id } as never,
+                          search: (prev: Record<string, unknown>) => ({
+                            ...prev,
+                            from: "review",
+                            reviewId: walk.id,
+                          }),
                         });
                       }}
                       className="inline-flex h-10 items-center justify-center rounded-xl bg-accent px-3 text-xs font-semibold text-accent-foreground hover:bg-accent/90"
@@ -465,6 +492,11 @@ function ReviewScreen() {
                   </li>
                 ))}
               </ul>
+              {overflow > 0 && (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  and {overflow} more...
+                </p>
+              )}
             </section>
           );
         })()}
