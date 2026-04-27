@@ -1440,10 +1440,10 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     // Section 13
     s13_wide: ["s13_hookups", "s13_hookup_type", "s13_condition"],
     // Section 14
-    s14_hvac_photo: ["s14_hvac_loc", "s14_hvac_cond"],
-    s14_furnace_photo: ["s14_furnace_loc", "s14_furnace_cond"],
-    s14_thermo_photo: ["s14_thermo_loc", "s14_thermo_type", "s14_thermo_cond"],
-    s14_wh_photo: ["s14_wh_loc", "s14_wh_strapped"],
+    s14_hvac_photo: ["s14_hvac_cond"],
+    s14_furnace_photo: ["s14_furnace_cond"],
+    s14_thermo_photo: ["s14_thermo_type", "s14_thermo_cond"],
+    s14_wh_photo: ["s14_wh_strapped"],
   };
 
   // Bathrooms (section 11) per-loop
