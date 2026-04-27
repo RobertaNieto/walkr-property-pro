@@ -1432,9 +1432,9 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s8_ceiling_photo: ["s8_lights"],
     // Section 9 (real schema ids)
     s9_cab_closed: ["s9_cab_open_1", "s9_cab_overall"],
-    s9_pantry: ["s9_bases"],
     s9_counters_photo: ["s9_counters_cond"],
     s9_sink_photo: ["s9_sink_cond", "s9_faucet_cond"],
+    s9_floor_photo: ["s9_floor_cond"],
     // Section 10
     s10_wide: ["s10_floor", "s10_lights", "s10_baseboards", "s10_paint"],
     // Section 13
