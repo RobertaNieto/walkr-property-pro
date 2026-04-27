@@ -1472,19 +1472,17 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s2_roofline: ["s2_exterior_paint"],
     s2_siding_photo: ["s2_siding_type"],
     s2_driveway_photo: ["s2_driveway_condition"],
-    s2_mailbox: ["s2_front_irrigation"],
     // Section 3
-    s3_back: ["s3_back_irrigation"],
-    s3_fence_photo: ["s3_fence"],
+    s3_fence_photo: [],
     // Section 4
     s4_exterior: ["s4_attached"],
-    s4_door_works: ["s4_remotes_count", "s4_remotes_location"],
+    s4_door_works: [],
     // Section 5
     s5_overall: ["s5_type", "s5_condition"],
     // Section 8 — Living Room: photos stay grouped with their photo screens;
     // condition ratings are consolidated under s8_floor_type as primary.
     s8_floor_photo: [],
-    s8_windows_photo: ["s8_window_type", "s8_window_coverings"],
+    s8_windows_photo: ["s8_window_type"],
     s8_ceiling_photo: [],
     s8_floor_type: ["s8_window_condition", "s8_lights", "s8_baseboards", "s8_paint"],
     // Section 9 — Kitchen: consolidate all surface/fixture condition ratings
@@ -1496,7 +1494,6 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s9_cab_overall: [
       "s9_counters_cond",
       "s9_sink_cond",
-      "s9_faucet_cond",
       "s9_floor_cond",
       "s9_lights",
       "s9_baseboards",
@@ -1505,11 +1502,11 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s10_wide: [],
     s10_floor: ["s10_lights", "s10_baseboards", "s10_paint"],
     // Section 13
-    s13_wide: ["s13_hookups", "s13_hookup_type", "s13_condition"],
+    s13_wide: ["s13_hookups", "s13_condition"],
     // Section 14
     s14_hvac_photo: ["s14_hvac_cond"],
     s14_furnace_photo: ["s14_furnace_cond"],
-    s14_thermo_photo: ["s14_thermo_type", "s14_thermo_cond"],
+    s14_thermo_photo: ["s14_thermo_cond"],
     s14_wh_photo: ["s14_wh_strapped"],
     // Section 16
     s16_neighbors: ["s16_other"],
@@ -1533,7 +1530,7 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
   for (let n = 1; n <= bedTotal; n++) {
     const id = (k: string) => `s12_b${n}_${k}`;
     groups[id("closet")] = [id("closet_cond")];
-    groups[id("windows")] = [id("window_cond"), id("coverings")];
+    groups[id("windows")] = [id("window_cond")];
     groups[id("floor")] = [id("lights"), id("baseboards"), id("paint")];
   }
 
