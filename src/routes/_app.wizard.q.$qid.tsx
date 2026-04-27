@@ -289,6 +289,28 @@ function QuestionScreen() {
       onNext={goNext}
       onAttemptNext={() => setAttempted(true)}
     >
+      {editingFromReview && (
+        <div className="mb-4 flex flex-col gap-2 rounded-2xl border-2 border-warning bg-warning/15 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-semibold text-warning-foreground">
+            ✏️ Editing — changes save automatically
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              persistDraft();
+              navigate({
+                to: "/review/$id",
+                params: { id: search.reviewId! },
+              });
+            }}
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-card px-3 text-xs font-semibold text-foreground ring-1 ring-border hover:bg-secondary"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Review
+          </button>
+        </div>
+      )}
+
       <div
         className={cn(
           "rounded-2xl",
