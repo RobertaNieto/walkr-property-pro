@@ -337,9 +337,14 @@ function WelcomeScreen() {
           </div>
         )}
 
-        <p className="mx-auto mt-auto pt-6 text-center text-[11px] text-primary-foreground/40">
-          Auto-saves to your secure account
-        </p>
+        <div className="mx-auto mt-auto pt-6 text-center space-y-1">
+          <p className="text-[11px] text-primary-foreground/40">
+            Auto-saves to your secure account
+          </p>
+          <p className="text-[11px] text-primary-foreground/40">
+            © 2026 WeConnect. All rights reserved.
+          </p>
+        </div>
       </main>
 
       <div className="pb-[max(env(safe-area-inset-bottom),1rem)]" />
