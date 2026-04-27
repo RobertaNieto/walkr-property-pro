@@ -879,3 +879,40 @@ function FollowUpRenderer({
     </div>
   );
 }
+
+function CompactRatingRow({
+  value,
+  onChange,
+}: {
+  value?: Rating;
+  onChange: (r: Rating) => void;
+}) {
+  const buttons: { r: Rating; cls: string }[] = [
+    { r: 1, cls: "bg-rating-good text-white" },
+    { r: 2, cls: "bg-rating-fair text-foreground" },
+    { r: 3, cls: "bg-rating-poor text-white" },
+  ];
+  return (
+    <div className="flex flex-shrink-0 items-center gap-1.5">
+      {buttons.map(({ r, cls }) => {
+        const selected = value === r;
+        return (
+          <button
+            key={r}
+            type="button"
+            onClick={() => onChange(r)}
+            aria-label={`Rating ${r}`}
+            className={cn(
+              "flex h-11 w-11 items-center justify-center rounded-full border-2 text-base font-bold transition-all active:scale-95",
+              selected
+                ? cn(cls, "border-transparent shadow-[var(--shadow-soft)]")
+                : "border-border bg-card text-foreground hover:border-accent/40",
+            )}
+          >
+            {r}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
