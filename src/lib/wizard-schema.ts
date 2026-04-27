@@ -1473,25 +1473,19 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s2_siding_photo: ["s2_siding_type"],
     s2_driveway_photo: ["s2_driveway_condition"],
     // Section 3
-    s3_fence_photo: [],
     // Section 4
     s4_exterior: ["s4_attached"],
-    s4_door_works: [],
     // Section 5
     s5_overall: ["s5_type", "s5_condition"],
-    // Section 8 — Living Room: photos stay grouped with their photo screens;
-    // condition ratings are consolidated under s8_floor_type as primary.
-    s8_floor_photo: [],
+    // Section 8 — Living Room: floor photo carries floor type + room conditions grid.
+    s8_floor_photo: ["s8_floor_type"],
     s8_windows_photo: ["s8_window_type"],
-    s8_ceiling_photo: [],
     s8_floor_type: ["s8_window_condition", "s8_lights", "s8_baseboards", "s8_paint"],
-    // Section 9 — Kitchen: consolidate all surface/fixture condition ratings
-    // under s9_cab_overall as primary.
-    s9_cab_closed: ["s9_cab_open_1"],
-    s9_counters_photo: [],
-    s9_sink_photo: [],
-    s9_floor_photo: [],
-    s9_cab_overall: [
+    // Section 9 — Kitchen: cabinets closed groups closed+open+overall;
+    // bases groups with sink photo; counters photo carries the conditions grid.
+    s9_cab_closed: ["s9_cab_open_1", "s9_cab_overall"],
+    s9_bases: ["s9_sink_photo"],
+    s9_counters_photo: [
       "s9_counters_cond",
       "s9_sink_cond",
       "s9_floor_cond",
@@ -1499,7 +1493,6 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
       "s9_baseboards",
     ],
     // Section 10 — Hallways: consolidate ratings under s10_floor.
-    s10_wide: [],
     s10_floor: ["s10_lights", "s10_baseboards", "s10_paint"],
     // Section 13
     s13_wide: ["s13_hookups", "s13_condition"],
