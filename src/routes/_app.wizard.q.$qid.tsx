@@ -8,7 +8,7 @@ import { RatingButtons } from "@/components/RatingButtons";
 import { SectionNav, type SectionMeta, type SectionStatus } from "@/components/SectionNav";
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
-import { loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer } from "@/lib/walkthrough";
+import { fetchById, getActiveId, loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer, type Walkthrough } from "@/lib/walkthrough";
 // loadActive is used in the initial state hydration (via useMemo above).
 import {
   buildQuestionList,
@@ -31,7 +31,42 @@ function QuestionScreen() {
   // Source draft from cache. We rebuild context every render so visibility
   // and follow-up logic always reflects the latest answers.
   const [tick, setTick] = useState(0);
-  const w = useMemo(() => loadActive(), [tick, qid]);
+  const [remoteWalk, setRemoteWalk] = useState<Walkthrough | null>(null);
+  const [remoteLoading, setRemoteLoading] = useState(false);
+  const cached = useMemo(() => loadActive(), [tick, qid]);
+  const w = cached ?? remoteWalk;
+
+  // If the local cache is empty (e.g. coming from review on a completed walk
+  // whose cache was cleared, or after a localStorage quota failure), fetch
+  // the walkthrough from the backend by the active id and rehydrate.
+  useEffect(() => {
+    if (cached) return;
+    if (typeof window === "undefined") return;
+    const id = getActiveId() ?? (editingFromReview ? search.reviewId : undefined);
+    if (!id) return;
+    let cancelled = false;
+    setRemoteLoading(true);
+    void fetchById(id)
+      .then((res) => {
+        if (cancelled) return;
+        if (res) {
+          try {
+            localStorage.setItem(`propertywalk:cache:${res.id}`, JSON.stringify(res));
+            localStorage.setItem("propertywalk:active-id", res.id);
+          } catch {
+            // Quota — keep in-memory copy only.
+          }
+          setRemoteWalk(res);
+          setTick((n) => n + 1);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setRemoteLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cached, editingFromReview, search.reviewId]);
 
   const ctx: SkipContext = useMemo(
     () => ({ config: w?.config ?? {}, answers: (w?.answers ?? {}) as SkipContext["answers"] }),
@@ -109,7 +144,9 @@ function QuestionScreen() {
   if (!w) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-6 text-center">
-        <p className="text-sm text-muted-foreground">No active walkthrough. Return home to start one.</p>
+        <p className="text-sm text-muted-foreground">
+          {remoteLoading ? "Loading walkthrough…" : "No active walkthrough. Return home to start one."}
+        </p>
       </div>
     );
   }

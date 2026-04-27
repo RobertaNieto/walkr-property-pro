@@ -463,13 +463,27 @@ function ReviewScreen() {
                       type="button"
                       onClick={() => {
                         // Make this walkthrough the active draft so the wizard
-                        // route can load it from local cache.
+                        // route can load it. Always set the active-id pointer
+                        // even if writing the full cached copy fails (quota),
+                        // because the wizard will fall back to fetching from
+                        // the backend by id.
                         if (typeof window !== "undefined") {
-                          localStorage.setItem(
-                            `propertywalk:cache:${walk.id}`,
-                            JSON.stringify(walk),
-                          );
-                          localStorage.setItem("propertywalk:active-id", walk.id);
+                          try {
+                            localStorage.setItem(
+                              `propertywalk:cache:${walk.id}`,
+                              JSON.stringify(walk),
+                            );
+                          } catch (e) {
+                            console.warn(
+                              "[review] cache write failed (quota?), relying on remote fetch",
+                              e,
+                            );
+                          }
+                          try {
+                            localStorage.setItem("propertywalk:active-id", walk.id);
+                          } catch (e) {
+                            console.warn("[review] active-id write failed", e);
+                          }
                         }
                         // Navigate to the missing question with an editing flag.
                         const targetId = mq.renderedByCompanion
