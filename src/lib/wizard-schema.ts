@@ -54,6 +54,12 @@ export interface QuestionDef {
   followUp?: FollowUp;
   // Hide question when this returns false. Evaluated against config + answers.
   visible?: (ctx: SkipContext) => boolean;
+  // IDs of other questions that should render on the same screen as this one,
+  // below the primary question's inputs, in order.
+  companions?: string[];
+  // True when this question is rendered as a companion of another and must
+  // be skipped by the wizard router as a standalone screen.
+  renderedByCompanion?: boolean;
 }
 
 export interface SectionDef {
