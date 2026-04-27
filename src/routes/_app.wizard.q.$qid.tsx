@@ -609,13 +609,16 @@ function FollowUpRenderer({
         />
       )}
       {fu.field === "photo" && (
-        <PhotoCapture
-          photos={value.photos ?? []}
-          filenames={value.photoNames ?? []}
-          baseName={fu.photoName ?? "FOLLOWUP"}
-          onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-          error={attempted && fu.required && (value.photos?.length ?? 0) < 1}
-        />
+        <>
+          <LandscapeHint />
+          <PhotoCapture
+            photos={value.photos ?? []}
+            filenames={value.photoNames ?? []}
+            baseName={fu.photoName ?? "FOLLOWUP"}
+            onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
+            error={attempted && fu.required && (value.photos?.length ?? 0) < 1}
+          />
+        </>
       )}
       {fu.field === "multichoice" && (
         <div className="grid grid-cols-2 gap-2">
