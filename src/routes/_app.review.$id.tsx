@@ -38,6 +38,7 @@ import {
   buildQuestionList,
   collectCriticalFlags,
   FINAL_CHECKLIST_ITEMS,
+  isQuestionAnswered,
   SECTIONS,
   type QuestionDef,
   type SkipContext,
