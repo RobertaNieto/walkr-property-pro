@@ -397,6 +397,7 @@ function QuestionScreen() {
         )}
       </div>
     </WizardLayout>
+    </>
   );
 }
 
