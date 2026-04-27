@@ -221,7 +221,7 @@ function QuestionScreen() {
       // Last question of this section — return to menu so the agent picks
       // what to do next instead of being forced into linear flow.
       void import("sonner").then(({ toast }) => {
-        toast.success(`Section ${currentSection} complete ✓`);
+        toast.success(`Section ${currentSection} complete`);
       });
       navigate({ to: "/wizard/menu" });
     }
