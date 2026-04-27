@@ -1414,10 +1414,12 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s1_lockbox_code: ["s1_lockbox_photo"],
     // Section 2
     s2_roofline: ["s2_exterior_paint"],
+    s2_siding_photo: ["s2_siding_type"],
     s2_driveway_photo: ["s2_driveway_condition"],
     s2_mailbox: ["s2_front_irrigation"],
     // Section 3
-    s3_back: ["s3_back_irrigation", "s3_fence"],
+    s3_back: ["s3_back_irrigation"],
+    s3_fence_photo: ["s3_fence"],
     // Section 4
     s4_exterior: ["s4_attached"],
     s4_door_works: ["s4_remotes_count", "s4_remotes_location"],
