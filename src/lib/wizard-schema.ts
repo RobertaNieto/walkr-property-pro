@@ -209,21 +209,14 @@ const S2: SectionDef = {
       withRating: true,
     },
     {
-      id: "s2_mailbox",
+      id: "s2_additional",
       sectionIndex: 2,
       sectionName: "Exterior Front",
-      label: "Mailbox location",
-      field: "choice",
-      options: ["Cluster community", "Front door", "Yard"],
-      required: true,
-    },
-    {
-      id: "s2_front_irrigation",
-      sectionIndex: 2,
-      sectionName: "Exterior Front",
-      label: "Front-yard irrigation present",
-      field: "yesno",
-      required: true,
+      label: "Additional exterior details",
+      helper:
+        "Note anything else relevant: mailbox type or location, irrigation system, gate access, easements, HOA restrictions, street parking, or anything a realtor should know about the exterior",
+      field: "longtext",
+      required: false,
     },
   ],
 };
@@ -245,24 +238,6 @@ const S3: SectionDef = {
     },
     photoQ("s3_fence_photo", 3, "Exterior Sides & Back", "Fence photo", "EXTERIOR_FENCE"),
     {
-      id: "s3_fence",
-      sectionIndex: 3,
-      sectionName: "Exterior Sides & Back",
-      label: "Fence condition",
-      field: "rating",
-      required: true,
-      notes: "optional",
-      notesPlaceholder: "Note material and any damage",
-    },
-    {
-      id: "s3_back_irrigation",
-      sectionIndex: 3,
-      sectionName: "Exterior Sides & Back",
-      label: "Back-yard irrigation present",
-      field: "yesno",
-      required: true,
-    },
-    {
       id: "s3_outbuildings",
       sectionIndex: 3,
       sectionName: "Exterior Sides & Back",
@@ -276,6 +251,16 @@ const S3: SectionDef = {
         label: "Outbuilding photo",
         photoName: "OUTBUILDING",
       },
+    },
+    {
+      id: "s3_additional",
+      sectionIndex: 3,
+      sectionName: "Exterior Sides & Back",
+      label: "Additional backyard details",
+      helper:
+        "Note anything relevant: fence material and condition, back irrigation, alley access, rear easements, or anything notable about the back of the property",
+      field: "longtext",
+      required: false,
     },
   ],
 };
@@ -307,21 +292,14 @@ const S4: SectionDef = {
         required: true,
       },
       {
-        id: "s4_remotes_count",
+        id: "s4_additional",
         sectionIndex: 4,
         sectionName: "Garage",
-        label: "Number of remotes",
-        field: "number",
-        required: true,
-      },
-      {
-        id: "s4_remotes_location",
-        sectionIndex: 4,
-        sectionName: "Garage",
-        label: "Remote location",
-        helper: "Where are the remotes stored?",
-        field: "text",
-        required: true,
+        label: "Additional garage details",
+        helper:
+          "Note anything relevant: number of remotes and where they are stored, storage in garage, EV charging, attic access, or any other garage details",
+        field: "longtext",
+        required: false,
       },
     ];
   },
@@ -543,15 +521,6 @@ const S8: SectionDef = {
         notesPlaceholder: "Describe leaks, broken panes, missing screens and locations",
       },
       {
-        id: "s8_window_coverings",
-        sectionIndex: 8,
-        sectionName: "Living Room",
-        label: "Window coverings condition",
-        field: "choice",
-        options: ["Good", "Needs cleaning", "Needs replacement"],
-        required: true,
-      },
-      {
         id: "s8_lights",
         sectionIndex: 8,
         sectionName: "Living Room",
@@ -584,6 +553,16 @@ const S8: SectionDef = {
         field: "rating",
         required: true,
         notes: "optional",
+      },
+      {
+        id: "s8_additional",
+        sectionIndex: 8,
+        sectionName: "Living Room",
+        label: "Additional living room details",
+        helper:
+          "Note anything relevant: window covering condition, crown molding, built-ins, or any other details",
+        field: "longtext",
+        required: false,
       },
     );
     return out;
@@ -640,14 +619,6 @@ const S9: SectionDef = {
       sectionIndex: 9,
       sectionName: "Kitchen",
       label: "Sink condition",
-      field: "rating",
-      required: true,
-    },
-    {
-      id: "s9_faucet_cond",
-      sectionIndex: 9,
-      sectionName: "Kitchen",
-      label: "Faucet condition",
       field: "rating",
       required: true,
     },
@@ -735,6 +706,16 @@ const S9: SectionDef = {
         label: "Baseboard photo",
         photoName: "KITCHEN_BASEBOARDS",
       },
+    },
+    {
+      id: "s9_additional",
+      sectionIndex: 9,
+      sectionName: "Kitchen",
+      label: "Additional kitchen details",
+      helper:
+        "Note anything relevant: faucet condition, garbage disposal, exhaust fan, kitchen layout, or anything else worth noting",
+      field: "longtext",
+      required: false,
     },
   ],
 };
@@ -871,23 +852,7 @@ function bathroomQuestions(n: number, total: number): QuestionDef[] {
       notes: "optional",
       notesPlaceholder: "Describe stains, damage, smell",
     },
-    {
-      id: id("window"),
-      sectionIndex: 11,
-      sectionName: tag,
-      label: "Window condition",
-      field: "rating",
-      required: true,
-    },
-    {
-      id: id("coverings"),
-      sectionIndex: 11,
-      sectionName: tag,
-      label: "Window coverings condition",
-      field: "choice",
-      options: ["Good", "Needs cleaning", "Needs replacement", "No window"],
-      required: true,
-    },
+    
     {
       id: id("lights"),
       sectionIndex: 11,
@@ -965,6 +930,16 @@ function bathroomQuestions(n: number, total: number): QuestionDef[] {
         photoName: pn("MOLD"),
       },
     },
+    {
+      id: id("additional"),
+      sectionIndex: 11,
+      sectionName: "Bathrooms",
+      label: `Bathroom ${n} additional details`,
+      helper:
+        "Note window condition, ventilation fan, heated floors, or anything else worth noting about this bathroom",
+      field: "longtext",
+      required: false,
+    },
   ];
   if (n === 1) return questions;
   // Bathrooms 2+ open with a "present" yes/no; if No, all loop questions hide.
@@ -1030,15 +1005,7 @@ function bedroomQuestions(n: number, total: number): QuestionDef[] {
       field: "rating",
       required: true,
     },
-    {
-      id: id("coverings"),
-      sectionIndex: 12,
-      sectionName: tag,
-      label: "Window coverings condition",
-      field: "choice",
-      options: ["Good", "Needs cleaning", "Needs replacement", "No covering"],
-      required: true,
-    },
+    
     {
       id: id("floor"),
       sectionIndex: 12,
@@ -1088,6 +1055,16 @@ function bedroomQuestions(n: number, total: number): QuestionDef[] {
       required: false,
       photoName: pn("FEATURE"),
     },
+    {
+      id: id("additional"),
+      sectionIndex: 12,
+      sectionName: "Bedrooms",
+      label: `Bedroom ${n} additional details`,
+      helper:
+        "Note window covering condition, ceiling fan, built-in storage, or anything else worth noting about this bedroom",
+      field: "longtext",
+      required: false,
+    },
   ];
 }
 
@@ -1110,21 +1087,22 @@ const S13: SectionDef = {
     photoQ("s13_wide", 13, "Laundry", "Laundry area wide photo", "LAUNDRY_WIDE"),
     photoQ("s13_hookups", 13, "Laundry", "Hookups close-up photo", "LAUNDRY_HOOKUPS"),
     {
-      id: "s13_hookup_type",
-      sectionIndex: 13,
-      sectionName: "Laundry",
-      label: "Hookup type",
-      field: "choice",
-      options: ["Gas", "Electric", "Both"],
-      required: true,
-    },
-    {
       id: "s13_condition",
       sectionIndex: 13,
       sectionName: "Laundry",
       label: "Laundry condition",
       field: "rating",
       required: true,
+    },
+    {
+      id: "s13_additional",
+      sectionIndex: 13,
+      sectionName: "Laundry",
+      label: "Additional laundry details",
+      helper:
+        "Note hookup type (gas or electric), washer/dryer included, ventilation, or any other laundry details",
+      field: "longtext",
+      required: false,
     },
   ],
 };
@@ -1133,15 +1111,6 @@ const S14: SectionDef = {
   index: 14,
   name: "Mechanical Systems",
   resolve: () => [
-    {
-      id: "s14_hvac_loc",
-      sectionIndex: 14,
-      sectionName: "Mechanical Systems",
-      label: "HVAC condenser location",
-      helper: "Describe where the condenser is located (e.g., left side of house, backyard)",
-      field: "text",
-      required: true,
-    },
     photoQ("s14_hvac_photo", 14, "Mechanical Systems", "HVAC condenser photo", "HVAC_CONDENSER"),
     {
       id: "s14_hvac_cond",
@@ -1149,14 +1118,6 @@ const S14: SectionDef = {
       sectionName: "Mechanical Systems",
       label: "HVAC condition",
       field: "rating",
-      required: true,
-    },
-    {
-      id: "s14_furnace_loc",
-      sectionIndex: 14,
-      sectionName: "Mechanical Systems",
-      label: "Furnace location",
-      field: "text",
       required: true,
     },
     photoQ("s14_furnace_photo", 14, "Mechanical Systems", "Furnace photo", "FURNACE"),
@@ -1168,24 +1129,7 @@ const S14: SectionDef = {
       field: "rating",
       required: true,
     },
-    {
-      id: "s14_thermo_loc",
-      sectionIndex: 14,
-      sectionName: "Mechanical Systems",
-      label: "Thermostat location",
-      field: "text",
-      required: true,
-    },
     photoQ("s14_thermo_photo", 14, "Mechanical Systems", "Thermostat photo", "THERMOSTAT"),
-    {
-      id: "s14_thermo_type",
-      sectionIndex: 14,
-      sectionName: "Mechanical Systems",
-      label: "Thermostat type",
-      field: "choice",
-      options: ["Smart", "Manual"],
-      required: true,
-    },
     {
       id: "s14_thermo_cond",
       sectionIndex: 14,
@@ -1223,6 +1167,16 @@ const S14: SectionDef = {
       field: "yesno",
       required: true,
       critical: true,
+    },
+    {
+      id: "s14_additional",
+      sectionIndex: 14,
+      sectionName: "Mechanical Systems",
+      label: "Mechanical systems notes",
+      helper:
+        "Note age and brand of systems, thermostat type, any recent replacements, service history, or anything a realtor or buyer should know about the mechanical systems",
+      field: "longtext",
+      required: false,
     },
   ],
 };
@@ -1272,23 +1226,7 @@ Maximum length: 10 minutes.`,
       minDuration: 120,
       minPhotos: 1,
     },
-    {
-      id: "s15_narration_confirmed",
-      sectionIndex: 15,
-      sectionName: "Walkthrough Videos",
-      label: "Narration checklist — confirm before recording interior",
-      field: "multichoice",
-      required: true,
-      options: [
-        "I will narrate every room as I enter it",
-        "I will describe what I see out loud including any issues",
-        "I will show all four walls of each room",
-        "I will open closets, cabinets and show interiors",
-        "I will point out any damage, odors, or concerns verbally",
-      ],
-      helper:
-        "Check all items to confirm you understand what the interior video must cover before recording.",
-    },
+    
     {
       id: "s15_interior_video",
       sectionIndex: 15,
@@ -1534,19 +1472,17 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s2_roofline: ["s2_exterior_paint"],
     s2_siding_photo: ["s2_siding_type"],
     s2_driveway_photo: ["s2_driveway_condition"],
-    s2_mailbox: ["s2_front_irrigation"],
     // Section 3
-    s3_back: ["s3_back_irrigation"],
-    s3_fence_photo: ["s3_fence"],
+    s3_fence_photo: [],
     // Section 4
     s4_exterior: ["s4_attached"],
-    s4_door_works: ["s4_remotes_count", "s4_remotes_location"],
+    s4_door_works: [],
     // Section 5
     s5_overall: ["s5_type", "s5_condition"],
     // Section 8 — Living Room: photos stay grouped with their photo screens;
     // condition ratings are consolidated under s8_floor_type as primary.
     s8_floor_photo: [],
-    s8_windows_photo: ["s8_window_type", "s8_window_coverings"],
+    s8_windows_photo: ["s8_window_type"],
     s8_ceiling_photo: [],
     s8_floor_type: ["s8_window_condition", "s8_lights", "s8_baseboards", "s8_paint"],
     // Section 9 — Kitchen: consolidate all surface/fixture condition ratings
@@ -1558,7 +1494,6 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s9_cab_overall: [
       "s9_counters_cond",
       "s9_sink_cond",
-      "s9_faucet_cond",
       "s9_floor_cond",
       "s9_lights",
       "s9_baseboards",
@@ -1567,11 +1502,11 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s10_wide: [],
     s10_floor: ["s10_lights", "s10_baseboards", "s10_paint"],
     // Section 13
-    s13_wide: ["s13_hookups", "s13_hookup_type", "s13_condition"],
+    s13_wide: ["s13_hookups", "s13_condition"],
     // Section 14
     s14_hvac_photo: ["s14_hvac_cond"],
     s14_furnace_photo: ["s14_furnace_cond"],
-    s14_thermo_photo: ["s14_thermo_type", "s14_thermo_cond"],
+    s14_thermo_photo: ["s14_thermo_cond"],
     s14_wh_photo: ["s14_wh_strapped"],
     // Section 16
     s16_neighbors: ["s16_other"],
@@ -1595,7 +1530,7 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
   for (let n = 1; n <= bedTotal; n++) {
     const id = (k: string) => `s12_b${n}_${k}`;
     groups[id("closet")] = [id("closet_cond")];
-    groups[id("windows")] = [id("window_cond"), id("coverings")];
+    groups[id("windows")] = [id("window_cond")];
     groups[id("floor")] = [id("lights"), id("baseboards"), id("paint")];
   }
 
