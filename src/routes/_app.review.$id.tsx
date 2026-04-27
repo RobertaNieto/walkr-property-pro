@@ -476,13 +476,9 @@ function ReviewScreen() {
                           ? allQuestions.find((x) => x.companions?.includes(mq.id))?.id ?? mq.id
                           : mq.id;
                         navigate({
-                          to: "/_app/wizard/q/$qid",
+                          to: "/wizard/q/$qid",
                           params: { qid: targetId },
-                          search: (prev: Record<string, unknown>) => ({
-                            ...prev,
-                            from: "review",
-                            reviewId: walk.id,
-                          }),
+                          search: { from: "review", reviewId: walk.id } as never,
                         });
                       }}
                       className="inline-flex h-10 items-center justify-center rounded-xl bg-accent px-3 text-xs font-semibold text-accent-foreground hover:bg-accent/90"
