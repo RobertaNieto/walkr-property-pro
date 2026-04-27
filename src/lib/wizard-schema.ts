@@ -1514,12 +1514,14 @@ export function isQuestionAnswered(q: QuestionDef, ans: SkipContext["answers"][s
     case "choice":
       if (q.required && !ans.choice) return false;
       if (q.withRating && ans.rating === undefined) return false;
+      if (q.withRating && ans.rating === 3 && q.poorPhotoName && (ans.poorPhotos?.length ?? 0) < 1) return false;
       break;
     case "multichoice":
       if (q.required && (!ans.choices || ans.choices.length === 0)) return false;
       break;
     case "rating":
       if (q.required && ans.rating === undefined) return false;
+      if (ans.rating === 3 && q.poorPhotoName && (ans.poorPhotos?.length ?? 0) < 1) return false;
       // notes-required-if-3
       if (q.notes === "required-if-rating-3" && ans.rating === 3 && (!ans.notes || ans.notes.trim().length === 0)) {
         // notes are not strictly required-if-rating-3 in schema (followUp handles photo)
@@ -1535,6 +1537,7 @@ export function isQuestionAnswered(q: QuestionDef, ans: SkipContext["answers"][s
 
   // text-with-rating (e.g. flooring type and condition)
   if (q.field === "text" && q.withRating && ans.rating === undefined) return false;
+  if (q.field === "text" && q.withRating && ans.rating === 3 && q.poorPhotoName && (ans.poorPhotos?.length ?? 0) < 1) return false;
   // rating-with-photo (e.g. stove)
   if (q.field === "rating" && q.withPhoto) {
     const min = q.withPhoto.min ?? 1;
