@@ -622,14 +622,6 @@ const S9: SectionDef = {
       field: "rating",
       required: true,
     },
-    {
-      id: "s9_faucet_cond",
-      sectionIndex: 9,
-      sectionName: "Kitchen",
-      label: "Faucet condition",
-      field: "rating",
-      required: true,
-    },
     photoQ("s9_floor_photo", 9, "Kitchen", "Kitchen flooring photo", "KITCHEN_FLOOR"),
     {
       id: "s9_floor_cond",
