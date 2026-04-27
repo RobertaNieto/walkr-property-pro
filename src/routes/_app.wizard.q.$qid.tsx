@@ -225,7 +225,7 @@ function QuestionScreen() {
           />
         )}
 
-        {q.field !== "longtext" && (
+        {q.field !== "longtext" && (!q.companions || q.companions.length === 0) && (
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-foreground">
               Notes & Observations <span className="font-normal text-muted-foreground">(optional)</span>
