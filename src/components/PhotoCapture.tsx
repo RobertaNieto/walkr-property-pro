@@ -34,6 +34,7 @@ export function PhotoCapture({
   error,
 }: PhotoCaptureProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const localCache = useRef<Record<string, string>>({});
   const [processing, setProcessing] = useState(false);
 
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -57,8 +58,12 @@ export function PhotoCapture({
         const name = baseName
           ? makeName(baseName, startIdx + i, !!isVideo)
           : `PHOTO_${Date.now()}_${i}.${isVideo ? "mp4" : "jpg"}`;
-        // Persist heavy data in the dedicated photo bucket, NOT the draft.
-        savePhoto(name, compressed);
+        // Persist heavy data in IndexedDB photo bucket. Await ensures any
+        // failure surfaces before we tell the parent the photo exists.
+        await savePhoto(name, compressed);
+        // Belt-and-suspenders: keep an instance-local copy so the thumbnail
+        // renders even if the IDB write or memCache lookup is somehow slow.
+        localCache.current[name] = compressed;
         newPhotos.push(name);
         newNames.push(name);
       }
@@ -72,7 +77,7 @@ export function PhotoCapture({
   const remove = (idx: number) => {
     const entry = photos[idx];
     // Only remove from store if it was a filename we saved.
-    if (entry && !entry.startsWith("data:")) removePhoto(entry);
+    if (entry && !entry.startsWith("data:")) void removePhoto(entry);
     const nextPhotos = photos.filter((_, i) => i !== idx);
     const nextNames = (filenames ?? photos).filter((_, i) => i !== idx);
     onChange(nextPhotos, nextNames);
@@ -115,7 +120,7 @@ export function PhotoCapture({
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {photos.map((entry, i) => {
-            const src = resolvePhotoSrc(entry);
+            const src = resolvePhotoSrc(entry) ?? localCache.current[entry];
             return (
               <div key={i} className="relative aspect-square overflow-hidden rounded-xl bg-secondary">
                 {src && (isVideo ? (

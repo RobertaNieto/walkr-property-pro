@@ -24,7 +24,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useAuth } from "@/lib/auth";
-import { resolvePhotoSrc } from "@/lib/photo-store";
+import { preloadPhoto, resolvePhotoSrc } from "@/lib/photo-store";
 import { cn } from "@/lib/utils";
 import {
   fetchById,
@@ -118,6 +118,7 @@ function ReviewScreen() {
   const [walk, setWalk] = useState<Walkthrough | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [photoTick, setPhotoTick] = useState(0);
 
   // Photo lightbox state
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -156,6 +157,34 @@ function ReviewScreen() {
     };
     void load();
   }, [id]);
+
+  // Photos may have been written to IndexedDB in a previous session and not
+  // yet loaded into the in-memory cache. Preload everything referenced by
+  // this walkthrough, then bump photoTick to force thumbnails to re-render.
+  useEffect(() => {
+    if (!walk?.answers) return;
+    const filenames: string[] = [];
+    for (const ans of Object.values(walk.answers)) {
+      const a = ans as WizardAnswer;
+      for (const p of [...(a.photos ?? []), ...(a.poorPhotos ?? [])]) {
+        if (
+          p &&
+          !p.startsWith("data:") &&
+          !p.startsWith("blob:") &&
+          !p.startsWith("http")
+        ) {
+          filenames.push(p);
+        }
+      }
+    }
+    if (filenames.length === 0) {
+      setPhotoTick((t) => t + 1);
+      return;
+    }
+    void Promise.all(filenames.map((f) => preloadPhoto(f))).then(() =>
+      setPhotoTick((t) => t + 1),
+    );
+  }, [walk]);
 
   const ctx: SkipContext | null = useMemo(
     () =>
@@ -223,7 +252,7 @@ function ReviewScreen() {
       photoBySection: photoCounts,
       criticalBySection: flagCounts,
     };
-  }, [walk, allQuestions]);
+  }, [walk, allQuestions, photoTick]);
 
   const visibleChecklist = useMemo(
     () => FINAL_CHECKLIST_ITEMS.filter((it) => !it.visible || it.visible(walk?.config ?? {})),
@@ -521,7 +550,12 @@ function ReviewScreen() {
                   onClick={() => setLightboxIndex(i)}
                   className="group flex flex-col gap-1 text-left"
                 >
-                  <div className="aspect-square overflow-hidden rounded-xl bg-secondary ring-1 ring-border transition-transform group-hover:scale-[1.02]">
+                  <div className="relative aspect-square overflow-hidden rounded-xl bg-secondary ring-1 ring-border transition-transform group-hover:scale-[1.02]">
+                    {photoTick === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
                     <img src={p.src} alt={p.filename} className="h-full w-full object-cover" />
                   </div>
                   <p className="truncate text-[10px] font-medium text-muted-foreground" title={p.filename}>

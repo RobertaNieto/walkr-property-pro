@@ -1,69 +1,113 @@
-// Separate localStorage bucket for large base64 photo data. Keeping this out
-// of the main draft object keeps `propertywalk:cache:<id>` small enough to
-// serialize instantly on every Next tap (Fix 2B).
-//
-// Storage shape (single key):
-//   propertywalk_photos = { "EXTERIOR_FRONT.jpg": "data:image/jpeg;base64,..." }
-//
-// In the wizard answer we store the *filename* string in `photos[]`. The
-// resolver below turns a filename back into a data URL for rendering. Legacy
-// drafts that still have a raw `data:` URL in `photos[]` continue to work
-// because the resolver passes those through unchanged.
+// ---------- IndexedDB photo store ----------
+// Replaces localStorage photo bucket which has a 5MB quota that iOS Safari
+// enforces strictly, causing silent write failures. IndexedDB quota is 50MB+
+// on mobile Safari and effectively unlimited on Chrome.
 
-const PHOTOS_KEY = "propertywalk_photos";
+const DB_NAME = "propertywalk_photos";
+const STORE = "photos";
+const DB_VERSION = 1;
 
-type PhotoMap = Record<string, string>;
+// In-memory cache so thumbnails render immediately after capture without
+// waiting for an async IDB read.
+const memCache = new Map<string, string>();
 
-function readMap(): PhotoMap {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(PHOTOS_KEY);
-    return raw ? (JSON.parse(raw) as PhotoMap) : {};
-  } catch {
-    return {};
-  }
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      req.result.createObjectStore(STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 }
 
-function writeMap(map: PhotoMap) {
-  if (typeof window === "undefined") return;
+export async function savePhoto(filename: string, dataUrl: string): Promise<void> {
+  // Update memory cache immediately so thumbnail renders before IDB write
+  // completes.
+  memCache.set(filename, dataUrl);
   try {
-    localStorage.setItem(PHOTOS_KEY, JSON.stringify(map));
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).put(dataUrl, filename);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
   } catch (e) {
-    // Quota exceeded — best effort. The compressed photos should keep us
-    // well under the 5MB limit for typical walkthroughs.
-    console.warn("[photo-store] write failed", e);
+    console.warn("[photo-store] IDB write failed", e);
   }
 }
 
-export function savePhoto(filename: string, dataUrl: string) {
-  const map = readMap();
-  map[filename] = dataUrl;
-  writeMap(map);
-}
-
-export function removePhoto(filename: string) {
-  const map = readMap();
-  if (filename in map) {
-    delete map[filename];
-    writeMap(map);
+export async function removePhoto(filename: string): Promise<void> {
+  memCache.delete(filename);
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).delete(filename);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) {
+    console.warn("[photo-store] IDB delete failed", e);
   }
 }
 
-// Resolve a stored photo entry to a data URL suitable for <img src="...">.
-// Accepts either a filename (looked up in the photo store) or a raw data URL
-// (returned as-is for backward compatibility with older drafts).
+// Preload a filename from IDB into memCache so future resolvePhotoSrc calls
+// return it synchronously.
+export async function preloadPhoto(filename: string): Promise<string | undefined> {
+  if (memCache.has(filename)) return memCache.get(filename);
+  try {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE, "readonly");
+      const req = tx.objectStore(STORE).get(filename);
+      req.onsuccess = () => {
+        const val = req.result as string | undefined;
+        if (val) memCache.set(filename, val);
+        resolve(val);
+      };
+      req.onerror = () => resolve(undefined);
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+// Synchronous resolver — checks memory cache first, then localStorage legacy.
+// Call preloadPhoto() first if you need IDB data synchronously.
 export function resolvePhotoSrc(entry: string | undefined): string | undefined {
   if (!entry) return undefined;
-  if (entry.startsWith("data:") || entry.startsWith("blob:") || entry.startsWith("http")) {
+  if (
+    entry.startsWith("data:") ||
+    entry.startsWith("blob:") ||
+    entry.startsWith("http")
+  ) {
     return entry;
   }
-  const map = readMap();
-  return map[entry];
+  // Check in-memory cache first (fast).
+  if (memCache.has(entry)) return memCache.get(entry);
+  // Legacy localStorage fallback.
+  try {
+    if (typeof localStorage === "undefined") return undefined;
+    const raw = localStorage.getItem("propertywalk_photos");
+    if (raw) {
+      const map = JSON.parse(raw) as Record<string, string>;
+      if (map[entry]) {
+        memCache.set(entry, map[entry]);
+        return map[entry];
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return undefined;
 }
 
-// Compress an image File to JPEG, max 1600px on the longest side, quality 0.75
-// (Fix 2C). Falls back to the original data URL if anything fails (e.g. HEIC
-// in a browser without decoder support).
+// Compress an image File to JPEG, max 1600px on the longest side, quality 0.75.
+// Falls back to the original data URL if anything fails (e.g. HEIC in a browser
+// without decoder support).
 export async function compressImage(file: File): Promise<string> {
   const MAX_DIM = 1600;
   const QUALITY = 0.75;
