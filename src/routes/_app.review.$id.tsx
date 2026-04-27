@@ -462,38 +462,37 @@ function ReviewScreen() {
                     <button
                       type="button"
                       onClick={() => {
-                        // Make this walkthrough the active draft so the wizard
-                        // route can load it. Always set the active-id pointer
-                        // even if writing the full cached copy fails (quota),
-                        // because the wizard will fall back to fetching from
-                        // the backend by id.
-                        if (typeof window !== "undefined") {
-                          try {
-                            localStorage.setItem(
-                              `propertywalk:cache:${walk.id}`,
-                              JSON.stringify(walk),
-                            );
-                          } catch (e) {
-                            console.warn(
-                              "[review] cache write failed (quota?), relying on remote fetch",
-                              e,
-                            );
+                        try {
+                          if (typeof window !== "undefined") {
+                            try {
+                              localStorage.setItem(
+                                `propertywalk:cache:${walk.id}`,
+                                JSON.stringify(walk),
+                              );
+                            } catch (e) {
+                              console.warn("[review] cache write failed", e);
+                            }
+                            try {
+                              localStorage.setItem("propertywalk:active-id", walk.id);
+                            } catch (e) {
+                              console.warn("[review] active-id write failed", e);
+                            }
                           }
-                          try {
-                            localStorage.setItem("propertywalk:active-id", walk.id);
-                          } catch (e) {
-                            console.warn("[review] active-id write failed", e);
-                          }
+
+                          const targetId = mq.renderedByCompanion
+                            ? allQuestions.find((x) => x.companions?.includes(mq.id))?.id ?? mq.id
+                            : mq.id;
+
+                          // Use direct URL navigation — more reliable than
+                          // TanStack Router navigate with typed search params
+                          // on iOS Safari.
+                          window.location.href =
+                            `/wizard/q/${targetId}` +
+                            `?from=review&reviewId=${encodeURIComponent(walk.id)}`;
+                        } catch (err) {
+                          console.error("[review] Go to question failed:", err);
+                          alert("Could not navigate to question. Please try again.");
                         }
-                        // Navigate to the missing question with an editing flag.
-                        const targetId = mq.renderedByCompanion
-                          ? allQuestions.find((x) => x.companions?.includes(mq.id))?.id ?? mq.id
-                          : mq.id;
-                        navigate({
-                          to: "/wizard/q/$qid",
-                          params: { qid: targetId },
-                          search: { from: "review", reviewId: walk.id } as never,
-                        });
                       }}
                       className="inline-flex h-10 items-center justify-center rounded-xl bg-accent px-3 text-xs font-semibold text-accent-foreground hover:bg-accent/90"
                     >
