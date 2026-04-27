@@ -84,6 +84,7 @@ function QuestionScreen() {
   const navList = useMemo(() => list.filter((x) => !x.renderedByCompanion), [list]);
   const idx = navList.findIndex((q) => q.id === qid);
   const q = idx >= 0 ? navList[idx] : undefined;
+  const prevQ = idx > 0 ? navList[idx - 1] : null;
 
   // Resolve companion QuestionDefs (still inside `list`).
   const companionDefs = useMemo<QuestionDef[]>(() => {
@@ -308,6 +309,16 @@ function QuestionScreen() {
     }
   };
 
+  const goBack = () => {
+    persistDraft();
+    if (prevQ) {
+      navigate({ to: "/wizard/q/$qid", params: { qid: prevQ.id } });
+    } else {
+      // First question — go to section menu
+      navigate({ to: "/wizard/menu" });
+    }
+  };
+
   return (
     <>
       <button
@@ -338,6 +349,7 @@ function QuestionScreen() {
       canContinue={valid}
       onNext={goNext}
       onAttemptNext={() => setAttempted(true)}
+      onBack={goBack}
       nextLabel={getNextLabel(q, ctxWithDraft.answers[qid]?.text)}
     >
       {editingFromReview && (
