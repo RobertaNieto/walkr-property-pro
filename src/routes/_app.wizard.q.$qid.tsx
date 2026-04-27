@@ -111,6 +111,12 @@ function QuestionScreen() {
   }
 
   if (!q) {
+    // If qid is a companion, redirect to its owning primary.
+    const owner = list.find((x) => x.companions?.includes(qid));
+    if (owner) {
+      void navigate({ to: "/wizard/q/$qid", params: { qid: owner.id }, replace: true });
+      return null;
+    }
     // Unknown question id — fall through to checklist (defensive).
     void navigate({ to: "/wizard/checklist" });
     return null;
