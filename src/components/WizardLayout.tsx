@@ -39,6 +39,7 @@ interface WizardLayoutProps {
   canContinue: boolean;
   onNext: () => void;
   onAttemptNext?: () => void;
+  nextLabel?: string;
   children: ReactNode;
 }
 
