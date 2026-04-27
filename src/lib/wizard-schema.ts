@@ -554,6 +554,16 @@ const S8: SectionDef = {
         required: true,
         notes: "optional",
       },
+      {
+        id: "s8_additional",
+        sectionIndex: 8,
+        sectionName: "Living Room",
+        label: "Additional living room details",
+        helper:
+          "Note anything relevant: window covering condition, crown molding, built-ins, or any other details",
+        field: "longtext",
+        required: false,
+      },
     );
     return out;
   },
