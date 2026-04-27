@@ -606,7 +606,20 @@ const S9: SectionDef = {
       field: "rating",
       required: true,
     },
-    photoQ("s9_pantry", 9, "Kitchen", "Pantry photo", "KITCHEN_PANTRY"),
+    {
+      id: "s9_pantry_exists",
+      sectionIndex: 9,
+      sectionName: "Kitchen",
+      label: "Pantry present",
+      helper: "Does this property have a pantry?",
+      field: "yesno",
+      required: true,
+    },
+    {
+      ...photoQ("s9_pantry", 9, "Kitchen", "Pantry photo", "KITCHEN_PANTRY"),
+      helper: "Photograph the pantry interior showing shelving and storage space",
+      visible: (ctx) => ctx.answers?.s9_pantry_exists?.bool === true,
+    },
     photoQ("s9_bases", 9, "Kitchen", "Cabinet bases photo", "KITCHEN_BASES"),
     photoQ("s9_counters_photo", 9, "Kitchen", "Counters photo", "KITCHEN_COUNTERS"),
     {
