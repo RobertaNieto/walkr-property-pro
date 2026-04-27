@@ -238,24 +238,6 @@ const S3: SectionDef = {
     },
     photoQ("s3_fence_photo", 3, "Exterior Sides & Back", "Fence photo", "EXTERIOR_FENCE"),
     {
-      id: "s3_fence",
-      sectionIndex: 3,
-      sectionName: "Exterior Sides & Back",
-      label: "Fence condition",
-      field: "rating",
-      required: true,
-      notes: "optional",
-      notesPlaceholder: "Note material and any damage",
-    },
-    {
-      id: "s3_back_irrigation",
-      sectionIndex: 3,
-      sectionName: "Exterior Sides & Back",
-      label: "Back-yard irrigation present",
-      field: "yesno",
-      required: true,
-    },
-    {
       id: "s3_outbuildings",
       sectionIndex: 3,
       sectionName: "Exterior Sides & Back",
@@ -269,6 +251,16 @@ const S3: SectionDef = {
         label: "Outbuilding photo",
         photoName: "OUTBUILDING",
       },
+    },
+    {
+      id: "s3_additional",
+      sectionIndex: 3,
+      sectionName: "Exterior Sides & Back",
+      label: "Additional backyard details",
+      helper:
+        "Note anything relevant: fence material and condition, back irrigation, alley access, rear easements, or anything notable about the back of the property",
+      field: "longtext",
+      required: false,
     },
   ],
 };
