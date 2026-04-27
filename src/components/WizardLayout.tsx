@@ -54,6 +54,7 @@ export function WizardLayout({
   canContinue,
   onNext,
   onAttemptNext,
+  nextLabel,
   children,
 }: WizardLayoutProps) {
   const router = useRouter();
