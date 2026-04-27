@@ -395,47 +395,115 @@ function QuestionScreen() {
           </div>
         )}
 
-        {companionDefs.map((c) => {
-          const cVal = compDrafts[c.id] ?? {};
-          const setCVal = (
-            updater: WizardAnswer | ((prev: WizardAnswer) => WizardAnswer),
-          ) => {
-            setCompDrafts((prev) => {
-              const cur = prev[c.id] ?? {};
-              const nextVal =
-                typeof updater === "function"
-                  ? (updater as (p: WizardAnswer) => WizardAnswer)(cur)
-                  : updater;
-              return { ...prev, [c.id]: nextVal };
-            });
-          };
+        {(() => {
+          const ratingComps = companionDefs.filter((c) => c.field === "rating");
+          const useGrid = ratingComps.length >= 3;
+          const gridIds = new Set(useGrid ? ratingComps.map((c) => c.id) : []);
+          const gridComps = useGrid ? ratingComps : [];
+          const otherComps = companionDefs.filter((c) => !gridIds.has(c.id));
+
+          const setCValFor =
+            (cid: string) =>
+            (updater: WizardAnswer | ((prev: WizardAnswer) => WizardAnswer)) => {
+              setCompDrafts((prev) => {
+                const cur = prev[cid] ?? {};
+                const nextVal =
+                  typeof updater === "function"
+                    ? (updater as (p: WizardAnswer) => WizardAnswer)(cur)
+                    : updater;
+                return { ...prev, [cid]: nextVal };
+              });
+            };
+
           return (
-            <div key={c.id} className="space-y-4">
-              <div className="border-t border-border pt-4">
-                <p className="text-base font-semibold text-foreground">
-                  {c.label} {c.required && <span className="text-critical">*</span>}
-                </p>
-                {c.helper && (
-                  <p className="mt-1 text-sm text-muted-foreground">{c.helper}</p>
-                )}
-              </div>
-              <FieldRenderer
-                q={c}
-                value={cVal}
-                onChange={setCVal}
-                attempted={attempted}
-              />
-              {c.followUp && c.followUp.when(pickValue(c, cVal)) && (
-                <FollowUpRenderer
-                  q={c}
-                  value={cVal}
-                  onChange={setCVal}
-                  attempted={attempted}
-                />
+            <>
+              {useGrid && (
+                <div className="space-y-3">
+                  <p className="text-base font-semibold text-foreground">Room Conditions</p>
+                  <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                    {gridComps.map((c, i) => {
+                      const cVal = compDrafts[c.id] ?? {};
+                      const setCVal = setCValFor(c.id);
+                      const errored = attempted && cVal.rating === undefined;
+                      return (
+                        <div key={c.id}>
+                          {i > 0 && <div className="h-px bg-border" />}
+                          <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                            <p
+                              className={cn(
+                                "flex-1 text-[12px] font-medium leading-tight",
+                                errored ? "text-critical" : "text-foreground",
+                              )}
+                            >
+                              {c.label} {c.required && <span className="text-critical">*</span>}
+                            </p>
+                            <CompactRatingRow
+                              value={cVal.rating}
+                              onChange={(r) =>
+                                setCVal((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
+                              }
+                            />
+                          </div>
+                          {c.followUp && c.followUp.when(cVal.rating) && (
+                            <div className="px-3 pb-3">
+                              <FollowUpRenderer
+                                q={c}
+                                value={cVal}
+                                onChange={setCVal}
+                                attempted={attempted}
+                              />
+                            </div>
+                          )}
+                          {cVal.rating === 3 && c.poorPhotoName && (
+                            <div className="px-3 pb-3">
+                              <PoorPhotoSection
+                                q={c}
+                                value={cVal}
+                                onChange={setCVal}
+                                attempted={attempted}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
-            </div>
+
+              {otherComps.map((c) => {
+                const cVal = compDrafts[c.id] ?? {};
+                const setCVal = setCValFor(c.id);
+                return (
+                  <div key={c.id} className="space-y-4">
+                    <div className="border-t border-border pt-4">
+                      <p className="text-base font-semibold text-foreground">
+                        {c.label} {c.required && <span className="text-critical">*</span>}
+                      </p>
+                      {c.helper && (
+                        <p className="mt-1 text-sm text-muted-foreground">{c.helper}</p>
+                      )}
+                    </div>
+                    <FieldRenderer
+                      q={c}
+                      value={cVal}
+                      onChange={setCVal}
+                      attempted={attempted}
+                    />
+                    {c.followUp && c.followUp.when(pickValue(c, cVal)) && (
+                      <FollowUpRenderer
+                        q={c}
+                        value={cVal}
+                        onChange={setCVal}
+                        attempted={attempted}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </>
           );
-        })}
+        })()}
 
         {q.companions && q.companions.length > 0 && q.field !== "longtext" && (
           <div>
@@ -808,6 +876,43 @@ function FollowUpRenderer({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function CompactRatingRow({
+  value,
+  onChange,
+}: {
+  value?: Rating;
+  onChange: (r: Rating) => void;
+}) {
+  const buttons: { r: Rating; cls: string }[] = [
+    { r: 1, cls: "bg-rating-good text-white" },
+    { r: 2, cls: "bg-rating-fair text-foreground" },
+    { r: 3, cls: "bg-rating-poor text-white" },
+  ];
+  return (
+    <div className="flex flex-shrink-0 items-center gap-1.5">
+      {buttons.map(({ r, cls }) => {
+        const selected = value === r;
+        return (
+          <button
+            key={r}
+            type="button"
+            onClick={() => onChange(r)}
+            aria-label={`Rating ${r}`}
+            className={cn(
+              "flex h-11 w-11 items-center justify-center rounded-full border-2 text-base font-bold transition-all active:scale-95",
+              selected
+                ? cn(cls, "border-transparent shadow-[var(--shadow-soft)]")
+                : "border-border bg-card text-foreground hover:border-accent/40",
+            )}
+          >
+            {r}
+          </button>
+        );
+      })}
     </div>
   );
 }
