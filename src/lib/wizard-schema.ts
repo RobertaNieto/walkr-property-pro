@@ -587,7 +587,6 @@ const S9: SectionDef = {
     },
     photoQ("s9_cab_closed", 9, "Kitchen", "Cabinets closed photo", "KITCHEN_CABINETS_CLOSED"),
     photoQ("s9_cab_open_1", 9, "Kitchen", "Cabinets open sample 1", "KITCHEN_CABINETS_OPEN_1"),
-    photoQ("s9_cab_open_2", 9, "Kitchen", "Cabinets open sample 2", "KITCHEN_CABINETS_OPEN_2"),
     photoQ("s9_pantry", 9, "Kitchen", "Pantry photo", "KITCHEN_PANTRY"),
     photoQ("s9_bases", 9, "Kitchen", "Cabinet bases photo", "KITCHEN_BASES"),
     photoQ("s9_counters_photo", 9, "Kitchen", "Counters photo", "KITCHEN_COUNTERS"),
