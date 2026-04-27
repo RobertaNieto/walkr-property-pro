@@ -1115,15 +1115,6 @@ const S14: SectionDef = {
   index: 14,
   name: "Mechanical Systems",
   resolve: () => [
-    {
-      id: "s14_hvac_loc",
-      sectionIndex: 14,
-      sectionName: "Mechanical Systems",
-      label: "HVAC condenser location",
-      helper: "Describe where the condenser is located (e.g., left side of house, backyard)",
-      field: "text",
-      required: true,
-    },
     photoQ("s14_hvac_photo", 14, "Mechanical Systems", "HVAC condenser photo", "HVAC_CONDENSER"),
     {
       id: "s14_hvac_cond",
@@ -1131,14 +1122,6 @@ const S14: SectionDef = {
       sectionName: "Mechanical Systems",
       label: "HVAC condition",
       field: "rating",
-      required: true,
-    },
-    {
-      id: "s14_furnace_loc",
-      sectionIndex: 14,
-      sectionName: "Mechanical Systems",
-      label: "Furnace location",
-      field: "text",
       required: true,
     },
     photoQ("s14_furnace_photo", 14, "Mechanical Systems", "Furnace photo", "FURNACE"),
@@ -1150,24 +1133,7 @@ const S14: SectionDef = {
       field: "rating",
       required: true,
     },
-    {
-      id: "s14_thermo_loc",
-      sectionIndex: 14,
-      sectionName: "Mechanical Systems",
-      label: "Thermostat location",
-      field: "text",
-      required: true,
-    },
     photoQ("s14_thermo_photo", 14, "Mechanical Systems", "Thermostat photo", "THERMOSTAT"),
-    {
-      id: "s14_thermo_type",
-      sectionIndex: 14,
-      sectionName: "Mechanical Systems",
-      label: "Thermostat type",
-      field: "choice",
-      options: ["Smart", "Manual"],
-      required: true,
-    },
     {
       id: "s14_thermo_cond",
       sectionIndex: 14,
@@ -1205,6 +1171,16 @@ const S14: SectionDef = {
       field: "yesno",
       required: true,
       critical: true,
+    },
+    {
+      id: "s14_additional",
+      sectionIndex: 14,
+      sectionName: "Mechanical Systems",
+      label: "Mechanical systems notes",
+      helper:
+        "Note age and brand of systems, thermostat type, any recent replacements, service history, or anything a realtor or buyer should know about the mechanical systems",
+      field: "longtext",
+      required: false,
     },
   ],
 };
