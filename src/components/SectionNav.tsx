@@ -131,8 +131,23 @@ export function SectionNav({
           </button>
         </div>
 
-        {/* Home button */}
-        <div className="px-4 py-4">
+        {/* Section Menu (top) + Home buttons */}
+        <div className="space-y-2 px-4 py-4">
+          <button
+            type="button"
+            onClick={handleSectionMenu}
+            className="flex w-full items-center gap-3 rounded-2xl border-2 border-accent/40 bg-accent/10 px-4 py-3 text-left transition-all hover:border-accent active:scale-[0.99]"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground">
+              <LayoutGrid className="h-5 w-5" />
+            </span>
+            <span className="flex-1">
+              <span className="block text-base font-semibold text-foreground">Section Menu</span>
+              <span className="block text-xs text-muted-foreground">
+                Pick a section to work on next
+              </span>
+            </span>
+          </button>
           <button
             type="button"
             onClick={handleHome}
