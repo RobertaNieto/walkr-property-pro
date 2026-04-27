@@ -194,13 +194,6 @@ function WelcomeScreen() {
             <UserIcon className="h-5 w-5" />
           </Link>
         )}
-        <Link
-          to="/debug"
-          aria-label="Debug"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-primary-foreground ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
-        >
-          <Settings className="h-4 w-4" />
-        </Link>
       </div>
 
       <main className="relative flex flex-1 flex-col px-6 pb-6">
