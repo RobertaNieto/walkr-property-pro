@@ -1229,38 +1229,116 @@ const S14: SectionDef = {
 
 const S15: SectionDef = {
   index: 15,
-  name: "Video Walkthroughs",
+  name: "Walkthrough Videos",
   resolve: () => [
     {
-      id: "s15_exterior_video",
+      id: "s15_exterior_brief",
       sectionIndex: 15,
-      sectionName: "Video Walkthroughs",
+      sectionName: "Walkthrough Videos",
       label: "Exterior walkthrough video",
-      helper: "Record one continuous video: front → left side → back → right side. Narrate as you walk. Pan slowly.",
       field: "video",
       required: true,
+      helper: `Record a continuous narrated video of the exterior. Follow this script as you record:
+
+START at the front curb facing the house. Say:
+"This is [address]. I am now walking the exterior."
+
+FRONT: Pan slowly across the entire front. Narrate:
+• Roof condition and type
+• Siding material and condition
+• Windows — any issues visible
+• Paint condition
+• Driveway condition
+• Landscaping condition
+
+LEFT SIDE: Walk to left side. Narrate anything you observe.
+
+BACK: Walk the back of property. Narrate:
+• Back of house condition
+• Yard condition
+• Any outbuildings
+• Pool or spa if present
+• Irrigation visible
+
+RIGHT SIDE: Walk right side back to front. Narrate anything notable.
+
+END at front door. Say:
+"Exterior walkthrough complete."
+
+Minimum length: 2 minutes.
+Maximum length: 10 minutes.`,
+      videoName: "EXTERIOR_WALKTHROUGH",
       photoName: "EXTERIOR_WALKTHROUGH",
+      minDuration: 120,
       minPhotos: 1,
+    },
+    {
+      id: "s15_narration_confirmed",
+      sectionIndex: 15,
+      sectionName: "Walkthrough Videos",
+      label: "Narration checklist — confirm before recording interior",
+      field: "multichoice",
+      required: true,
+      options: [
+        "I will narrate every room as I enter it",
+        "I will describe what I see out loud including any issues",
+        "I will show all four walls of each room",
+        "I will open closets, cabinets and show interiors",
+        "I will point out any damage, odors, or concerns verbally",
+      ],
+      helper:
+        "Check all items to confirm you understand what the interior video must cover before recording.",
     },
     {
       id: "s15_interior_video",
       sectionIndex: 15,
-      sectionName: "Video Walkthroughs",
+      sectionName: "Walkthrough Videos",
       label: "Interior walkthrough video",
-      helper: "Record one continuous video through entire home. Begin at front door. Narrate each room as you enter. Detail all observations.",
       field: "video",
       required: true,
+      helper: `Record a continuous narrated video of the entire interior. Follow this script:
+
+START at the front door (outside). Say: "I am now entering the property at [address]."
+
+ENTRY: Step inside. Describe:
+• First impressions
+• Any smells immediately noticed
+• Flooring type visible
+
+For EVERY ROOM say the room name out loud as you enter. Show:
+• All four walls (pan slowly)
+• Ceiling and light fixtures
+• Floor condition
+• Windows — open coverings to show
+• Any damage, stains, or issues
+• Closets — open and show inside
+
+KITCHEN: Open every cabinet. Show appliances. Run the faucet. Narrate condition of everything.
+
+BATHROOMS: Show tub, shower, sink, toilet. Flush the toilet. Run the water. Check under sink. Narrate any issues.
+
+MECHANICAL: Show water heater, furnace, HVAC. Point out straps on water heater.
+
+END in last room. Say:
+"Interior walkthrough complete for [address]. This concludes the property inspection."
+
+Minimum length: 3 minutes.
+Maximum length: 20 minutes.`,
+      videoName: "INTERIOR_WALKTHROUGH",
       photoName: "INTERIOR_WALKTHROUGH",
+      minDuration: 180,
       minPhotos: 1,
     },
     {
       id: "s15_critical_videos",
       sectionIndex: 15,
-      sectionName: "Video Walkthroughs",
-      label: "Critical issue videos",
-      helper: "Upload short videos of any critical issues flagged during the walkthrough",
+      sectionName: "Walkthrough Videos",
+      label: "Critical issue close-up videos",
       field: "video",
       required: false,
+      helper:
+        "Record short close-up videos of any critical issues found — leaks, damage, mold, safety concerns. Narrate what you are showing and its location in the home. Add as many as needed.",
+      videoName: "CRITICAL_VIDEO",
       photoName: "CRITICAL_VIDEO",
       maxPhotos: 5,
     },
