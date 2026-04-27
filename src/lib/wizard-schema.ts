@@ -1234,7 +1234,7 @@ Call out anything you notice — damage, smells, condition issues, anything unus
       field: "video",
       required: false,
       helper:
-        "Short close-up clips of any issues found — leaks, damage, mold, safety concerns. Keep each clip under 30 seconds. Narrate what you are showing and where it is located. Add one clip per issue.",
+        "Short close-up clips of any issues found — leaks, damage, discoloration, safety concerns. Keep each clip under 30 seconds. Narrate what you are showing and where it is located. Add one clip per issue.",
       videoName: "CRITICAL_VIDEO",
       photoName: "CRITICAL_VIDEO",
       maxPhotos: 5,
