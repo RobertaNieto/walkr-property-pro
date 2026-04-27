@@ -313,7 +313,7 @@ const S5: SectionDef = {
       ...photoQ("s5_overall", 5, "Roof", "Overall roof photo", "ROOF_OVERALL"),
       helper: "From ground level or drone if available",
     },
-    photoQ("s5_closeup", 5, "Roof", "Roof material close-up photo", "ROOF_CLOSEUP"),
+    
     {
       id: "s5_type",
       sectionIndex: 5,
