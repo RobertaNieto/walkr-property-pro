@@ -35,18 +35,36 @@ function QuestionScreen() {
   );
 
   const list = useMemo(() => buildQuestionList(ctx), [ctx]);
-  const idx = list.findIndex((q) => q.id === qid);
-  const q = idx >= 0 ? list[idx] : undefined;
+  // Navigation list excludes companion-rendered questions.
+  const navList = useMemo(() => list.filter((x) => !x.renderedByCompanion), [list]);
+  const idx = navList.findIndex((q) => q.id === qid);
+  const q = idx >= 0 ? navList[idx] : undefined;
+
+  // Resolve companion QuestionDefs (still inside `list`).
+  const companionDefs = useMemo<QuestionDef[]>(() => {
+    if (!q?.companions) return [];
+    return q.companions
+      .map((cid) => list.find((x) => x.id === cid))
+      .filter((x): x is QuestionDef => Boolean(x));
+  }, [q, list]);
 
   const [attempted, setAttempted] = useState(false);
   const [savedAt, setSavedAt] = useState<number | undefined>();
 
   // Local working copy of the current answer so typing feels snappy.
   const [draft, setDraft] = useState<WizardAnswer>({});
+  // Companion drafts keyed by companion question id.
+  const [compDrafts, setCompDrafts] = useState<Record<string, WizardAnswer>>({});
 
   useEffect(() => {
     setAttempted(false);
     setDraft((w?.answers?.[qid] as WizardAnswer | undefined) ?? {});
+    const next: Record<string, WizardAnswer> = {};
+    for (const c of companionDefs) {
+      next[c.id] = (w?.answers?.[c.id] as WizardAnswer | undefined) ?? {};
+    }
+    setCompDrafts(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qid, w?.id]);
 
   useEffect(() => {
@@ -55,7 +73,7 @@ function QuestionScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qid]);
 
-  // Auto-save every change.
+  // Auto-save primary question.
   useEffect(() => {
     if (!q) return;
     const t = setTimeout(() => {
@@ -70,6 +88,20 @@ function QuestionScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft, qid]);
 
+  // Auto-save each companion answer to its own id.
+  useEffect(() => {
+    if (!q) return;
+    const t = setTimeout(() => {
+      for (const [cid, val] of Object.entries(compDrafts)) {
+        const next = setAnswer(cid, val);
+        if (next) setSavedAt(next.updatedAt);
+      }
+      setTick((n) => n + 1);
+    }, 150);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compDrafts, qid]);
+
   if (!w) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-6 text-center">
@@ -79,6 +111,12 @@ function QuestionScreen() {
   }
 
   if (!q) {
+    // If qid is a companion, redirect to its owning primary.
+    const owner = list.find((x) => x.companions?.includes(qid));
+    if (owner) {
+      void navigate({ to: "/wizard/q/$qid", params: { qid: owner.id }, replace: true });
+      return null;
+    }
     // Unknown question id — fall through to checklist (defensive).
     void navigate({ to: "/wizard/checklist" });
     return null;
@@ -86,16 +124,27 @@ function QuestionScreen() {
 
   const ctxWithDraft: SkipContext = {
     config: ctx.config,
-    answers: { ...ctx.answers, [qid]: draft as SkipContext["answers"][string] },
+    answers: {
+      ...ctx.answers,
+      [qid]: draft as SkipContext["answers"][string],
+      ...Object.fromEntries(
+        Object.entries(compDrafts).map(([cid, v]) => [cid, v as SkipContext["answers"][string]]),
+      ),
+    },
   };
-  const valid = isQuestionAnswered(q, ctxWithDraft.answers[qid]);
+  const primaryValid = isQuestionAnswered(q, ctxWithDraft.answers[qid]);
+  const companionsValid = companionDefs.every((c) =>
+    isQuestionAnswered(c, ctxWithDraft.answers[c.id]),
+  );
+  const valid = primaryValid && companionsValid;
+
+  // Progress and counters use the FULL list including companions.
   const totalQ = list.length;
-  // Question index within its section
   const sectionList = list.filter((x) => x.sectionIndex === q.sectionIndex);
+  // Find position of the primary in the section (companions are co-located).
   const sectionPos = sectionList.findIndex((x) => x.id === qid) + 1;
   const totalInSection = sectionList.length;
-  // Overall progress across all required questions answered
-  const answeredCount = list.filter((x) => isQuestionAnswered(x, ctx.answers[x.id])).length;
+  const answeredCount = list.filter((x) => isQuestionAnswered(x, ctxWithDraft.answers[x.id])).length;
   const progress = (answeredCount / totalQ) * 100;
 
   const goNext = () => {
@@ -103,16 +152,20 @@ function QuestionScreen() {
       setAttempted(true);
       return;
     }
-    // Compute next question against the current in-memory draft so navigation
-    // is instant. The persistent save is deferred to a macrotask after
-    // navigation commits — never block the UI thread on a write.
     const freshCtx: SkipContext = {
       config: ctx.config,
-      answers: { ...ctx.answers, [qid]: draft as SkipContext["answers"][string] },
+      answers: {
+        ...ctx.answers,
+        [qid]: draft as SkipContext["answers"][string],
+        ...Object.fromEntries(
+          Object.entries(compDrafts).map(([cid, v]) => [cid, v as SkipContext["answers"][string]]),
+        ),
+      },
     };
-    const refreshedList = buildQuestionList(freshCtx);
-    const here = refreshedList.findIndex((x) => x.id === qid);
-    const next = here >= 0 ? refreshedList[here + 1] : undefined;
+    const refreshedFull = buildQuestionList(freshCtx);
+    const refreshedNav = refreshedFull.filter((x) => !x.renderedByCompanion);
+    const here = refreshedNav.findIndex((x) => x.id === qid);
+    const next = here >= 0 ? refreshedNav[here + 1] : undefined;
     if (next) {
       navigate({ to: "/wizard/q/$qid", params: { qid: next.id } });
     } else {
@@ -120,6 +173,9 @@ function QuestionScreen() {
     }
     setTimeout(() => {
       setAnswer(qid, draft);
+      for (const [cid, val] of Object.entries(compDrafts)) {
+        setAnswer(cid, val);
+      }
     }, 0);
   };
 
@@ -182,6 +238,63 @@ function QuestionScreen() {
           </div>
         )}
 
+        {companionDefs.map((c) => {
+          const cVal = compDrafts[c.id] ?? {};
+          const setCVal = (
+            updater: WizardAnswer | ((prev: WizardAnswer) => WizardAnswer),
+          ) => {
+            setCompDrafts((prev) => {
+              const cur = prev[c.id] ?? {};
+              const nextVal =
+                typeof updater === "function"
+                  ? (updater as (p: WizardAnswer) => WizardAnswer)(cur)
+                  : updater;
+              return { ...prev, [c.id]: nextVal };
+            });
+          };
+          return (
+            <div key={c.id} className="space-y-4">
+              <div className="border-t border-border pt-4">
+                <p className="text-base font-semibold text-foreground">
+                  {c.label} {c.required && <span className="text-critical">*</span>}
+                </p>
+                {c.helper && (
+                  <p className="mt-1 text-sm text-muted-foreground">{c.helper}</p>
+                )}
+              </div>
+              <FieldRenderer
+                q={c}
+                value={cVal}
+                onChange={setCVal}
+                attempted={attempted}
+              />
+              {c.followUp && c.followUp.when(pickValue(c, cVal)) && (
+                <FollowUpRenderer
+                  q={c}
+                  value={cVal}
+                  onChange={setCVal}
+                  attempted={attempted}
+                />
+              )}
+              {c.field !== "longtext" && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-foreground">
+                    Notes & Observations{" "}
+                    <span className="font-normal text-muted-foreground">(optional)</span>
+                  </label>
+                  <NotesField
+                    value={cVal.notes ?? ""}
+                    onChange={(v) => setCVal((d) => ({ ...d, notes: v }))}
+                    placeholder={
+                      c.notesPlaceholder ?? "Add any notes or observations here (optional)"
+                    }
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+
         {!q.critical && q.field !== "yesno" && (
           <div className="flex items-start gap-2 rounded-xl bg-accent/5 p-3 text-xs text-accent">
             <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0" />
@@ -192,6 +305,7 @@ function QuestionScreen() {
     </WizardLayout>
   );
 }
+
 
 function pickValue(q: QuestionDef, ans: WizardAnswer): unknown {
   switch (q.field) {

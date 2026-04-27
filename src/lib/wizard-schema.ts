@@ -54,6 +54,12 @@ export interface QuestionDef {
   followUp?: FollowUp;
   // Hide question when this returns false. Evaluated against config + answers.
   visible?: (ctx: SkipContext) => boolean;
+  // IDs of other questions that should render on the same screen as this one,
+  // below the primary question's inputs, in order.
+  companions?: string[];
+  // True when this question is rendered as a companion of another and must
+  // be skipped by the wizard router as a standalone screen.
+  renderedByCompanion?: boolean;
 }
 
 export interface SectionDef {
@@ -1289,8 +1295,94 @@ export function buildQuestionList(ctx: SkipContext): QuestionDef[] {
       list.push(q);
     }
   }
+  return applyCompanions(list, ctx);
+}
+
+// Static companion groupings keyed by primary question id. Per-bedroom and
+// per-bathroom loops are expanded dynamically below.
+function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
+  const groups: Record<string, string[]> = {
+    // Section 1
+    s1_lockbox_code: ["s1_lockbox_photo"],
+    // Section 2
+    s2_roofline: ["s2_exterior_paint"],
+    s2_driveway_photo: ["s2_driveway_condition"],
+    s2_mailbox: ["s2_front_irrigation"],
+    // Section 3
+    s3_back: ["s3_back_irrigation", "s3_fence"],
+    // Section 4
+    s4_exterior: ["s4_attached"],
+    s4_door_works: ["s4_remotes_count", "s4_remotes_location"],
+    // Section 5
+    s5_overall: ["s5_type", "s5_condition"],
+    // Section 8
+    s8_floor_photo: ["s8_floor_type"],
+    s8_windows_photo: ["s8_window_type", "s8_window_condition", "s8_window_coverings"],
+    s8_ceiling_photo: ["s8_lights"],
+    // Section 9 (real schema ids)
+    s9_cab_closed: ["s9_cab_open_1", "s9_cab_open_2", "s9_cab_overall"],
+    s9_pantry: ["s9_bases"],
+    s9_counters_photo: ["s9_counters_cond"],
+    s9_sink_photo: ["s9_sink_cond", "s9_faucet_cond"],
+    // Section 10
+    s10_wide: ["s10_floor", "s10_lights", "s10_baseboards", "s10_paint"],
+    // Section 13
+    s13_wide: ["s13_hookups", "s13_hookup_type", "s13_condition"],
+    // Section 14
+    s14_hvac_photo: ["s14_hvac_loc", "s14_hvac_cond"],
+    s14_furnace_photo: ["s14_furnace_loc", "s14_furnace_cond"],
+    s14_thermo_photo: ["s14_thermo_loc", "s14_thermo_type", "s14_thermo_cond"],
+    s14_wh_photo: ["s14_wh_loc", "s14_wh_strapped"],
+    // Section 16
+    s16_trash: ["s16_neighbors", "s16_other"],
+  };
+
+  // Bathrooms (section 11) per-loop
+  const bTotal = bathCount(ctx.config);
+  for (let n = 1; n <= bTotal; n++) {
+    const id = (k: string) => `s11_b${n}_${k}`;
+    groups[id("tub")] = [id("tub_cond")];
+    groups[id("shower")] = [id("shower_cond")];
+    groups[id("sink")] = [id("sink_cond")];
+    groups[id("toilet")] = [id("toilet_cond")];
+    groups[id("water_pooling")] = [id("active_leaks")];
+    groups[id("lights")] = [id("baseboards")];
+  }
+
+  // Bedrooms (section 12) per-loop
+  const bedTotal = bedCount(ctx.config);
+  for (let n = 1; n <= bedTotal; n++) {
+    const id = (k: string) => `s12_b${n}_${k}`;
+    groups[id("closet")] = [id("closet_cond")];
+    groups[id("windows")] = [id("window_cond"), id("coverings")];
+    groups[id("floor")] = [id("lights"), id("baseboards"), id("paint")];
+  }
+
+  return groups;
+}
+
+function applyCompanions(list: QuestionDef[], ctx: SkipContext): QuestionDef[] {
+  const groups = buildCompanionGroups(ctx);
+  const byId = new Map(list.map((q) => [q.id, q]));
+  const companionOf = new Set<string>();
+
+  for (const [primaryId, companionIds] of Object.entries(groups)) {
+    const primary = byId.get(primaryId);
+    if (!primary) continue;
+    const validCompanions = companionIds.filter((cid) => byId.has(cid));
+    if (validCompanions.length === 0) continue;
+    primary.companions = validCompanions;
+    for (const cid of validCompanions) companionOf.add(cid);
+  }
+
+  for (const cid of companionOf) {
+    const c = byId.get(cid);
+    if (c) c.renderedByCompanion = true;
+  }
+
   return list;
 }
+
 
 // ---------- per-question completion check ----------
 
