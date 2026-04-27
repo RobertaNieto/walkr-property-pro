@@ -213,10 +213,17 @@ function QuestionScreen() {
     const refreshedNav = refreshedFull.filter((x) => !x.renderedByCompanion);
     const here = refreshedNav.findIndex((x) => x.id === qid);
     const next = here >= 0 ? refreshedNav[here + 1] : undefined;
-    if (next) {
+    const currentSection = q.sectionIndex;
+    const crossesSection = !next || next.sectionIndex !== currentSection;
+    if (next && !crossesSection) {
       navigate({ to: "/wizard/q/$qid", params: { qid: next.id } });
     } else {
-      navigate({ to: "/wizard/checklist" });
+      // Last question of this section — return to menu so the agent picks
+      // what to do next instead of being forced into linear flow.
+      void import("sonner").then(({ toast }) => {
+        toast.success(`Section ${currentSection} complete ✓`);
+      });
+      navigate({ to: "/wizard/menu" });
     }
     setTimeout(() => {
       setAnswer(qid, draft);
