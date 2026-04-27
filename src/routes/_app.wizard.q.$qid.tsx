@@ -169,15 +169,15 @@ function QuestionScreen() {
           />
         )}
 
-        {q.notes === "optional" && (
+        {q.field !== "longtext" && (
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-foreground">
-              Notes <span className="font-normal text-muted-foreground">(optional)</span>
+              Notes & Observations <span className="font-normal text-muted-foreground">(optional)</span>
             </label>
             <NotesField
               value={draft.notes ?? ""}
               onChange={(v) => setDraft((d) => ({ ...d, notes: v }))}
-              placeholder={q.notesPlaceholder ?? "Anything to remember…"}
+              placeholder={q.notesPlaceholder ?? "Add any notes or observations here (optional)"}
             />
           </div>
         )}
