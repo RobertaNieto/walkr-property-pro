@@ -1513,7 +1513,11 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     groups[id("shower")] = [id("shower_cond")];
     groups[id("sink")] = [id("sink_cond")];
     groups[id("toilet")] = [id("toilet_cond")];
-    groups[id("water_pooling")] = [id("active_leaks")];
+    groups[id("water_pooling")] = [
+      id("active_leaks"),
+      id("smells"),
+      id("microbial"),
+    ];
     // Core bathroom surface ratings consolidated under flooring as primary.
     groups[id("floor")] = [id("lights"), id("baseboards")];
   }
