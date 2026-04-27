@@ -550,7 +550,12 @@ function ReviewScreen() {
                   onClick={() => setLightboxIndex(i)}
                   className="group flex flex-col gap-1 text-left"
                 >
-                  <div className="aspect-square overflow-hidden rounded-xl bg-secondary ring-1 ring-border transition-transform group-hover:scale-[1.02]">
+                  <div className="relative aspect-square overflow-hidden rounded-xl bg-secondary ring-1 ring-border transition-transform group-hover:scale-[1.02]">
+                    {photoTick === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
                     <img src={p.src} alt={p.filename} className="h-full w-full object-cover" />
                   </div>
                   <p className="truncate text-[10px] font-medium text-muted-foreground" title={p.filename}>
