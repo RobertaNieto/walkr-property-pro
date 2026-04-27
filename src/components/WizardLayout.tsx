@@ -123,18 +123,26 @@ export function WizardLayout({
               <span>Saved {formatTimestamp(lastSavedAt)}</span>
             </div>
           )}
-          <button
-            onClick={() => (canContinue ? onNext() : onAttemptNext?.())}
-            aria-disabled={!canContinue}
-            className={cn(
-              "inline-flex h-14 w-full items-center justify-center rounded-2xl text-base font-semibold transition-all",
-              canContinue
-                ? "bg-primary text-primary-foreground shadow-[var(--shadow-elevated)] hover:bg-primary/90 active:scale-[0.99]"
-                : "bg-muted text-muted-foreground"
-            )}
-          >
-            {nextLabel ?? "Next →"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleBack}
+              className="inline-flex h-14 w-[30%] items-center justify-center rounded-2xl border-2 border-primary bg-background text-base font-semibold text-primary transition-all hover:bg-secondary active:scale-[0.99]"
+            >
+              ← Back
+            </button>
+            <button
+              onClick={() => (canContinue ? onNext() : onAttemptNext?.())}
+              aria-disabled={!canContinue}
+              className={cn(
+                "inline-flex h-14 flex-1 items-center justify-center rounded-2xl text-base font-semibold transition-all",
+                canContinue
+                  ? "bg-primary text-primary-foreground shadow-[var(--shadow-elevated)] hover:bg-primary/90 active:scale-[0.99]"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              {nextLabel ?? "Next →"}
+            </button>
+          </div>
         </div>
       </footer>
     </div>
