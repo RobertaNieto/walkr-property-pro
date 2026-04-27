@@ -118,6 +118,7 @@ function ReviewScreen() {
   const [walk, setWalk] = useState<Walkthrough | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [photoTick, setPhotoTick] = useState(0);
 
   // Photo lightbox state
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
