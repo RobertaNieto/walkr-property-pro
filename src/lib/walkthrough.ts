@@ -37,6 +37,11 @@ export interface WizardAnswer {
   // a parallel object map keyed by question id.
   photos?: string[];
   photoNames?: string[]; // index-aligned with photos
+  // Photos captured because the rating was 3 (Poor). Stored separately so
+  // they don't intermix with regular photos and can be cleared if the
+  // rating changes back to 1 or 2.
+  poorPhotos?: string[];
+  poorPhotoNames?: string[];
   bool?: boolean;
   choice?: string;
   choices?: string[];
