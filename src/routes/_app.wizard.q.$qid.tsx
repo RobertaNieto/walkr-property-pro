@@ -144,7 +144,9 @@ function QuestionScreen() {
   if (!w) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-6 text-center">
-        <p className="text-sm text-muted-foreground">No active walkthrough. Return home to start one.</p>
+        <p className="text-sm text-muted-foreground">
+          {remoteLoading ? "Loading walkthrough…" : "No active walkthrough. Return home to start one."}
+        </p>
       </div>
     );
   }
