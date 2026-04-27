@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, Check, Home, X } from "lucide-react";
+import { AlertTriangle, Check, Home, LayoutGrid, X } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -72,7 +72,13 @@ export function SectionNav({
   const handleHome = () => {
     onGoHome();
     onClose();
-    void navigate({ to: "/" });
+    void navigate({ to: "/wizard/menu" });
+  };
+
+  const handleSectionMenu = () => {
+    onGoHome();
+    onClose();
+    void navigate({ to: "/wizard/menu" });
   };
 
   const handleRow = (s: SectionMeta) => {
