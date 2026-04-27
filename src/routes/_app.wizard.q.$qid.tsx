@@ -22,6 +22,12 @@ export const Route = createFileRoute("/_app/wizard/q/$qid")({
   component: QuestionScreen,
 });
 
+function getNextLabel(q: QuestionDef, text: string | undefined): string | undefined {
+  if (q.field !== "longtext" || q.required) return undefined;
+  const t = text ?? "";
+  return t.trim().length > 0 ? "Save & Next →" : "Skip →";
+}
+
 function QuestionScreen() {
   const { qid } = useParams({ from: "/_app/wizard/q/$qid" });
   const navigate = useNavigate();
