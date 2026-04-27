@@ -852,23 +852,7 @@ function bathroomQuestions(n: number, total: number): QuestionDef[] {
       notes: "optional",
       notesPlaceholder: "Describe stains, damage, smell",
     },
-    {
-      id: id("window"),
-      sectionIndex: 11,
-      sectionName: tag,
-      label: "Window condition",
-      field: "rating",
-      required: true,
-    },
-    {
-      id: id("coverings"),
-      sectionIndex: 11,
-      sectionName: tag,
-      label: "Window coverings condition",
-      field: "choice",
-      options: ["Good", "Needs cleaning", "Needs replacement", "No window"],
-      required: true,
-    },
+    
     {
       id: id("lights"),
       sectionIndex: 11,
