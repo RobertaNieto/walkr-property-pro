@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Menu } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ChoiceGrid } from "@/components/ChoiceGrid";
 import { NotesField } from "@/components/NotesField";
 import { PhotoCapture } from "@/components/PhotoCapture";
 import { RatingButtons } from "@/components/RatingButtons";
+import { SectionNav, type SectionMeta, type SectionStatus } from "@/components/SectionNav";
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
 import { loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer } from "@/lib/walkthrough";
@@ -12,6 +13,7 @@ import { loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswe
 import {
   buildQuestionList,
   isQuestionAnswered,
+  SECTIONS,
   type QuestionDef,
   type SkipContext,
 } from "@/lib/wizard-schema";
@@ -179,7 +181,101 @@ function QuestionScreen() {
     }, 0);
   };
 
+  // ----- Section navigation drawer -----
+  const [navOpen, setNavOpen] = useState(false);
+
+  const sections: SectionMeta[] = useMemo(() => {
+    // Group the resolved primary-only list by section index for status calc.
+    const byIndex = new Map<number, QuestionDef[]>();
+    for (const item of navList) {
+      const arr = byIndex.get(item.sectionIndex) ?? [];
+      arr.push(item);
+      byIndex.set(item.sectionIndex, arr);
+    }
+    const ans = ctxWithDraft.answers;
+    const out: SectionMeta[] = [];
+    for (const s of SECTIONS) {
+      const items = byIndex.get(s.index) ?? [];
+      const isCurrent = s.index === q.sectionIndex;
+      // Detect skipped sections by config.
+      let skipReason: string | undefined;
+      if (items.length === 0) {
+        if (s.index === 4 && (!ctx.config.garage || ctx.config.garage === "None")) {
+          skipReason = "Skipped — No garage selected";
+        } else if (s.index === 6 && ctx.config.pool !== "Yes") {
+          skipReason = "Skipped — No pool selected";
+        } else {
+          skipReason = "Skipped";
+        }
+      }
+      // Find first unanswered (or first overall) primary question.
+      const firstUnanswered = items.find((x) => !isQuestionAnswered(x, ans[x.id]));
+      const firstQuestionId = (firstUnanswered ?? items[0])?.id;
+      const allAnswered = items.length > 0 && items.every((x) => isQuestionAnswered(x, ans[x.id]));
+      const hasFlaggedIssue = items.some((x) => {
+        if (!x.critical) return false;
+        const a = ans[x.id];
+        // Critical issue raised when a yesno critical was answered Yes.
+        return a?.bool === true;
+      });
+      let status: SectionStatus;
+      if (skipReason) status = "skipped";
+      else if (isCurrent) status = "current";
+      else if (hasFlaggedIssue) status = "flagged";
+      else if (allAnswered) status = "complete";
+      else status = "todo";
+      out.push({
+        index: s.index,
+        name: s.name,
+        status,
+        firstQuestionId,
+        skipReason,
+      });
+    }
+    // Section 17 — Final Checklist (lives on its own route).
+    out.push({
+      index: 17,
+      name: "Final Checklist",
+      status: q.sectionIndex === 17 ? "current" : "todo",
+      route: "/wizard/checklist",
+    });
+    // Section 18 — Review.
+    out.push({
+      index: 18,
+      name: "Review",
+      status: q.sectionIndex === 18 ? "current" : "todo",
+      route: "/wizard/checklist",
+    });
+    return out;
+  }, [navList, ctxWithDraft.answers, ctx.config, q.sectionIndex]);
+
+  const persistDraft = () => {
+    setAnswer(qid, draft);
+    for (const [cid, val] of Object.entries(compDrafts)) {
+      setAnswer(cid, val);
+    }
+  };
+
   return (
+    <>
+      <button
+        type="button"
+        onClick={() => setNavOpen(true)}
+        aria-label="Open section navigation"
+        className="fixed left-2 top-[max(env(safe-area-inset-top),0.75rem)] z-30 inline-flex h-11 w-11 items-center justify-center rounded-full bg-background/80 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-secondary active:bg-secondary"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      <SectionNav
+        open={navOpen}
+        onClose={() => setNavOpen(false)}
+        currentSectionIndex={q.sectionIndex}
+        sections={sections}
+        onNavigate={() => persistDraft()}
+        onGoHome={() => persistDraft()}
+      />
+
     <WizardLayout
       sectionIndex={q.sectionIndex}
       sectionName={q.sectionName}
@@ -301,6 +397,7 @@ function QuestionScreen() {
         )}
       </div>
     </WizardLayout>
+    </>
   );
 }
 
