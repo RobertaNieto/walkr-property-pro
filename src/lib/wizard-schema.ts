@@ -930,6 +930,16 @@ function bathroomQuestions(n: number, total: number): QuestionDef[] {
         photoName: pn("MOLD"),
       },
     },
+    {
+      id: id("additional"),
+      sectionIndex: 11,
+      sectionName: "Bathrooms",
+      label: `Bathroom ${n} additional details`,
+      helper:
+        "Note window condition, ventilation fan, heated floors, or anything else worth noting about this bathroom",
+      field: "longtext",
+      required: false,
+    },
   ];
   if (n === 1) return questions;
   // Bathrooms 2+ open with a "present" yes/no; if No, all loop questions hide.
