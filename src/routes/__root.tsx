@@ -1,4 +1,4 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts, useLocation } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 
 import { AuthProvider } from "@/lib/auth";
@@ -97,17 +97,25 @@ function RootComponent() {
 }
 
 function Copyright() {
+  const { pathname } = useLocation();
+  const isWelcome = pathname === "/";
   return (
-    <footer
-      className="w-full text-center"
-      style={{
-        fontSize: "11px",
-        color: "#9CA3AF",
-        padding: "0 16px 12px 16px",
-      }}
-    >
-      © 2026 WeConnect. All rights reserved.
-    </footer>
+    <>
+      {isWelcome && (
+        <style>{`html, body { background-color: oklch(0.28 0.08 260); }`}</style>
+      )}
+      <footer
+        className="w-full text-center"
+        style={{
+          fontSize: isWelcome ? "12px" : "11px",
+          color: isWelcome ? "rgba(255,255,255,0.4)" : "#9CA3AF",
+          background: "transparent",
+          padding: "0 16px 12px 16px",
+        }}
+      >
+        © 2026 WeConnect. All rights reserved.
+      </footer>
+    </>
   );
 }
 
