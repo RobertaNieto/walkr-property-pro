@@ -42,17 +42,8 @@ function ConfigScreen() {
     if (!valid) return;
     // Compute first question of dynamic flow against the freshly-saved config.
     updateWalkthrough({ config });
-    // Lazy import to keep config screen lightweight.
-    import("@/lib/wizard-schema").then(({ buildQuestionList }) => {
-      const w = loadActive();
-      const list = buildQuestionList({
-        config: w?.config ?? config,
-        answers: (w?.answers ?? {}) as never,
-      });
-      const firstId = list[0]?.id ?? "s1_lockbox_code";
-      updateWalkthrough({ lastRoute: `/wizard/q/${firstId}` });
-      navigate({ to: "/wizard/q/$qid", params: { qid: firstId } });
-    });
+    updateWalkthrough({ lastRoute: "/wizard/menu" });
+    navigate({ to: "/wizard/menu" });
   };
 
   return (

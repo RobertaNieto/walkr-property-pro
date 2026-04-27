@@ -19,6 +19,7 @@ import { Route as AppWalkthroughsRouteImport } from './routes/_app.walkthroughs'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppConfigRouteImport } from './routes/_app.config'
 import { Route as AppAddressRouteImport } from './routes/_app.address'
+import { Route as AppWizardMenuRouteImport } from './routes/_app.wizard.menu'
 import { Route as AppWizardLockboxRouteImport } from './routes/_app.wizard.lockbox'
 import { Route as AppWizardFrontPhotoRouteImport } from './routes/_app.wizard.front-photo'
 import { Route as AppWizardExteriorPaintRouteImport } from './routes/_app.wizard.exterior-paint'
@@ -76,6 +77,11 @@ const AppAddressRoute = AppAddressRouteImport.update({
   path: '/address',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWizardMenuRoute = AppWizardMenuRouteImport.update({
+  id: '/wizard/menu',
+  path: '/wizard/menu',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppWizardLockboxRoute = AppWizardLockboxRouteImport.update({
   id: '/wizard/lockbox',
   path: '/wizard/lockbox',
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/wizard/front-photo': typeof AppWizardFrontPhotoRoute
   '/wizard/lockbox': typeof AppWizardLockboxRoute
+  '/wizard/menu': typeof AppWizardMenuRoute
   '/wizard/q/$qid': typeof AppWizardQQidRoute
 }
 export interface FileRoutesByTo {
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/wizard/front-photo': typeof AppWizardFrontPhotoRoute
   '/wizard/lockbox': typeof AppWizardLockboxRoute
+  '/wizard/menu': typeof AppWizardMenuRoute
   '/wizard/q/$qid': typeof AppWizardQQidRoute
 }
 export interface FileRoutesById {
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/_app/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/_app/wizard/front-photo': typeof AppWizardFrontPhotoRoute
   '/_app/wizard/lockbox': typeof AppWizardLockboxRoute
+  '/_app/wizard/menu': typeof AppWizardMenuRoute
   '/_app/wizard/q/$qid': typeof AppWizardQQidRoute
 }
 export interface FileRouteTypes {
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/wizard/exterior-paint'
     | '/wizard/front-photo'
     | '/wizard/lockbox'
+    | '/wizard/menu'
     | '/wizard/q/$qid'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/wizard/exterior-paint'
     | '/wizard/front-photo'
     | '/wizard/lockbox'
+    | '/wizard/menu'
     | '/wizard/q/$qid'
   id:
     | '__root__'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/_app/wizard/exterior-paint'
     | '/_app/wizard/front-photo'
     | '/_app/wizard/lockbox'
+    | '/_app/wizard/menu'
     | '/_app/wizard/q/$qid'
   fileRoutesById: FileRoutesById
 }
@@ -307,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAddressRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/wizard/menu': {
+      id: '/_app/wizard/menu'
+      path: '/wizard/menu'
+      fullPath: '/wizard/menu'
+      preLoaderRoute: typeof AppWizardMenuRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/wizard/lockbox': {
       id: '/_app/wizard/lockbox'
       path: '/wizard/lockbox'
@@ -370,6 +389,7 @@ interface AppRouteChildren {
   AppWizardExteriorPaintRoute: typeof AppWizardExteriorPaintRoute
   AppWizardFrontPhotoRoute: typeof AppWizardFrontPhotoRoute
   AppWizardLockboxRoute: typeof AppWizardLockboxRoute
+  AppWizardMenuRoute: typeof AppWizardMenuRoute
   AppWizardQQidRoute: typeof AppWizardQQidRoute
 }
 
@@ -384,6 +404,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppWizardExteriorPaintRoute: AppWizardExteriorPaintRoute,
   AppWizardFrontPhotoRoute: AppWizardFrontPhotoRoute,
   AppWizardLockboxRoute: AppWizardLockboxRoute,
+  AppWizardMenuRoute: AppWizardMenuRoute,
   AppWizardQQidRoute: AppWizardQQidRoute,
 }
 
