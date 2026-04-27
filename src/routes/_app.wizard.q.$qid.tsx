@@ -309,6 +309,16 @@ function QuestionScreen() {
     }
   };
 
+  const goBack = () => {
+    persistDraft();
+    if (prevQ) {
+      navigate({ to: "/wizard/q/$qid", params: { qid: prevQ.id } });
+    } else {
+      // First question — go to section menu
+      navigate({ to: "/wizard/menu" });
+    }
+  };
+
   return (
     <>
       <button
@@ -339,6 +349,7 @@ function QuestionScreen() {
       canContinue={valid}
       onNext={goNext}
       onAttemptNext={() => setAttempted(true)}
+      onBack={goBack}
       nextLabel={getNextLabel(q, ctxWithDraft.answers[qid]?.text)}
     >
       {editingFromReview && (
