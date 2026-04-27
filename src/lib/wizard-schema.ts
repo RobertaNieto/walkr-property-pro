@@ -152,9 +152,8 @@ const S2: SectionDef = {
     photoQ("s2_front_straight", 2, "Exterior Front", "Straight-on front photo", "EXTERIOR_FRONT"),
     photoQ("s2_front_left", 2, "Exterior Front", "Front left angle photo", "EXTERIOR_FRONT_LEFT"),
     photoQ("s2_front_right", 2, "Exterior Front", "Front right angle photo", "EXTERIOR_FRONT_RIGHT"),
-    photoQ("s2_roofline", 2, "Exterior Front", "Roofline and fascia close-up", "EXTERIOR_ROOFLINE"),
     photoQ("s2_frontdoor", 2, "Exterior Front", "Front door close-up", "EXTERIOR_FRONTDOOR"),
-    photoQ("s2_driveway_photo", 2, "Exterior Front", "Driveway full view", "EXTERIOR_DRIVEWAY"),
+    photoQ("s2_roofline", 2, "Exterior Front", "Roofline and fascia close-up", "EXTERIOR_ROOFLINE"),
     {
       id: "s2_exterior_paint",
       sectionIndex: 2,
@@ -165,6 +164,7 @@ const S2: SectionDef = {
       required: true,
       notes: "optional",
     },
+    photoQ("s2_siding_photo", 2, "Exterior Front", "Siding photo", "EXTERIOR_SIDING"),
     {
       id: "s2_siding_type",
       sectionIndex: 2,
@@ -185,6 +185,7 @@ const S2: SectionDef = {
       required: true,
       withRating: true,
     },
+    photoQ("s2_driveway_photo", 2, "Exterior Front", "Driveway full view", "EXTERIOR_DRIVEWAY"),
     {
       id: "s2_driveway_condition",
       sectionIndex: 2,
@@ -240,14 +241,7 @@ const S3: SectionDef = {
       ...photoQ("s3_yard_houseview", 3, "Exterior Sides & Back", "Backyard looking at house", "BACKYARD_HOUSEVIEW"),
       helper: "Stand at the back of the yard, photograph back toward the house",
     },
-    {
-      id: "s3_back_irrigation",
-      sectionIndex: 3,
-      sectionName: "Exterior Sides & Back",
-      label: "Back-yard irrigation present",
-      field: "yesno",
-      required: true,
-    },
+    photoQ("s3_fence_photo", 3, "Exterior Sides & Back", "Fence photo", "EXTERIOR_FENCE"),
     {
       id: "s3_fence",
       sectionIndex: 3,
@@ -257,6 +251,14 @@ const S3: SectionDef = {
       required: true,
       notes: "optional",
       notesPlaceholder: "Note material and any damage",
+    },
+    {
+      id: "s3_back_irrigation",
+      sectionIndex: 3,
+      sectionName: "Exterior Sides & Back",
+      label: "Back-yard irrigation present",
+      field: "yesno",
+      required: true,
     },
     {
       id: "s3_outbuildings",
@@ -1412,10 +1414,12 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s1_lockbox_code: ["s1_lockbox_photo"],
     // Section 2
     s2_roofline: ["s2_exterior_paint"],
+    s2_siding_photo: ["s2_siding_type"],
     s2_driveway_photo: ["s2_driveway_condition"],
     s2_mailbox: ["s2_front_irrigation"],
     // Section 3
-    s3_back: ["s3_back_irrigation", "s3_fence"],
+    s3_back: ["s3_back_irrigation"],
+    s3_fence_photo: ["s3_fence"],
     // Section 4
     s4_exterior: ["s4_attached"],
     s4_door_works: ["s4_remotes_count", "s4_remotes_location"],
