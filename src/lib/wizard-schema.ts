@@ -1091,21 +1091,22 @@ const S13: SectionDef = {
     photoQ("s13_wide", 13, "Laundry", "Laundry area wide photo", "LAUNDRY_WIDE"),
     photoQ("s13_hookups", 13, "Laundry", "Hookups close-up photo", "LAUNDRY_HOOKUPS"),
     {
-      id: "s13_hookup_type",
-      sectionIndex: 13,
-      sectionName: "Laundry",
-      label: "Hookup type",
-      field: "choice",
-      options: ["Gas", "Electric", "Both"],
-      required: true,
-    },
-    {
       id: "s13_condition",
       sectionIndex: 13,
       sectionName: "Laundry",
       label: "Laundry condition",
       field: "rating",
       required: true,
+    },
+    {
+      id: "s13_additional",
+      sectionIndex: 13,
+      sectionName: "Laundry",
+      label: "Additional laundry details",
+      helper:
+        "Note hookup type (gas or electric), washer/dryer included, ventilation, or any other laundry details",
+      field: "longtext",
+      required: false,
     },
   ],
 };
