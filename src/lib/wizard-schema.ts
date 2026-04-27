@@ -1013,25 +1013,6 @@ function bedroomQuestions(n: number, total: number): QuestionDef[] {
       helper: "Wide angle, mimic professional real estate photography",
     },
     photoQ(id("closet"), 12, tag, "Closet door open photo", pn("CLOSET")),
-    photoQ(id("windows"), 12, tag, "Windows photo", pn("WINDOWS")),
-    {
-      id: id("feature"),
-      sectionIndex: 12,
-      sectionName: tag,
-      label: "Unique feature photo",
-      helper: "Capture any standout feature worth noting",
-      field: "photo",
-      required: false,
-      photoName: pn("FEATURE"),
-    },
-    {
-      id: id("floor"),
-      sectionIndex: 12,
-      sectionName: tag,
-      label: "Flooring condition",
-      field: "rating",
-      required: true,
-    },
     {
       id: id("closet_cond"),
       sectionIndex: 12,
@@ -1040,6 +1021,7 @@ function bedroomQuestions(n: number, total: number): QuestionDef[] {
       field: "rating",
       required: true,
     },
+    photoQ(id("windows"), 12, tag, "Windows photo", pn("WINDOWS")),
     {
       id: id("window_cond"),
       sectionIndex: 12,
@@ -1055,6 +1037,14 @@ function bedroomQuestions(n: number, total: number): QuestionDef[] {
       label: "Window coverings condition",
       field: "choice",
       options: ["Good", "Needs cleaning", "Needs replacement", "No covering"],
+      required: true,
+    },
+    {
+      id: id("floor"),
+      sectionIndex: 12,
+      sectionName: tag,
+      label: "Flooring condition",
+      field: "rating",
       required: true,
     },
     {
@@ -1087,6 +1077,16 @@ function bedroomQuestions(n: number, total: number): QuestionDef[] {
       label: "Paint condition",
       field: "rating",
       required: true,
+    },
+    {
+      id: id("feature"),
+      sectionIndex: 12,
+      sectionName: tag,
+      label: "Unique feature photo",
+      helper: "Capture any standout feature worth noting",
+      field: "photo",
+      required: false,
+      photoName: pn("FEATURE"),
     },
   ];
 }
