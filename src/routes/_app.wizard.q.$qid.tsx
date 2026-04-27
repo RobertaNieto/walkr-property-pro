@@ -22,6 +22,12 @@ export const Route = createFileRoute("/_app/wizard/q/$qid")({
   component: QuestionScreen,
 });
 
+function getNextLabel(q: QuestionDef, text: string | undefined): string | undefined {
+  if (q.field !== "longtext" || q.required) return undefined;
+  const t = text ?? "";
+  return t.trim().length > 0 ? "Save & Next →" : "Skip →";
+}
+
 function QuestionScreen() {
   const { qid } = useParams({ from: "/_app/wizard/q/$qid" });
   const navigate = useNavigate();
@@ -325,13 +331,7 @@ function QuestionScreen() {
       canContinue={valid}
       onNext={goNext}
       onAttemptNext={() => setAttempted(true)}
-      nextLabel={
-        q.field === "longtext" && !q.required
-          ? (ctxWithDraft.answers[qid]?.text ?? "").trim().length > 0
-            ? "Save & Next →"
-            : "Skip →"
-          : undefined
-      }
+      nextLabel={getNextLabel(q, ctxWithDraft.answers[qid]?.text)}
     >
       {editingFromReview && (
         <div className="mb-4 flex flex-col gap-2 rounded-2xl border-2 border-warning bg-warning/15 p-3 sm:flex-row sm:items-center sm:justify-between">
