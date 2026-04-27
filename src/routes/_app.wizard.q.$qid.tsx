@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
-import { AlertTriangle, CheckCircle2, Menu } from "lucide-react";
+import { createFileRoute, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Menu } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ChoiceGrid } from "@/components/ChoiceGrid";
 import { NotesField } from "@/components/NotesField";
@@ -25,6 +25,8 @@ export const Route = createFileRoute("/_app/wizard/q/$qid")({
 function QuestionScreen() {
   const { qid } = useParams({ from: "/_app/wizard/q/$qid" });
   const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { from?: string; reviewId?: string };
+  const editingFromReview = search?.from === "review" && !!search?.reviewId;
 
   // Source draft from cache. We rebuild context every render so visibility
   // and follow-up logic always reflects the latest answers.
@@ -287,6 +289,28 @@ function QuestionScreen() {
       onNext={goNext}
       onAttemptNext={() => setAttempted(true)}
     >
+      {editingFromReview && (
+        <div className="mb-4 flex flex-col gap-2 rounded-2xl border-2 border-warning bg-warning/15 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-semibold text-warning-foreground">
+            ✏️ Editing — changes save automatically
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              persistDraft();
+              navigate({
+                to: "/review/$id",
+                params: { id: search.reviewId! },
+              });
+            }}
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-card px-3 text-xs font-semibold text-foreground ring-1 ring-border hover:bg-secondary"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Review
+          </button>
+        </div>
+      )}
+
       <div
         className={cn(
           "rounded-2xl",
