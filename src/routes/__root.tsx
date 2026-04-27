@@ -90,7 +90,24 @@ function RootComponent() {
   return (
     <AuthProvider>
       <Outlet />
+      <Copyright />
       <Toaster position="top-center" richColors />
     </AuthProvider>
   );
 }
+
+function Copyright() {
+  return (
+    <footer
+      className="w-full text-center"
+      style={{
+        fontSize: "11px",
+        color: "#9CA3AF",
+        padding: "0 16px 12px 16px",
+      }}
+    >
+      © 2026 WeConnect. All rights reserved.
+    </footer>
+  );
+}
+
