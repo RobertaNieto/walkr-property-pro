@@ -1005,15 +1005,7 @@ function bedroomQuestions(n: number, total: number): QuestionDef[] {
       field: "rating",
       required: true,
     },
-    {
-      id: id("coverings"),
-      sectionIndex: 12,
-      sectionName: tag,
-      label: "Window coverings condition",
-      field: "choice",
-      options: ["Good", "Needs cleaning", "Needs replacement", "No covering"],
-      required: true,
-    },
+    
     {
       id: id("floor"),
       sectionIndex: 12,
