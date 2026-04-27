@@ -84,6 +84,7 @@ function QuestionScreen() {
   const navList = useMemo(() => list.filter((x) => !x.renderedByCompanion), [list]);
   const idx = navList.findIndex((q) => q.id === qid);
   const q = idx >= 0 ? navList[idx] : undefined;
+  const prevQ = idx > 0 ? navList[idx - 1] : null;
 
   // Resolve companion QuestionDefs (still inside `list`).
   const companionDefs = useMemo<QuestionDef[]>(() => {
