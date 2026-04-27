@@ -394,6 +394,77 @@ function ReviewScreen() {
 
       {/* Body */}
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 print:max-w-none">
+        {/* Missing required items */}
+        {(() => {
+          const missing = allQuestions.filter(
+            (qq) => !isQuestionAnsweredLocal(qq, walk.answers?.[qq.id] as WizardAnswer | undefined),
+          );
+          if (missing.length === 0) {
+            return (
+              <section className="mb-6 rounded-2xl border-2 border-success bg-success/10 p-4 sm:p-5 print:hidden">
+                <div className="flex items-center gap-2 text-success">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <h2 className="text-base font-bold">Ready to upload</h2>
+                </div>
+                <p className="mt-1 text-sm text-foreground">
+                  All required items have been completed.
+                </p>
+              </section>
+            );
+          }
+          return (
+            <section className="mb-6 rounded-2xl border-2 border-warning bg-warning/10 p-4 sm:p-5 print:hidden">
+              <div className="flex items-center gap-2 text-warning-foreground">
+                <AlertTriangle className="h-5 w-5 text-warning" />
+                <h2 className="text-base font-bold text-foreground">
+                  {missing.length} Missing {missing.length === 1 ? "Item" : "Items"}
+                </h2>
+              </div>
+              <ul className="mt-3 space-y-2">
+                {missing.map((mq) => (
+                  <li
+                    key={mq.id}
+                    className="flex flex-col gap-2 rounded-xl border border-warning/30 bg-card p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground">{mq.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Section {mq.sectionIndex} — {mq.sectionName}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Make this walkthrough the active draft so the wizard
+                        // route can load it from local cache.
+                        if (typeof window !== "undefined") {
+                          localStorage.setItem(
+                            `propertywalk:cache:${walk.id}`,
+                            JSON.stringify(walk),
+                          );
+                          localStorage.setItem("propertywalk:active-id", walk.id);
+                        }
+                        // Navigate to the missing question with an editing flag.
+                        const targetId = mq.renderedByCompanion
+                          ? allQuestions.find((x) => x.companions?.includes(mq.id))?.id ?? mq.id
+                          : mq.id;
+                        navigate({
+                          to: "/wizard/q/$qid",
+                          params: { qid: targetId },
+                          search: { from: "review", reviewId: walk.id } as never,
+                        });
+                      }}
+                      className="inline-flex h-10 items-center justify-center rounded-xl bg-accent px-3 text-xs font-semibold text-accent-foreground hover:bg-accent/90"
+                    >
+                      Go to question →
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })()}
+
         {/* Critical flags */}
         {critical.length > 0 && (
           <section
