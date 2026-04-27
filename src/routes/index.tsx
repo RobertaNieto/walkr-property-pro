@@ -6,7 +6,7 @@ import {
   Loader2,
   LogIn,
   RefreshCw,
-  Settings,
+  
   Trash2,
   User as UserIcon,
 } from "lucide-react";
