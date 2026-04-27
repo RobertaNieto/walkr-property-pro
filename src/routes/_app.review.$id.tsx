@@ -252,7 +252,7 @@ function ReviewScreen() {
       photoBySection: photoCounts,
       criticalBySection: flagCounts,
     };
-  }, [walk, allQuestions]);
+  }, [walk, allQuestions, photoTick]);
 
   const visibleChecklist = useMemo(
     () => FINAL_CHECKLIST_ITEMS.filter((it) => !it.visible || it.visible(walk?.config ?? {})),
