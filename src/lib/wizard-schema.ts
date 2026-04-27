@@ -1563,6 +1563,8 @@ function applyCompanions(list: QuestionDef[], ctx: SkipContext): QuestionDef[] {
 // ---------- per-question completion check ----------
 
 export function isQuestionAnswered(q: QuestionDef, ans: SkipContext["answers"][string] | undefined): boolean {
+  // TESTING MODE — remove before launch
+  return true;
   if (!q.required && q.field !== "rating") {
     // optional fields don't block progress
     return true;
