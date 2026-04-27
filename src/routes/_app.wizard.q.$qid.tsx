@@ -8,7 +8,7 @@ import { RatingButtons } from "@/components/RatingButtons";
 import { SectionNav, type SectionMeta, type SectionStatus } from "@/components/SectionNav";
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
-import { loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer } from "@/lib/walkthrough";
+import { fetchById, getActiveId, loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer, type Walkthrough } from "@/lib/walkthrough";
 // loadActive is used in the initial state hydration (via useMemo above).
 import {
   buildQuestionList,
