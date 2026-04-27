@@ -140,6 +140,15 @@ const S2: SectionDef = {
   index: 2,
   name: "Exterior Front",
   resolve: () => [
+    {
+      id: "s2_trash_cleared",
+      sectionIndex: 2,
+      sectionName: "Exterior Front",
+      label: "Obstructions cleared from front of house",
+      helper: "Move trash cans, hoses, vehicles, or anything that would appear in exterior photos before continuing",
+      field: "yesno",
+      required: true,
+    },
     photoQ("s2_front_straight", 2, "Exterior Front", "Straight-on front photo", "EXTERIOR_FRONT"),
     photoQ("s2_front_left", 2, "Exterior Front", "Front left angle photo", "EXTERIOR_FRONT_LEFT"),
     photoQ("s2_front_right", 2, "Exterior Front", "Front right angle photo", "EXTERIOR_FRONT_RIGHT"),
@@ -1231,15 +1240,6 @@ const S16: SectionDef = {
       required: false,
     },
     {
-      id: "s16_trash",
-      sectionIndex: 16,
-      sectionName: "Miscellaneous",
-      label: "Trash cans relocated before exterior photos",
-      helper: "Confirm trash cans and other obstructions were moved before photographing the exterior",
-      field: "yesno",
-      required: true,
-    },
-    {
       id: "s16_other",
       sectionIndex: 16,
       sectionName: "Miscellaneous",
@@ -1439,8 +1439,6 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s14_furnace_photo: ["s14_furnace_loc", "s14_furnace_cond"],
     s14_thermo_photo: ["s14_thermo_loc", "s14_thermo_type", "s14_thermo_cond"],
     s14_wh_photo: ["s14_wh_loc", "s14_wh_strapped"],
-    // Section 16
-    s16_trash: ["s16_neighbors", "s16_other"],
   };
 
   // Bathrooms (section 11) per-loop
