@@ -4,6 +4,30 @@ import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { formatTimestamp } from "@/lib/walkthrough";
 
+const SECTION_COLORS: Record<number, string> = {
+  1: "#1B3A6B",
+  2: "#0D6E3F",
+  3: "#0D6E3F",
+  4: "#5C4033",
+  5: "#37474F",
+  6: "#0277BD",
+  7: "#6A1B9A",
+  8: "#1565C0",
+  9: "#E65100",
+  10: "#558B2F",
+  11: "#00838F",
+  12: "#4527A0",
+  13: "#2E7D32",
+  14: "#BF360C",
+  15: "#283593",
+  16: "#4E342E",
+  17: "#1B5E20",
+};
+
+export function getSectionColor(sectionNumber: number): string {
+  return SECTION_COLORS[sectionNumber] ?? "#1B3A6B";
+}
+
 interface WizardLayoutProps {
   sectionIndex: number;
   totalSections?: number;
