@@ -399,7 +399,9 @@ function ReviewScreen() {
         {/* Missing required items */}
         {(() => {
           const missing = allQuestions.filter(
-            (qq) => !isQuestionAnsweredLocal(qq, walk.answers?.[qq.id] as WizardAnswer | undefined),
+            (qq) =>
+              qq.required &&
+              !isQuestionAnswered(qq, walk.answers?.[qq.id] as SkipContext["answers"][string] | undefined),
           );
           if (missing.length === 0) {
             return (
