@@ -25,6 +25,8 @@ export const Route = createFileRoute("/_app/wizard/q/$qid")({
 function QuestionScreen() {
   const { qid } = useParams({ from: "/_app/wizard/q/$qid" });
   const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { from?: string; reviewId?: string };
+  const editingFromReview = search?.from === "review" && !!search?.reviewId;
 
   // Source draft from cache. We rebuild context every render so visibility
   // and follow-up logic always reflects the latest answers.
