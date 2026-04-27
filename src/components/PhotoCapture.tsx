@@ -36,11 +36,21 @@ export function PhotoCapture({
   const inputRef = useRef<HTMLInputElement>(null);
   const localCache = useRef<Record<string, string>>({});
   const [processing, setProcessing] = useState(false);
+  const [orientationError, setOrientationError] = useState(false);
+
+  const getDimensions = (dataUrl: string) =>
+    new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => reject(new Error("decode failed"));
+      img.src = dataUrl;
+    });
 
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
     setProcessing(true);
+    setOrientationError(false);
     try {
       const startIdx = photos.length;
       const newPhotos: string[] = [];
@@ -55,6 +65,18 @@ export function PhotoCapture({
               r.readAsDataURL(file);
             })
           : await compressImage(file);
+        // Enforce landscape orientation for photos.
+        if (!isVideo) {
+          try {
+            const { width, height } = await getDimensions(compressed);
+            if (height > width) {
+              setOrientationError(true);
+              continue;
+            }
+          } catch {
+            // If dimension check fails, allow through.
+          }
+        }
         const name = baseName
           ? makeName(baseName, startIdx + i, !!isVideo)
           : `PHOTO_${Date.now()}_${i}.${isVideo ? "mp4" : "jpg"}`;
@@ -67,7 +89,9 @@ export function PhotoCapture({
         newPhotos.push(name);
         newNames.push(name);
       }
-      onChange([...photos, ...newPhotos], [...(filenames ?? photos), ...newNames]);
+      if (newPhotos.length > 0) {
+        onChange([...photos, ...newPhotos], [...(filenames ?? photos), ...newNames]);
+      }
     } finally {
       setProcessing(false);
       if (inputRef.current) inputRef.current.value = "";
