@@ -1095,7 +1095,6 @@ const S14: SectionDef = {
   index: 14,
   name: "Mechanical Systems",
   resolve: () => [
-    photoQ("s14_hvac_photo", 14, "Mechanical Systems", "HVAC condenser photo", "HVAC_CONDENSER"),
     {
       id: "s14_hvac_loc",
       sectionIndex: 14,
@@ -1105,6 +1104,7 @@ const S14: SectionDef = {
       field: "text",
       required: true,
     },
+    photoQ("s14_hvac_photo", 14, "Mechanical Systems", "HVAC condenser photo", "HVAC_CONDENSER"),
     {
       id: "s14_hvac_cond",
       sectionIndex: 14,
@@ -1113,7 +1113,6 @@ const S14: SectionDef = {
       field: "rating",
       required: true,
     },
-    photoQ("s14_furnace_photo", 14, "Mechanical Systems", "Furnace photo", "FURNACE"),
     {
       id: "s14_furnace_loc",
       sectionIndex: 14,
@@ -1122,6 +1121,7 @@ const S14: SectionDef = {
       field: "text",
       required: true,
     },
+    photoQ("s14_furnace_photo", 14, "Mechanical Systems", "Furnace photo", "FURNACE"),
     {
       id: "s14_furnace_cond",
       sectionIndex: 14,
@@ -1130,7 +1130,6 @@ const S14: SectionDef = {
       field: "rating",
       required: true,
     },
-    photoQ("s14_thermo_photo", 14, "Mechanical Systems", "Thermostat photo", "THERMOSTAT"),
     {
       id: "s14_thermo_loc",
       sectionIndex: 14,
@@ -1139,6 +1138,7 @@ const S14: SectionDef = {
       field: "text",
       required: true,
     },
+    photoQ("s14_thermo_photo", 14, "Mechanical Systems", "Thermostat photo", "THERMOSTAT"),
     {
       id: "s14_thermo_type",
       sectionIndex: 14,
@@ -1157,6 +1157,14 @@ const S14: SectionDef = {
       required: true,
     },
     {
+      id: "s14_wh_loc",
+      sectionIndex: 14,
+      sectionName: "Mechanical Systems",
+      label: "Water heater location",
+      field: "text",
+      required: true,
+    },
+    {
       id: "s14_wh_photo",
       sectionIndex: 14,
       sectionName: "Mechanical Systems",
@@ -1167,14 +1175,6 @@ const S14: SectionDef = {
       minPhotos: 1,
       photoName: "WATERHEATER",
       critical: true,
-    },
-    {
-      id: "s14_wh_loc",
-      sectionIndex: 14,
-      sectionName: "Mechanical Systems",
-      label: "Water heater location",
-      field: "text",
-      required: true,
     },
     {
       id: "s14_wh_strapped",
@@ -1440,10 +1440,10 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     // Section 13
     s13_wide: ["s13_hookups", "s13_hookup_type", "s13_condition"],
     // Section 14
-    s14_hvac_photo: ["s14_hvac_loc", "s14_hvac_cond"],
-    s14_furnace_photo: ["s14_furnace_loc", "s14_furnace_cond"],
-    s14_thermo_photo: ["s14_thermo_loc", "s14_thermo_type", "s14_thermo_cond"],
-    s14_wh_photo: ["s14_wh_loc", "s14_wh_strapped"],
+    s14_hvac_photo: ["s14_hvac_cond"],
+    s14_furnace_photo: ["s14_furnace_cond"],
+    s14_thermo_photo: ["s14_thermo_type", "s14_thermo_cond"],
+    s14_wh_photo: ["s14_wh_strapped"],
   };
 
   // Bathrooms (section 11) per-loop
