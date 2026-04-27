@@ -1055,6 +1055,16 @@ function bedroomQuestions(n: number, total: number): QuestionDef[] {
       required: false,
       photoName: pn("FEATURE"),
     },
+    {
+      id: id("additional"),
+      sectionIndex: 12,
+      sectionName: "Bedrooms",
+      label: `Bedroom ${n} additional details`,
+      helper:
+        "Note window covering condition, ceiling fan, built-in storage, or anything else worth noting about this bedroom",
+      field: "longtext",
+      required: false,
+    },
   ];
 }
 
