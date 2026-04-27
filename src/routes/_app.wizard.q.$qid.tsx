@@ -494,6 +494,7 @@ function FieldRenderer({
               <p className="mb-2 text-sm font-semibold text-foreground">
                 Photo <span className="text-critical">*</span>
               </p>
+              <LandscapeHint />
               <PhotoCapture
                 photos={value.photos ?? []}
                 filenames={value.photoNames ?? []}
