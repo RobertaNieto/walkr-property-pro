@@ -327,7 +327,7 @@ function QuestionScreen() {
       onAttemptNext={() => setAttempted(true)}
       nextLabel={
         q.field === "longtext" && !q.required
-          ? (answer.text ?? "").trim().length > 0
+          ? ((ctxWithDraft.answers[qid]?.text ?? "").trim().length > 0
             ? "Save & Next →"
             : "Skip →"
           : undefined
