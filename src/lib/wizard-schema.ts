@@ -1381,7 +1381,9 @@ function deriveBedPoorName(qid: string): string | undefined {
 
 function applyPoorPhotoNames(list: QuestionDef[]): void {
   for (const q of list) {
-    const eligible = q.field === "rating" || (q.field === "choice" && q.withRating === true);
+    const eligible =
+      q.field === "rating" ||
+      ((q.field === "choice" || q.field === "text") && q.withRating === true);
     if (!eligible) continue;
     if (q.poorPhotoName) continue;
     const override = POOR_PHOTO_NAME_OVERRIDES[q.id];
