@@ -39,6 +39,7 @@ interface WizardLayoutProps {
   canContinue: boolean;
   onNext: () => void;
   onAttemptNext?: () => void;
+  nextLabel?: string;
   children: ReactNode;
 }
 
@@ -53,6 +54,7 @@ export function WizardLayout({
   canContinue,
   onNext,
   onAttemptNext,
+  nextLabel,
   children,
 }: WizardLayoutProps) {
   const router = useRouter();
@@ -130,7 +132,7 @@ export function WizardLayout({
                 : "bg-muted text-muted-foreground"
             )}
           >
-            Next →
+            {nextLabel ?? "Next →"}
           </button>
         </div>
       </footer>
