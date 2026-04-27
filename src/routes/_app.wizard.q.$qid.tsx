@@ -528,6 +528,48 @@ function isAnsweredLocal(q: QuestionDef, ans: WizardAnswer): boolean {
   return isQuestionAnswered(q, ans as SkipContext["answers"][string]);
 }
 
+// When the user changes rating away from 3 (Poor), drop any poor-rating
+// photos so they don't linger in the saved draft.
+function clearPoorPhotosIfNeeded(d: WizardAnswer, r: Rating | undefined): WizardAnswer {
+  if (r === 3) return d;
+  if (!d.poorPhotos && !d.poorPhotoNames) return d;
+  const next = { ...d };
+  delete next.poorPhotos;
+  delete next.poorPhotoNames;
+  return next;
+}
+
+function PoorPhotoSection({
+  q,
+  value,
+  onChange,
+  attempted,
+}: {
+  q: QuestionDef;
+  value: WizardAnswer;
+  onChange: (v: WizardAnswer | ((prev: WizardAnswer) => WizardAnswer)) => void;
+  attempted: boolean;
+}) {
+  if (value.rating !== 3 || !q.poorPhotoName) return null;
+  const missing = (value.poorPhotos?.length ?? 0) < 1;
+  return (
+    <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
+      <p className="mb-2 text-sm font-semibold text-critical">
+        ⚠️ Photo required for Poor rating
+      </p>
+      <PhotoCapture
+        photos={value.poorPhotos ?? []}
+        filenames={value.poorPhotoNames ?? []}
+        baseName={q.poorPhotoName}
+        onChange={(photos, photoNames) =>
+          onChange((d) => ({ ...d, poorPhotos: photos, poorPhotoNames: photoNames }))
+        }
+        error={attempted && missing}
+      />
+    </div>
+  );
+}
+
 function FollowUpRenderer({
   q,
   value,
