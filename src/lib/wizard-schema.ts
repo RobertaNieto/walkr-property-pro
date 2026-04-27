@@ -77,7 +77,7 @@ export type AnswerValue = unknown;
 
 export interface SkipContext {
   config: PreWalkConfig;
-  answers: Record<string, { text?: string; rating?: 1 | 2 | 3; notes?: string; photos?: string[]; choice?: string; choices?: string[]; bool?: boolean; number?: number }>;
+  answers: Record<string, { text?: string; rating?: 1 | 2 | 3; notes?: string; photos?: string[]; photoNames?: string[]; poorPhotos?: string[]; poorPhotoNames?: string[]; choice?: string; choices?: string[]; bool?: boolean; number?: number }>;
 }
 
 // ---------- helpers ----------
