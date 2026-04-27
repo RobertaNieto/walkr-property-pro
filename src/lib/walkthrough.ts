@@ -69,70 +69,90 @@ const COMPLETED_KEY = "propertywalk_completed";
 export const COMPLETING_KEY = "propertywalk_completing";
 const MAX_COMPLETED = 50;
 
-export interface CompletedRecord extends Walkthrough {
-  completedAt: number;
+// Lightweight summary stored in localStorage. The full walkthrough (with
+// answers and photos) lives in Supabase — local storage only needs enough
+// to render the My Walkthroughs list and home screen card.
+export interface CompletedSummary {
+  id: string;
   propertyAddress: string;
+  completedAt: number;
   totalPhotos: number;
-  criticalFlags: { questionId: string; label?: string; rating?: Rating; notes?: string }[];
+  criticalFlags: { questionId: string; label: string; notes?: string }[];
 }
+
+// Backwards-compatible alias for the old name used across the app.
+export type CompletedRecord = CompletedSummary;
 
 function formatAddress(a: PropertyAddress): string {
   const street = [a.houseNumber, a.streetName].filter(Boolean).join(" ").trim();
   return [street, a.city].filter(Boolean).join(", ");
 }
 
-function buildCompletedRecord(w: Walkthrough): CompletedRecord {
+function buildCompletedSummary(w: Walkthrough): CompletedSummary {
   let totalPhotos = 0;
-  const criticalFlags: CompletedRecord["criticalFlags"] = [];
+  const criticalFlags: CompletedSummary["criticalFlags"] = [];
   for (const [qid, ans] of Object.entries(w.answers ?? {})) {
     if (ans.photos) totalPhotos += ans.photos.length;
-    // Rating of 1 = Poor → treat as critical flag
+    // Rating of 3 = Poor → treat as critical flag
     if (ans.rating === 3) {
-      criticalFlags.push({ questionId: qid, rating: ans.rating, notes: ans.notes });
+      criticalFlags.push({ questionId: qid, label: qid, notes: ans.notes });
     }
   }
   return {
-    ...w,
-    completedAt: w.completedAt ?? Date.now(),
+    id: w.id,
     propertyAddress: formatAddress(w.address),
+    completedAt: w.completedAt ?? Date.now(),
     totalPhotos,
     criticalFlags,
   };
 }
 
-export function listCompletedLocal(): CompletedRecord[] {
+function writeCompletedList(summaries: CompletedSummary[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(COMPLETED_KEY, JSON.stringify(summaries));
+  } catch (e) {
+    console.warn(
+      "[walkthrough] localStorage quota exceeded — Supabase has the data",
+      e
+    );
+    // Do not show error to user. Supabase is the source of truth.
+  }
+}
+
+export function listCompletedLocal(): CompletedSummary[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(COMPLETED_KEY);
     if (!raw) return [];
-    const arr = JSON.parse(raw) as CompletedRecord[];
+    const arr = JSON.parse(raw) as CompletedSummary[];
     return Array.isArray(arr) ? arr : [];
   } catch {
     return [];
   }
 }
 
-export function saveCompletedLocal(w: Walkthrough): CompletedRecord {
-  const record = buildCompletedRecord(w);
-  if (typeof window === "undefined") return record;
-  const existing = listCompletedLocal().filter((r) => r.id !== record.id);
-  const next = [record, ...existing].slice(0, MAX_COMPLETED);
-  localStorage.setItem(COMPLETED_KEY, JSON.stringify(next));
-  return record;
+export function saveCompletedLocal(w: Walkthrough): CompletedSummary {
+  const summary = buildCompletedSummary(w);
+  if (typeof window === "undefined") return summary;
+  const existing = listCompletedLocal().filter((r) => r.id !== summary.id);
+  const next = [summary, ...existing].slice(0, MAX_COMPLETED);
+  writeCompletedList(next);
+  return summary;
 }
 
-export function getCompletedLocalById(id: string): CompletedRecord | null {
+export function getCompletedLocalById(id: string): CompletedSummary | null {
   return listCompletedLocal().find((r) => r.id === id) ?? null;
 }
 
-export function getLatestCompletedLocal(): CompletedRecord | null {
+export function getLatestCompletedLocal(): CompletedSummary | null {
   return listCompletedLocal()[0] ?? null;
 }
 
 export function removeCompletedLocal(id: string) {
   if (typeof window === "undefined") return;
   const next = listCompletedLocal().filter((r) => r.id !== id);
-  localStorage.setItem(COMPLETED_KEY, JSON.stringify(next));
+  writeCompletedList(next);
 }
 
 // ---------- local cache helpers (fast UI, survives reload) ----------
