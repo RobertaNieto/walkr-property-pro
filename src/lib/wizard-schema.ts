@@ -1230,23 +1230,7 @@ Maximum length: 10 minutes.`,
       minDuration: 120,
       minPhotos: 1,
     },
-    {
-      id: "s15_narration_confirmed",
-      sectionIndex: 15,
-      sectionName: "Walkthrough Videos",
-      label: "Narration checklist — confirm before recording interior",
-      field: "multichoice",
-      required: true,
-      options: [
-        "I will narrate every room as I enter it",
-        "I will describe what I see out loud including any issues",
-        "I will show all four walls of each room",
-        "I will open closets, cabinets and show interiors",
-        "I will point out any damage, odors, or concerns verbally",
-      ],
-      helper:
-        "Check all items to confirm you understand what the interior video must cover before recording.",
-    },
+    
     {
       id: "s15_interior_video",
       sectionIndex: 15,
