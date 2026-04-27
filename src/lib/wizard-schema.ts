@@ -707,6 +707,16 @@ const S9: SectionDef = {
         photoName: "KITCHEN_BASEBOARDS",
       },
     },
+    {
+      id: "s9_additional",
+      sectionIndex: 9,
+      sectionName: "Kitchen",
+      label: "Additional kitchen details",
+      helper:
+        "Note anything relevant: faucet condition, garbage disposal, exhaust fan, kitchen layout, or anything else worth noting",
+      field: "longtext",
+      required: false,
+    },
   ],
 };
 
