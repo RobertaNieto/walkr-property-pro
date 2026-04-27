@@ -97,13 +97,17 @@ function RootComponent() {
 }
 
 function Copyright() {
+  const { pathname } = useLocation();
+  const isWelcome = pathname === "/";
   return (
     <footer
       className="w-full text-center"
       style={{
-        fontSize: "11px",
-        color: "#9CA3AF",
+        fontSize: isWelcome ? "12px" : "11px",
+        color: isWelcome ? "rgba(255,255,255,0.4)" : "#9CA3AF",
+        background: isWelcome ? "transparent" : undefined,
         padding: "0 16px 12px 16px",
+        marginTop: isWelcome ? "-12px" : undefined,
       }}
     >
       © 2026 WeConnect. All rights reserved.
