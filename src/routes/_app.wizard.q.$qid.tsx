@@ -570,6 +570,7 @@ function PoorPhotoSection({
       <p className="mb-2 text-sm font-semibold text-critical">
         ⚠️ Photo required for Poor rating
       </p>
+      <LandscapeHint />
       <PhotoCapture
         photos={value.poorPhotos ?? []}
         filenames={value.poorPhotoNames ?? []}
