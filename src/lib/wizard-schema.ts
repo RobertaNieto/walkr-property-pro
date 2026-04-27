@@ -521,15 +521,6 @@ const S8: SectionDef = {
         notesPlaceholder: "Describe leaks, broken panes, missing screens and locations",
       },
       {
-        id: "s8_window_coverings",
-        sectionIndex: 8,
-        sectionName: "Living Room",
-        label: "Window coverings condition",
-        field: "choice",
-        options: ["Good", "Needs cleaning", "Needs replacement"],
-        required: true,
-      },
-      {
         id: "s8_lights",
         sectionIndex: 8,
         sectionName: "Living Room",
