@@ -31,7 +31,42 @@ function QuestionScreen() {
   // Source draft from cache. We rebuild context every render so visibility
   // and follow-up logic always reflects the latest answers.
   const [tick, setTick] = useState(0);
-  const w = useMemo(() => loadActive(), [tick, qid]);
+  const [remoteWalk, setRemoteWalk] = useState<Walkthrough | null>(null);
+  const [remoteLoading, setRemoteLoading] = useState(false);
+  const cached = useMemo(() => loadActive(), [tick, qid]);
+  const w = cached ?? remoteWalk;
+
+  // If the local cache is empty (e.g. coming from review on a completed walk
+  // whose cache was cleared, or after a localStorage quota failure), fetch
+  // the walkthrough from the backend by the active id and rehydrate.
+  useEffect(() => {
+    if (cached) return;
+    if (typeof window === "undefined") return;
+    const id = getActiveId() ?? (editingFromReview ? search.reviewId : undefined);
+    if (!id) return;
+    let cancelled = false;
+    setRemoteLoading(true);
+    void fetchById(id)
+      .then((res) => {
+        if (cancelled) return;
+        if (res) {
+          try {
+            localStorage.setItem(`propertywalk:cache:${res.id}`, JSON.stringify(res));
+            localStorage.setItem("propertywalk:active-id", res.id);
+          } catch {
+            // Quota — keep in-memory copy only.
+          }
+          setRemoteWalk(res);
+          setTick((n) => n + 1);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setRemoteLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cached, editingFromReview, search.reviewId]);
 
   const ctx: SkipContext = useMemo(
     () => ({ config: w?.config ?? {}, answers: (w?.answers ?? {}) as SkipContext["answers"] }),
