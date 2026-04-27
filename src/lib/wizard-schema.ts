@@ -209,21 +209,14 @@ const S2: SectionDef = {
       withRating: true,
     },
     {
-      id: "s2_mailbox",
+      id: "s2_additional",
       sectionIndex: 2,
       sectionName: "Exterior Front",
-      label: "Mailbox location",
-      field: "choice",
-      options: ["Cluster community", "Front door", "Yard"],
-      required: true,
-    },
-    {
-      id: "s2_front_irrigation",
-      sectionIndex: 2,
-      sectionName: "Exterior Front",
-      label: "Front-yard irrigation present",
-      field: "yesno",
-      required: true,
+      label: "Additional exterior details",
+      helper:
+        "Note anything else relevant: mailbox type or location, irrigation system, gate access, easements, HOA restrictions, street parking, or anything a realtor should know about the exterior",
+      field: "longtext",
+      required: false,
     },
   ],
 };
