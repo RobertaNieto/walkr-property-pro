@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Menu } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ChoiceGrid } from "@/components/ChoiceGrid";
 import { NotesField } from "@/components/NotesField";
 import { PhotoCapture } from "@/components/PhotoCapture";
 import { RatingButtons } from "@/components/RatingButtons";
+import { SectionNav, type SectionMeta, type SectionStatus } from "@/components/SectionNav";
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
 import { loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer } from "@/lib/walkthrough";
@@ -12,6 +13,7 @@ import { loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswe
 import {
   buildQuestionList,
   isQuestionAnswered,
+  SECTIONS,
   type QuestionDef,
   type SkipContext,
 } from "@/lib/wizard-schema";
