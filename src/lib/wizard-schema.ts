@@ -792,8 +792,22 @@ function bathroomQuestions(n: number, total: number): QuestionDef[] {
   const tag = `Bathroom ${n} of ${total}`;
   const id = (k: string) => `s11_b${n}_${k}`;
   const pn = (k: string) => `BATHROOM${n}_${k}`;
-  return [
-    {
+  // For bathrooms 2+, gate the entire loop on a "Bathroom N present" yes/no.
+  // If the agent answers No, every subsequent question in this loop is hidden.
+  const existsId = id("exists");
+  const isPresent = (ctx: SkipContext) =>
+    n === 1 || ctx.answers?.[existsId]?.bool === true;
+  const gate = <Q extends QuestionDef>(q: Q): Q => {
+    if (n === 1) return q;
+    const prev = q.visible;
+    return {
+      ...q,
+      visible: (ctx: SkipContext) =>
+        isPresent(ctx) && (prev ? prev(ctx) : true),
+    };
+  };
+  const questions: QuestionDef[] = [
+    gate({
       id: id("type"),
       sectionIndex: 11,
       sectionName: tag,
@@ -801,7 +815,7 @@ function bathroomQuestions(n: number, total: number): QuestionDef[] {
       field: "choice",
       options: ["Full bath", "Three-quarter bath", "Half bath"],
       required: true,
-    },
+    }),
     photoQ(id("mls"), 11, tag, "MLS-style wide photo", pn("MLS")),
     {
       ...photoQ(id("tub"), 11, tag, "Tub and surround photo", pn("TUB")),
