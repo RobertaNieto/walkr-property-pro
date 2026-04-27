@@ -512,17 +512,29 @@ function FieldRenderer({
     case "video": {
       const isVideo = q.field === "video";
       return (
-        <PhotoCapture
-          photos={value.photos ?? []}
-          filenames={value.photoNames ?? []}
-          baseName={q.photoName ?? q.id.toUpperCase()}
-          isVideo={isVideo}
-          onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-          error={errored}
-        />
+        <>
+          {!isVideo && <LandscapeHint />}
+          <PhotoCapture
+            photos={value.photos ?? []}
+            filenames={value.photoNames ?? []}
+            baseName={q.photoName ?? q.id.toUpperCase()}
+            isVideo={isVideo}
+            onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
+            error={errored}
+          />
+        </>
       );
     }
   }
+}
+
+function LandscapeHint() {
+  return (
+    <p className="mb-2 flex items-center gap-1 text-xs text-muted-foreground">
+      <span>📐</span>
+      Hold phone in landscape (horizontal) for all photos
+    </p>
+  );
 }
 
 function isAnsweredLocal(q: QuestionDef, ans: WizardAnswer): boolean {
