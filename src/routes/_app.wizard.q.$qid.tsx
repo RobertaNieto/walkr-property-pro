@@ -359,9 +359,10 @@ function FieldRenderer({
               </p>
               <RatingButtons
                 value={value.rating}
-                onChange={(r: Rating) => onChange((d) => ({ ...d, rating: r }))}
+                onChange={(r: Rating) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
                 error={attempted && value.rating === undefined}
               />
+              <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
             </div>
           )}
         </>
