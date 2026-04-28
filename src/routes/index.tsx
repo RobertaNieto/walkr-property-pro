@@ -3,35 +3,23 @@ import {
   Camera,
   ChevronRight,
   ClipboardList,
+  Eye,
   Loader2,
   LogIn,
+  PlayCircle,
   RefreshCw,
-  
-  Trash2,
   User as UserIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth";
 import {
   createWalkthrough,
-  deleteWalkthrough,
+  fetchAllInProgress,
   fetchCompleted,
-  fetchLatestInProgress,
   formatTimestamp,
-  listCompletedLocal,
-  type CompletedRecord,
+  resumeWalkthrough,
   type Walkthrough,
 } from "@/lib/walkthrough";
 
@@ -45,41 +33,50 @@ function formatAddress(w: Walkthrough): string {
   return full || "Untitled walkthrough";
 }
 
+type WalkStatus = "in-progress" | "completed" | "uploaded";
+
+function statusOf(w: Walkthrough): WalkStatus {
+  if (!w.completedAt) return "in-progress";
+  if (w.uploadStatus === "confirmed") return "uploaded";
+  return "completed";
+}
+
+function StatusBadge({ status }: { status: WalkStatus }) {
+  const styles: Record<WalkStatus, string> = {
+    "in-progress": "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 ring-yellow-500/30",
+    completed: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 ring-emerald-500/30",
+    uploaded: "bg-blue-500/15 text-blue-700 dark:text-blue-400 ring-blue-500/30",
+  };
+  const labels: Record<WalkStatus, string> = {
+    "in-progress": "In Progress",
+    completed: "Completed",
+    uploaded: "Uploaded",
+  };
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${styles[status]}`}
+    >
+      {labels[status]}
+    </span>
+  );
+}
+
 function WelcomeScreen() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const [existing, setExisting] = useState<Walkthrough | null>(null);
+  const [inProgress, setInProgress] = useState<Walkthrough[]>([]);
   const [completed, setCompleted] = useState<Walkthrough[]>([]);
-  const [completedLocal, setCompletedLocal] = useState<CompletedRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [starting, setStarting] = useState(false);
-  const [confirmFresh, setConfirmFresh] = useState(false);
-  const [clearing, setClearing] = useState(false);
-
-  useEffect(() => {
-    const refresh = () => {
-      setCompletedLocal(listCompletedLocal());
-    };
-    const onVisibility = () => {
-      if (!document.hidden) refresh();
-    };
-    refresh();
-    window.addEventListener("focus", refresh);
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      window.removeEventListener("focus", refresh);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, []);
+  const [resumingId, setResumingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-    Promise.all([fetchLatestInProgress(user.id), fetchCompleted(user.id)])
-      .then(([w, done]) => {
-        setExisting(w);
+    Promise.all([fetchAllInProgress(user.id), fetchCompleted(user.id)])
+      .then(([drafts, done]) => {
+        setInProgress(drafts);
         setCompleted(done);
-        setCompletedLocal(listCompletedLocal());
       })
       .catch((e) => toast.error(e.message ?? "Could not load walkthroughs"))
       .finally(() => setLoading(false));
@@ -102,53 +99,30 @@ function WelcomeScreen() {
     }
   };
 
-  const resume = () => {
-    if (!existing) return;
-    const target = existing.lastRoute ?? "/address";
-    navigate({ to: target });
-  };
-
-  const handleStartFresh = () => {
-    if (existing) {
-      setConfirmFresh(true);
-    } else {
-      void startNew();
-    }
-  };
-
-  const confirmAndStartFresh = async () => {
-    if (!existing) {
-      setConfirmFresh(false);
-      await startNew();
-      return;
-    }
-    setClearing(true);
+  const handleContinue = async (w: Walkthrough) => {
+    setResumingId(w.id);
     try {
-      await deleteWalkthrough(existing.id);
-      setExisting(null);
-      setConfirmFresh(false);
-      await startNew();
+      await resumeWalkthrough(w.id);
+      navigate({ to: w.lastRoute ?? "/address" });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not clear walkthrough";
+      const msg = e instanceof Error ? e.message : "Could not resume walkthrough";
       toast.error(msg);
     } finally {
-      setClearing(false);
+      setResumingId(null);
     }
   };
 
-  // Stats: prefer DB-backed counts, fall back to local snapshot for photos.
-  const completedCount = Math.max(completed.length, completedLocal.length);
-  const inProgressCount = existing ? 1 : 0;
-  const totalPhotos = (() => {
-    if (completedLocal.length > 0) {
-      return completedLocal.reduce((sum, r) => sum + (r.totalPhotos ?? 0), 0);
-    }
-    return completed.reduce((sum, w) => {
-      let n = 0;
-      for (const a of Object.values(w.answers ?? {})) n += a.photos?.length ?? 0;
-      return n;
-    }, 0);
-  })();
+  // Combined list, in-progress first then completed (each newest-first).
+  const allWalks: Walkthrough[] = [
+    ...inProgress,
+    ...completed,
+  ];
+
+  const totalPhotos = [...inProgress, ...completed].reduce((sum, w) => {
+    let n = 0;
+    for (const a of Object.values(w.answers ?? {})) n += a.photos?.length ?? 0;
+    return sum + n;
+  }, 0);
 
   if (authLoading) {
     return (
@@ -157,22 +131,6 @@ function WelcomeScreen() {
       </div>
     );
   }
-
-  const resumeAddr = existing ? formatAddress(existing) : null;
-
-  // Two most recent completed previews — prefer source with more entries.
-  const recentPreview: { id: string; address: string; completedAt: number }[] =
-    completedLocal.length >= completed.length
-      ? completedLocal.slice(0, 2).map((r) => ({
-          id: r.id,
-          address: r.propertyAddress || "Untitled walkthrough",
-          completedAt: r.completedAt,
-        }))
-      : completed.slice(0, 2).map((w) => ({
-          id: w.id,
-          address: formatAddress(w),
-          completedAt: w.completedAt ?? w.updatedAt,
-        }));
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col bg-gradient-to-b from-primary via-primary to-[oklch(0.28_0.08_260)] text-primary-foreground">
@@ -214,25 +172,31 @@ function WelcomeScreen() {
             <StatChip
               icon={<ClipboardList className="h-3.5 w-3.5" />}
               label="Completed"
-              value={completedCount}
-              onClick={() => navigate({ to: "/walkthroughs", search: { tab: "completed" } as never })}
+              value={completed.length}
+              onClick={() =>
+                navigate({ to: "/walkthroughs", search: { tab: "completed" } as never })
+              }
             />
             <StatChip
               icon={<RefreshCw className="h-3.5 w-3.5" />}
               label="In Progress"
-              value={inProgressCount}
-              onClick={() => navigate({ to: "/walkthroughs", search: { tab: "in-progress" } as never })}
+              value={inProgress.length}
+              onClick={() =>
+                navigate({ to: "/walkthroughs", search: { tab: "in-progress" } as never })
+              }
             />
             <StatChip
               icon={<Camera className="h-3.5 w-3.5" />}
               label="Photos"
               value={totalPhotos}
-              onClick={() => navigate({ to: "/walkthroughs", search: { tab: "completed" } as never })}
+              onClick={() =>
+                navigate({ to: "/walkthroughs", search: { tab: "completed" } as never })
+              }
             />
           </div>
         )}
 
-        {/* 3 & 4. Action buttons */}
+        {/* 3. Start New — always starts fresh */}
         <div className="mx-auto mt-6 w-full max-w-md space-y-3">
           {!user ? (
             <Link
@@ -242,44 +206,6 @@ function WelcomeScreen() {
               <LogIn className="h-5 w-5" />
               Sign in to get started
             </Link>
-          ) : loading ? (
-            <div className="flex h-14 w-full items-center justify-center rounded-2xl border border-white/15 bg-white/5">
-              <Loader2 className="h-5 w-5 animate-spin text-primary-foreground/60" />
-            </div>
-          ) : existing ? (
-            <>
-              <button
-                onClick={resume}
-                className="flex w-full items-center justify-between gap-3 rounded-2xl bg-accent px-4 py-3 text-left text-accent-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-accent/90 active:scale-[0.99]"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-base font-semibold">
-                    Resume: {resumeAddr}
-                  </div>
-                  <div className="text-xs opacity-80">
-                    Last saved {formatTimestamp(existing.updatedAt)}
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 shrink-0 opacity-80" />
-              </button>
-
-              <button
-                onClick={handleStartFresh}
-                disabled={starting || clearing}
-                className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-white/20 bg-transparent text-sm font-semibold text-primary-foreground transition-all hover:bg-white/10 active:scale-[0.99] disabled:opacity-60"
-              >
-                {starting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Start New Walkthrough"}
-              </button>
-
-              <button
-                onClick={handleStartFresh}
-                disabled={starting || clearing}
-                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border-0 bg-transparent text-xs font-medium text-primary-foreground/80 transition-all hover:bg-white/5 active:scale-[0.99] disabled:opacity-60"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Discard draft & start fresh
-              </button>
-            </>
           ) : (
             <button
               onClick={startNew}
@@ -291,46 +217,86 @@ function WelcomeScreen() {
           )}
         </div>
 
-        {/* 5. My Walkthroughs card */}
+        {/* 4. My Walkthroughs — all walks, in-progress + completed */}
         {user && (
           <div className="mx-auto mt-6 w-full max-w-md">
-            <div
-              onClick={() => navigate({ to: "/walkthroughs", search: { tab: "completed" } as never })}
-              className="block rounded-2xl bg-card p-5 text-card-foreground shadow-[var(--shadow-elevated)] transition-transform hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
+            <div className="rounded-2xl bg-card p-5 text-card-foreground shadow-[var(--shadow-elevated)]">
+              <div
+                onClick={() =>
+                  navigate({
+                    to: "/walkthroughs",
+                    search: {
+                      tab: inProgress.length > 0 ? "in-progress" : "completed",
+                    } as never,
+                  })
+                }
+                className="flex cursor-pointer items-center justify-between"
+              >
                 <h2 className="text-base font-bold">My Walkthroughs</h2>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </div>
 
-              {recentPreview.length > 0 ? (
+              {loading ? (
+                <div className="mt-3 flex h-16 items-center justify-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : allWalks.length > 0 ? (
                 <ul className="mt-3 space-y-2">
-                  {recentPreview.map((p) => (
-                    <li key={p.id}>
-                      <Link
-                        to="/review/$id"
-                        params={{ id: p.id }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2.5 transition-colors hover:bg-muted"
+                  {allWalks.slice(0, 5).map((w) => {
+                    const status = statusOf(w);
+                    const isInProgress = status === "in-progress";
+                    return (
+                      <li
+                        key={w.id}
+                        className="rounded-xl bg-muted/60 px-3 py-2.5"
                       >
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-semibold text-foreground">
-                            {p.address}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-semibold text-foreground">
+                              {formatAddress(w)}
+                            </div>
+                            <div className="mt-0.5 flex items-center gap-2">
+                              <StatusBadge status={status} />
+                              <span className="text-xs text-muted-foreground">
+                                {isInProgress
+                                  ? `Saved ${formatTimestamp(w.updatedAt)}`
+                                  : `Completed ${formatTimestamp(w.completedAt ?? w.updatedAt)}`}
+                              </span>
+                            </div>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {formatTimestamp(p.completedAt)}
-                          </div>
+                          {isInProgress ? (
+                            <button
+                              onClick={() => void handleContinue(w)}
+                              disabled={resumingId === w.id}
+                              className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-accent px-2.5 py-1.5 text-xs font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-60"
+                            >
+                              {resumingId === w.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <>
+                                  <PlayCircle className="h-3.5 w-3.5" />
+                                  Continue
+                                </>
+                              )}
+                            </button>
+                          ) : (
+                            <Link
+                              to="/review/$id"
+                              params={{ id: w.id }}
+                              className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              View Report
+                            </Link>
+                          )}
                         </div>
-                        <span className="ml-3 shrink-0 text-xs font-semibold text-accent">
-                          View Report
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : (
                 <p className="mt-3 text-sm italic text-muted-foreground">
-                  No completed walkthroughs yet. Finished properties will appear here.
+                  No walkthroughs yet. Tap "Start New Walkthrough" to begin.
                 </p>
               )}
             </div>
@@ -348,31 +314,6 @@ function WelcomeScreen() {
       </main>
 
       <div className="pb-[max(env(safe-area-inset-bottom),1rem)]" />
-
-      <AlertDialog open={confirmFresh} onOpenChange={setConfirmFresh}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Discard saved walkthrough?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This permanently deletes your in-progress walkthrough, including all answers and
-              photos. This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={clearing}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                void confirmAndStartFresh();
-              }}
-              disabled={clearing}
-              className="bg-critical text-critical-foreground hover:bg-critical/90"
-            >
-              {clearing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Discard & start fresh"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

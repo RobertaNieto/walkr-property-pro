@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, CloudUpload, Eye, Image as ImageIcon, Loader2, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CloudUpload, Eye, Image as ImageIcon, Loader2, PlayCircle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -16,11 +16,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import {
   deleteWalkthrough,
+  fetchAllInProgress,
   fetchCompleted,
-  fetchLatestInProgress,
   formatTimestamp,
   listCompletedLocal,
   removeCompletedLocal,
+  resumeWalkthrough,
   type CompletedRecord,
   type Walkthrough,
 } from "@/lib/walkthrough";
@@ -47,9 +48,10 @@ function WalkthroughsScreen() {
   const { tab } = Route.useSearch();
   const resolvedTab: "in-progress" | "completed" = tab === "completed" ? "completed" : "in-progress";
   const [activeTab, setActiveTab] = useState<"in-progress" | "completed">(resolvedTab);
-  const [inProgress, setInProgress] = useState<Walkthrough | null>(null);
+  const [inProgress, setInProgress] = useState<Walkthrough[]>([]);
   const [completed, setCompleted] = useState<CompletedRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resumingId, setResumingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<
     | { kind: "draft"; id: string; label: string }
     | { kind: "completed"; id: string; label: string }
@@ -70,12 +72,12 @@ function WalkthroughsScreen() {
     setCompleted(local);
 
     try {
-      const [draft, dbCompleted] = await Promise.all([
-        fetchLatestInProgress(user.id),
+      const [drafts, dbCompleted] = await Promise.all([
+        fetchAllInProgress(user.id),
         fetchCompleted(user.id),
       ]);
 
-      setInProgress(draft);
+      setInProgress(drafts);
 
       // Merge DB + local completed records.
       // DB is source of truth. Local fills gaps for records not yet flushed to DB.
@@ -146,7 +148,7 @@ function WalkthroughsScreen() {
     try {
       if (pendingDelete.kind === "draft") {
         await deleteWalkthrough(pendingDelete.id);
-        setInProgress(null);
+        setInProgress((prev) => prev.filter((w) => w.id !== pendingDelete.id));
       } else {
         removeCompletedLocal(pendingDelete.id);
         setCompleted((prev) => prev.filter((r) => r.id !== pendingDelete.id));
@@ -188,7 +190,7 @@ function WalkthroughsScreen() {
         >
           <TabsList className="grid h-11 w-full grid-cols-2">
             <TabsTrigger value="in-progress" className="text-sm font-semibold">
-              In progress
+              In progress{inProgress.length > 0 ? ` (${inProgress.length})` : ""}
             </TabsTrigger>
             <TabsTrigger value="completed" className="text-sm font-semibold">
               Completed{completed.length > 0 ? ` (${completed.length})` : ""}
@@ -200,26 +202,41 @@ function WalkthroughsScreen() {
               <div className="flex h-24 items-center justify-center">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
-            ) : inProgress ? (
-              <DraftCard
-                walk={inProgress}
-                onResume={() => navigate({ to: inProgress.lastRoute ?? "/address" })}
-                onDelete={() =>
-                  setPendingDelete({
-                    kind: "draft",
-                    id: inProgress.id,
-                    label:
-                      [inProgress.address.houseNumber, inProgress.address.streetName]
-                        .filter(Boolean)
-                        .join(" ") || "this draft",
-                  })
-                }
-              />
-            ) : (
+            ) : inProgress.length === 0 ? (
               <EmptyState
                 title="No drafts yet"
                 description="Start a new walkthrough from the home screen and it'll show up here."
               />
+            ) : (
+              inProgress.map((w) => (
+                <DraftCard
+                  key={w.id}
+                  walk={w}
+                  resuming={resumingId === w.id}
+                  onResume={async () => {
+                    setResumingId(w.id);
+                    try {
+                      await resumeWalkthrough(w.id);
+                      navigate({ to: w.lastRoute ?? "/address" });
+                    } catch (e) {
+                      const msg = e instanceof Error ? e.message : "Could not resume";
+                      toast.error(msg);
+                    } finally {
+                      setResumingId(null);
+                    }
+                  }}
+                  onDelete={() =>
+                    setPendingDelete({
+                      kind: "draft",
+                      id: w.id,
+                      label:
+                        [w.address.houseNumber, w.address.streetName]
+                          .filter(Boolean)
+                          .join(" ") || "this draft",
+                    })
+                  }
+                />
+              ))
             )}
           </TabsContent>
 
@@ -340,10 +357,12 @@ function DraftCard({
   walk,
   onResume,
   onDelete,
+  resuming,
 }: {
   walk: Walkthrough;
   onResume: () => void;
   onDelete: () => void;
+  resuming?: boolean;
 }) {
   const addr =
     [walk.address.houseNumber, walk.address.streetName].filter(Boolean).join(" ") ||
@@ -351,26 +370,47 @@ function DraftCard({
   const pct = completionPercent(walk);
   return (
     <SwipeRow onDelete={onDelete}>
-      <button
-        onClick={onResume}
-        className="flex w-full items-center justify-between gap-3 bg-card p-4 text-left transition-colors hover:bg-secondary"
-      >
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-bold text-foreground">{addr}</p>
-          {walk.address.city && (
-            <p className="truncate text-xs text-muted-foreground">{walk.address.city}</p>
-          )}
-          <p className="mt-1 text-xs text-muted-foreground">
-            Last saved {formatTimestamp(walk.updatedAt)}
-          </p>
-          <div className="mt-2 flex items-center gap-2">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
-              <div className="h-full rounded-full bg-accent" style={{ width: `${Math.max(2, pct)}%` }} />
+      <div className="bg-card p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-yellow-500/15 px-2 py-0.5 text-[11px] font-semibold text-yellow-700 ring-1 ring-yellow-500/30 dark:text-yellow-400">
+                In Progress
+              </span>
             </div>
-            <span className="text-[11px] font-semibold text-muted-foreground">{pct}%</span>
+            <p className="mt-1.5 truncate text-base font-bold text-foreground">{addr}</p>
+            {walk.address.city && (
+              <p className="truncate text-xs text-muted-foreground">{walk.address.city}</p>
+            )}
+            <p className="mt-1 text-xs text-muted-foreground">
+              Last saved {formatTimestamp(walk.updatedAt)}
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
+                <div
+                  className="h-full rounded-full bg-accent"
+                  style={{ width: `${Math.max(2, pct)}%` }}
+                />
+              </div>
+              <span className="text-[11px] font-semibold text-muted-foreground">{pct}%</span>
+            </div>
           </div>
         </div>
-      </button>
+        <button
+          onClick={onResume}
+          disabled={resuming}
+          className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-accent text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-60"
+        >
+          {resuming ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              <PlayCircle className="h-4 w-4" />
+              Continue
+            </>
+          )}
+        </button>
+      </div>
     </SwipeRow>
   );
 }
@@ -386,7 +426,10 @@ function CompletedCard({
     <SwipeRow onDelete={onDelete}>
       <div className="space-y-3 bg-card p-4">
         <div>
-          <p className="text-base font-bold text-foreground">
+          <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400">
+            Completed
+          </span>
+          <p className="mt-1.5 text-base font-bold text-foreground">
             {record.propertyAddress || "Untitled walkthrough"}
           </p>
           <p className="text-xs text-muted-foreground">
