@@ -8,6 +8,7 @@ import {
   LogIn,
   PlayCircle,
   RefreshCw,
+  Shield,
   User as UserIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -63,7 +64,7 @@ function StatusBadge({ status }: { status: WalkStatus }) {
 
 function WelcomeScreen() {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [inProgress, setInProgress] = useState<Walkthrough[]>([]);
   const [completed, setCompleted] = useState<Walkthrough[]>([]);
   const [loading, setLoading] = useState(false);
@@ -144,13 +145,25 @@ function WelcomeScreen() {
 
       <div className="relative flex justify-end gap-2 px-4 pt-[max(env(safe-area-inset-top),0.75rem)]">
         {user && (
-          <Link
-            to="/profile"
-            aria-label="Profile"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-primary-foreground ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
-          >
-            <UserIcon className="h-5 w-5" />
-          </Link>
+          <>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                aria-label="Admin Panel"
+                className="inline-flex h-11 items-center gap-1.5 rounded-full bg-white/10 px-3 text-sm font-semibold text-primary-foreground ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
+              >
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
+            <Link
+              to="/profile"
+              aria-label="Profile"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-primary-foreground ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
+            >
+              <UserIcon className="h-5 w-5" />
+            </Link>
+          </>
         )}
       </div>
 
