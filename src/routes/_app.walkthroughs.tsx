@@ -190,7 +190,7 @@ function WalkthroughsScreen() {
         >
           <TabsList className="grid h-11 w-full grid-cols-2">
             <TabsTrigger value="in-progress" className="text-sm font-semibold">
-              In progress
+              In progress{inProgress.length > 0 ? ` (${inProgress.length})` : ""}
             </TabsTrigger>
             <TabsTrigger value="completed" className="text-sm font-semibold">
               Completed{completed.length > 0 ? ` (${completed.length})` : ""}
