@@ -445,44 +445,61 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+              <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
                 <span className="text-xs text-muted-foreground">
                   Invited {fmtDate(r.invited_at)}
                 </span>
-                {r.role === "admin" ? (
-                  <span className="text-xs italic text-muted-foreground">No actions</span>
-                ) : r.status === "active" ? (
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => void toggleBlock(r)}
-                    disabled={busyId === r.id}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-500/40 bg-transparent px-3 text-xs font-semibold text-red-700 hover:bg-red-500/10 disabled:opacity-60 dark:text-red-400"
+                    onClick={() => setEditing(r)}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-transparent px-3 text-xs font-semibold text-foreground hover:bg-secondary"
                   >
-                    {busyId === r.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <ShieldOff className="h-3.5 w-3.5" />
-                    )}
-                    Block
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
                   </button>
-                ) : (
-                  <button
-                    onClick={() => void toggleBlock(r)}
-                    disabled={busyId === r.id}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-transparent px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-60 dark:text-emerald-400"
-                  >
-                    {busyId === r.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <ShieldCheck className="h-3.5 w-3.5" />
-                    )}
-                    Unblock
-                  </button>
-                )}
+                  {r.role === "admin" ? null : r.status === "active" ? (
+                    <button
+                      onClick={() => void toggleBlock(r)}
+                      disabled={busyId === r.id}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-500/40 bg-transparent px-3 text-xs font-semibold text-red-700 hover:bg-red-500/10 disabled:opacity-60 dark:text-red-400"
+                    >
+                      {busyId === r.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <ShieldOff className="h-3.5 w-3.5" />
+                      )}
+                      Block
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => void toggleBlock(r)}
+                      disabled={busyId === r.id}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-transparent px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-60 dark:text-emerald-400"
+                    >
+                      {busyId === r.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                      )}
+                      Unblock
+                    </button>
+                  )}
+                </div>
               </div>
             </article>
           ))}
         </div>
       )}
+
+      <EditAgentDialog
+        agent={editing}
+        onOpenChange={(open) => !open && setEditing(null)}
+        onSaved={(updated) => {
+          setRows((prev) => prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
+          setEditing(null);
+          onChange();
+        }}
+      />
 
       <InviteAgentDialog
         open={inviteOpen}
