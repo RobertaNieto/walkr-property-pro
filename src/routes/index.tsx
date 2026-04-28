@@ -66,6 +66,7 @@ function StatusBadge({ status }: { status: WalkStatus }) {
 function WelcomeScreen() {
   const navigate = useNavigate();
   const { user, loading: authLoading, isAdmin } = useAuth();
+  const { profile } = useMyProfile();
   const [inProgress, setInProgress] = useState<Walkthrough[]>([]);
   const [completed, setCompleted] = useState<Walkthrough[]>([]);
   const [loading, setLoading] = useState(false);
