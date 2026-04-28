@@ -19,6 +19,7 @@ interface Walkthrough {
   house_number: string;
   street_name: string;
   city: string;
+  state: string;
   config: Record<string, unknown>;
   answers: Record<string, AnswerRow>;
   completed_at: string | null;
@@ -209,7 +210,8 @@ async function buildSummaryPdf(
   const pageH = 792;
   const margin = 50;
 
-  const address = `${walk.house_number} ${walk.street_name}, ${walk.city}`;
+  const cityState = [walk.city, walk.state].filter(Boolean).join(", ");
+  const address = `${walk.house_number} ${walk.street_name}, ${cityState}`;
   const completedAt = walk.completed_at
     ? new Date(walk.completed_at).toLocaleString()
     : "—";
@@ -422,10 +424,10 @@ Deno.serve(async (req) => {
     // Get Google access token
     const token = await getAccessToken();
 
-    // Create subfolder STREETNAME_CITY_HOUSENUMBER
+    // Create subfolder HOUSENUMBER_STREETNAME_CITY_STATE
     const sanitize = (s: string) =>
       (s ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-    const folderName = `${sanitize(walk.street_name)}_${sanitize(walk.city)}_${sanitize(walk.house_number)}`;
+    const folderName = `${sanitize(walk.house_number)}_${sanitize(walk.street_name)}_${sanitize(walk.city)}_${sanitize(walk.state)}`;
     const subfolderId = await createDriveFolder(token, folderName, PARENT_FOLDER);
 
     // Collect photo filenames from answers
