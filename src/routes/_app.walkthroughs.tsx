@@ -452,16 +452,26 @@ function CompletedCard({
   return (
     <SwipeRow onDelete={onDelete}>
       <div className="space-y-3 bg-card p-4">
-        <div>
-          <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400">
-            Completed
-          </span>
-          <p className="mt-1.5 text-base font-bold text-foreground">
-            {record.propertyAddress || "Untitled walkthrough"}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Completed {formatTimestamp(record.completedAt)}
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400">
+              Completed
+            </span>
+            <p className="mt-1.5 truncate text-base font-bold text-foreground">
+              {record.propertyAddress || "Untitled walkthrough"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Completed {formatTimestamp(record.completedAt)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label="Delete walkthrough"
+            className="-mr-1 -mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-critical/10 hover:text-critical"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-xs">
