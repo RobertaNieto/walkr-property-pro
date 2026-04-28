@@ -414,6 +414,14 @@ function DraftCard({
               <span className="text-[11px] font-semibold text-muted-foreground">{pct}%</span>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label="Delete walkthrough"
+            className="-mr-1 -mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-critical/10 hover:text-critical"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
         <button
           onClick={onResume}
