@@ -430,8 +430,10 @@ Deno.serve(async (req) => {
     const folderName = `${sanitize(walk.house_number)}_${sanitize(walk.street_name)}_${sanitize(walk.city)}_${sanitize(walk.state)}`;
     const subfolderId = await createDriveFolder(token, folderName, PARENT_FOLDER);
 
-    // Create a "Photos" subfolder inside the property folder
+    // Create "Photos" and "Videos" subfolders inside the property folder
     const photosFolderId = await createDriveFolder(token, "Photos", subfolderId);
+    const videosFolderId = await createDriveFolder(token, "Videos", subfolderId);
+    void videosFolderId; // reserved for future video uploads
 
     // Collect photo filenames from answers
     const photoNames = new Set<string>();
