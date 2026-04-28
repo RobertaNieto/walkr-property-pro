@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { formatPhone } from "@/lib/format-phone";
 
 export const Route = createFileRoute("/_app/profile")({
   component: ProfileScreen,
