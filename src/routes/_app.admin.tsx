@@ -434,6 +434,10 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
                       <CloudUpload className="h-3 w-3" />
                       {r.uploaded_count} uploaded
                     </Pill>
+                    <Pill tone="amber">
+                      <Clock className="h-3 w-3" />
+                      {r.active_count} active
+                    </Pill>
                   </div>
                 </div>
               </div>
