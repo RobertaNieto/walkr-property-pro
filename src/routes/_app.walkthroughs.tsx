@@ -357,10 +357,12 @@ function DraftCard({
   walk,
   onResume,
   onDelete,
+  resuming,
 }: {
   walk: Walkthrough;
   onResume: () => void;
   onDelete: () => void;
+  resuming?: boolean;
 }) {
   const addr =
     [walk.address.houseNumber, walk.address.streetName].filter(Boolean).join(" ") ||
@@ -368,26 +370,47 @@ function DraftCard({
   const pct = completionPercent(walk);
   return (
     <SwipeRow onDelete={onDelete}>
-      <button
-        onClick={onResume}
-        className="flex w-full items-center justify-between gap-3 bg-card p-4 text-left transition-colors hover:bg-secondary"
-      >
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-bold text-foreground">{addr}</p>
-          {walk.address.city && (
-            <p className="truncate text-xs text-muted-foreground">{walk.address.city}</p>
-          )}
-          <p className="mt-1 text-xs text-muted-foreground">
-            Last saved {formatTimestamp(walk.updatedAt)}
-          </p>
-          <div className="mt-2 flex items-center gap-2">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
-              <div className="h-full rounded-full bg-accent" style={{ width: `${Math.max(2, pct)}%` }} />
+      <div className="bg-card p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-yellow-500/15 px-2 py-0.5 text-[11px] font-semibold text-yellow-700 ring-1 ring-yellow-500/30 dark:text-yellow-400">
+                In Progress
+              </span>
             </div>
-            <span className="text-[11px] font-semibold text-muted-foreground">{pct}%</span>
+            <p className="mt-1.5 truncate text-base font-bold text-foreground">{addr}</p>
+            {walk.address.city && (
+              <p className="truncate text-xs text-muted-foreground">{walk.address.city}</p>
+            )}
+            <p className="mt-1 text-xs text-muted-foreground">
+              Last saved {formatTimestamp(walk.updatedAt)}
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
+                <div
+                  className="h-full rounded-full bg-accent"
+                  style={{ width: `${Math.max(2, pct)}%` }}
+                />
+              </div>
+              <span className="text-[11px] font-semibold text-muted-foreground">{pct}%</span>
+            </div>
           </div>
         </div>
-      </button>
+        <button
+          onClick={onResume}
+          disabled={resuming}
+          className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-accent text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-60"
+        >
+          {resuming ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              <PlayCircle className="h-4 w-4" />
+              Continue
+            </>
+          )}
+        </button>
+      </div>
     </SwipeRow>
   );
 }
