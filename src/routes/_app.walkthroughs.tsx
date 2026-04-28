@@ -72,12 +72,12 @@ function WalkthroughsScreen() {
     setCompleted(local);
 
     try {
-      const [draft, dbCompleted] = await Promise.all([
-        fetchLatestInProgress(user.id),
+      const [drafts, dbCompleted] = await Promise.all([
+        fetchAllInProgress(user.id),
         fetchCompleted(user.id),
       ]);
 
-      setInProgress(draft);
+      setInProgress(drafts);
 
       // Merge DB + local completed records.
       // DB is source of truth. Local fills gaps for records not yet flushed to DB.
