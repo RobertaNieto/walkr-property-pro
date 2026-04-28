@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, CloudUpload, Eye, Image as ImageIcon, Loader2, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CloudUpload, Eye, Image as ImageIcon, Loader2, PlayCircle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -16,11 +16,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import {
   deleteWalkthrough,
+  fetchAllInProgress,
   fetchCompleted,
-  fetchLatestInProgress,
   formatTimestamp,
   listCompletedLocal,
   removeCompletedLocal,
+  resumeWalkthrough,
   type CompletedRecord,
   type Walkthrough,
 } from "@/lib/walkthrough";
