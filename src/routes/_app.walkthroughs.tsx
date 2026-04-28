@@ -202,26 +202,41 @@ function WalkthroughsScreen() {
               <div className="flex h-24 items-center justify-center">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
-            ) : inProgress ? (
-              <DraftCard
-                walk={inProgress}
-                onResume={() => navigate({ to: inProgress.lastRoute ?? "/address" })}
-                onDelete={() =>
-                  setPendingDelete({
-                    kind: "draft",
-                    id: inProgress.id,
-                    label:
-                      [inProgress.address.houseNumber, inProgress.address.streetName]
-                        .filter(Boolean)
-                        .join(" ") || "this draft",
-                  })
-                }
-              />
-            ) : (
+            ) : inProgress.length === 0 ? (
               <EmptyState
                 title="No drafts yet"
                 description="Start a new walkthrough from the home screen and it'll show up here."
               />
+            ) : (
+              inProgress.map((w) => (
+                <DraftCard
+                  key={w.id}
+                  walk={w}
+                  resuming={resumingId === w.id}
+                  onResume={async () => {
+                    setResumingId(w.id);
+                    try {
+                      await resumeWalkthrough(w.id);
+                      navigate({ to: w.lastRoute ?? "/address" });
+                    } catch (e) {
+                      const msg = e instanceof Error ? e.message : "Could not resume";
+                      toast.error(msg);
+                    } finally {
+                      setResumingId(null);
+                    }
+                  }}
+                  onDelete={() =>
+                    setPendingDelete({
+                      kind: "draft",
+                      id: w.id,
+                      label:
+                        [w.address.houseNumber, w.address.streetName]
+                          .filter(Boolean)
+                          .join(" ") || "this draft",
+                    })
+                  }
+                />
+              ))
             )}
           </TabsContent>
 
