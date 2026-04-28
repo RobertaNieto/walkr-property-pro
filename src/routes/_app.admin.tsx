@@ -295,6 +295,7 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
   const [rows, setRows] = useState<AgentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [editing, setEditing] = useState<AgentRow | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = async () => {
