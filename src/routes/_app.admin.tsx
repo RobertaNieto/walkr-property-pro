@@ -5,6 +5,7 @@ import {
   CloudUpload,
   Loader2,
   Mail,
+  Pencil,
   Search,
   ShieldCheck,
   ShieldOff,
@@ -13,6 +14,7 @@ import {
   ClipboardList,
   Clock,
 } from "lucide-react";
+import { formatPhone } from "@/lib/format-phone";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -293,6 +295,7 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
   const [rows, setRows] = useState<AgentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [editing, setEditing] = useState<AgentRow | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = async () => {
@@ -442,44 +445,61 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+              <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
                 <span className="text-xs text-muted-foreground">
                   Invited {fmtDate(r.invited_at)}
                 </span>
-                {r.role === "admin" ? (
-                  <span className="text-xs italic text-muted-foreground">No actions</span>
-                ) : r.status === "active" ? (
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => void toggleBlock(r)}
-                    disabled={busyId === r.id}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-500/40 bg-transparent px-3 text-xs font-semibold text-red-700 hover:bg-red-500/10 disabled:opacity-60 dark:text-red-400"
+                    onClick={() => setEditing(r)}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-transparent px-3 text-xs font-semibold text-foreground hover:bg-secondary"
                   >
-                    {busyId === r.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <ShieldOff className="h-3.5 w-3.5" />
-                    )}
-                    Block
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
                   </button>
-                ) : (
-                  <button
-                    onClick={() => void toggleBlock(r)}
-                    disabled={busyId === r.id}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-transparent px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-60 dark:text-emerald-400"
-                  >
-                    {busyId === r.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <ShieldCheck className="h-3.5 w-3.5" />
-                    )}
-                    Unblock
-                  </button>
-                )}
+                  {r.role === "admin" ? null : r.status === "active" ? (
+                    <button
+                      onClick={() => void toggleBlock(r)}
+                      disabled={busyId === r.id}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-500/40 bg-transparent px-3 text-xs font-semibold text-red-700 hover:bg-red-500/10 disabled:opacity-60 dark:text-red-400"
+                    >
+                      {busyId === r.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <ShieldOff className="h-3.5 w-3.5" />
+                      )}
+                      Block
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => void toggleBlock(r)}
+                      disabled={busyId === r.id}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-transparent px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-60 dark:text-emerald-400"
+                    >
+                      {busyId === r.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                      )}
+                      Unblock
+                    </button>
+                  )}
+                </div>
               </div>
             </article>
           ))}
         </div>
       )}
+
+      <EditAgentDialog
+        agent={editing}
+        onOpenChange={(open) => !open && setEditing(null)}
+        onSaved={(updated) => {
+          setRows((prev) => prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
+          setEditing(null);
+          onChange();
+        }}
+      />
 
       <InviteAgentDialog
         open={inviteOpen}
@@ -490,6 +510,177 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
         }}
       />
     </div>
+  );
+}
+
+function EditAgentDialog({
+  agent,
+  onOpenChange,
+  onSaved,
+}: {
+  agent: AgentRow | null;
+  onOpenChange: (o: boolean) => void;
+  onSaved: (updated: Partial<AgentRow> & { id: string }) => void;
+}) {
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [role, setRole] = useState<"admin" | "agent">("agent");
+  const [status, setStatus] = useState<"active" | "blocked">("active");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (agent) {
+      setFullName(agent.full_name ?? "");
+      setPhone(agent.phone ?? "");
+      setLicenseNumber(agent.license_number ?? "");
+      setRole(agent.role);
+      setStatus(agent.status);
+    }
+  }, [agent]);
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!agent) return;
+    setSaving(true);
+    const trimmedName = fullName.trim();
+    const trimmedPhone = phone.trim();
+    const trimmedLicense = licenseNumber.trim();
+
+    // Update user_roles (full_name, role, status)
+    const { error: rolesErr } = await supabase
+      .from("user_roles")
+      .update({
+        full_name: trimmedName || null,
+        role,
+        status,
+      })
+      .eq("id", agent.id);
+    if (rolesErr) {
+      setSaving(false);
+      toast.error(rolesErr.message);
+      return;
+    }
+
+    // Upsert profile (display_name, phone, license_number)
+    const { error: profErr } = await supabase
+      .from("profiles")
+      .upsert(
+        {
+          id: agent.user_id,
+          display_name: trimmedName || null,
+          phone: trimmedPhone || null,
+          license_number: trimmedLicense || null,
+        },
+        { onConflict: "id" },
+      );
+    if (profErr) {
+      setSaving(false);
+      toast.error(profErr.message);
+      return;
+    }
+
+    setSaving(false);
+    toast.success("Profile updated successfully");
+    onSaved({
+      id: agent.id,
+      full_name: trimmedName || null,
+      phone: trimmedPhone || null,
+      license_number: trimmedLicense || null,
+      role,
+      status,
+    });
+  };
+
+  return (
+    <Dialog open={!!agent} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogDescription>Update this user's information.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={onSubmit} className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Full Name</label>
+            <input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              placeholder="First and Last Name"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Email</label>
+            <input
+              value={agent?.email ?? ""}
+              readOnly
+              className="h-10 w-full rounded-lg border border-input bg-muted px-3 text-sm text-muted-foreground"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Phone Number</label>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(formatPhone(e.target.value))}
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              placeholder="(555) 555-5555"
+              inputMode="tel"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Real Estate License #</label>
+            <input
+              value={licenseNumber}
+              onChange={(e) => setLicenseNumber(e.target.value)}
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              placeholder="License Number"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Role</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as "admin" | "agent")}
+                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              >
+                <option value="agent">Agent</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as "active" | "blocked")}
+                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              >
+                <option value="active">Active</option>
+                <option value="blocked">Blocked</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              disabled={saving}
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-transparent px-4 text-sm font-semibold text-foreground hover:bg-secondary"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save Changes
+            </button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
