@@ -145,15 +145,25 @@ function WalkthroughsScreen() {
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     setDeleting(true);
+    const { id, kind } = pendingDelete;
     try {
-      if (pendingDelete.kind === "draft") {
-        await deleteWalkthrough(pendingDelete.id);
-        setInProgress((prev) => prev.filter((w) => w.id !== pendingDelete.id));
+      // Always remove from DB + local cache + IndexedDB photos.
+      // deleteWalkthrough is safe to call even if the row is already gone.
+      await deleteWalkthrough(id).catch((err) => {
+        // If the row doesn't exist in DB (e.g. local-only completed record),
+        // still proceed with local cleanup.
+        console.warn("[walkthroughs] deleteWalkthrough error", err);
+      });
+      removeCompletedLocal(id);
+      if (kind === "draft") {
+        setInProgress((prev) => prev.filter((w) => w.id !== id));
       } else {
-        removeCompletedLocal(pendingDelete.id);
-        setCompleted((prev) => prev.filter((r) => r.id !== pendingDelete.id));
+        setCompleted((prev) => prev.filter((r) => r.id !== id));
       }
-      toast.success("Deleted");
+      // Also remove from the other list in case a record appears in both.
+      setInProgress((prev) => prev.filter((w) => w.id !== id));
+      setCompleted((prev) => prev.filter((r) => r.id !== id));
+      toast.success("Walkthrough deleted");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not delete";
       toast.error(msg);
