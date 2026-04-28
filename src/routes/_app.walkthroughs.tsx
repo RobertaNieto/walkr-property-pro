@@ -285,14 +285,34 @@ function WalkthroughsScreen() {
       <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete walkthrough?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {pendingDelete?.uploaded
+                ? "Delete from PropertyWalk only?"
+                : "Delete walkthrough?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingDelete
+              {pendingDelete?.uploaded
+                ? "This walkthrough has been uploaded to Drive. The Drive folder will NOT be deleted. Delete from PropertyWalk only?"
+                : pendingDelete
                 ? `This permanently deletes ${pendingDelete.label}. This cannot be undone.`
                 : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmDelete();
+              }}
+              disabled={deleting}
+              className="bg-critical text-critical-foreground hover:bg-critical/90"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : pendingDelete?.uploaded ? "Confirm" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
