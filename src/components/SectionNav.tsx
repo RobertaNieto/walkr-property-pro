@@ -72,7 +72,7 @@ export function SectionNav({
   const handleHome = () => {
     onGoHome();
     onClose();
-    void navigate({ to: "/wizard/menu" });
+    void navigate({ to: "/" });
   };
 
   const handleSectionMenu = () => {

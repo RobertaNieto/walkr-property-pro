@@ -1,6 +1,16 @@
 import { useNavigate } from "@tanstack/react-router";
-import { MapPin, Save } from "lucide-react";
-import { ReactNode, useMemo } from "react";
+import { Home as HomeIcon, MapPin, Save } from "lucide-react";
+import { ReactNode, useMemo, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { formatPropertyAddress, formatTimestamp, loadActive } from "@/lib/walkthrough";
 
@@ -61,6 +71,7 @@ export function WizardLayout({
 }: WizardLayoutProps) {
   const navigate = useNavigate();
   const propertyAddress = useMemo(() => formatPropertyAddress(loadActive()?.address), []);
+  const [homeConfirmOpen, setHomeConfirmOpen] = useState(false);
 
   const handleBack = () => {
     if (onBack) {
@@ -70,22 +81,37 @@ export function WizardLayout({
     }
   };
 
+  const handleConfirmLeave = () => {
+    setHomeConfirmOpen(false);
+    void navigate({ to: "/" });
+  };
+
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background">
       {/* Sticky top */}
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto w-full max-w-2xl px-4 pb-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
-          {/* Row 1: progress bar */}
-          <div className="min-w-0 flex-1">
-            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-              <div
-                className="h-full rounded-full bg-accent transition-all duration-300"
-                style={{ width: `${Math.max(2, Math.min(100, progress))}%` }}
-              />
+          {/* Row 1: progress bar + Home */}
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                <div
+                  className="h-full rounded-full bg-accent transition-all duration-300"
+                  style={{ width: `${Math.max(2, Math.min(100, progress))}%` }}
+                />
+              </div>
+              <div className="mt-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {Math.round(progress)}% complete
+              </div>
             </div>
-            <div className="mt-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              {Math.round(progress)}% complete
-            </div>
+            <button
+              type="button"
+              onClick={() => setHomeConfirmOpen(true)}
+              aria-label="Home"
+              className="-mr-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary active:bg-secondary"
+            >
+              <HomeIcon className="h-5 w-5" />
+            </button>
           </div>
 
           {/* Row 2: color-coded section banner — chapter heading */}
@@ -152,6 +178,21 @@ export function WizardLayout({
           </div>
         </div>
       </footer>
+
+      <AlertDialog open={homeConfirmOpen} onOpenChange={setHomeConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave walkthrough?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your progress is saved automatically.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmLeave}>Leave</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

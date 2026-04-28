@@ -1,4 +1,14 @@
-import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   ArrowLeft,
   KeyRound,
@@ -72,8 +82,8 @@ interface SectionRow {
 
 function SectionMenuScreen() {
   const navigate = useNavigate();
-  const router = useRouter();
   const [tick, setTick] = useState(0);
+  const [leaveOpen, setLeaveOpen] = useState(false);
   const w: Walkthrough | null = useMemo(() => loadActive(), [tick]);
 
   useEffect(() => {
@@ -185,8 +195,8 @@ function SectionMenuScreen() {
         <div className="mx-auto w-full max-w-2xl px-4 pb-4 pt-[max(env(safe-area-inset-top),0.75rem)]">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => router.history.back()}
-              aria-label="Back"
+              onClick={() => setLeaveOpen(true)}
+              aria-label="Home"
               className="-ml-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-white/90 transition-colors hover:bg-white/10 active:bg-white/15"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -194,6 +204,13 @@ function SectionMenuScreen() {
             <p className="text-[12px] font-semibold uppercase tracking-wide text-white/70">
               PropertyWalk
             </p>
+            <button
+              onClick={() => setLeaveOpen(true)}
+              aria-label="Home"
+              className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-full text-white/90 transition-colors hover:bg-white/10 active:bg-white/15"
+            >
+              <HomeIcon className="h-5 w-5" />
+            </button>
           </div>
           <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight">
             Where would you like to start?
@@ -318,6 +335,28 @@ function SectionMenuScreen() {
           )}
         </div>
       </footer>
+
+      <AlertDialog open={leaveOpen} onOpenChange={setLeaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave walkthrough?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your progress is saved automatically.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setLeaveOpen(false);
+                void navigate({ to: "/" });
+              }}
+            >
+              Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
