@@ -14,6 +14,8 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { UserAvatar } from "@/components/UserAvatar";
+import { useMyProfile } from "@/hooks/use-my-profile";
 import { useAuth } from "@/lib/auth";
 import {
   createWalkthrough,
