@@ -53,8 +53,8 @@ function WalkthroughsScreen() {
   const [loading, setLoading] = useState(true);
   const [resumingId, setResumingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<
-    | { kind: "draft"; id: string; label: string }
-    | { kind: "completed"; id: string; label: string }
+    | { kind: "draft"; id: string; label: string; uploaded: boolean }
+    | { kind: "completed"; id: string; label: string; uploaded: boolean }
     | null
   >(null);
   const [deleting, setDeleting] = useState(false);
@@ -145,15 +145,25 @@ function WalkthroughsScreen() {
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     setDeleting(true);
+    const { id, kind } = pendingDelete;
     try {
-      if (pendingDelete.kind === "draft") {
-        await deleteWalkthrough(pendingDelete.id);
-        setInProgress((prev) => prev.filter((w) => w.id !== pendingDelete.id));
+      // Always remove from DB + local cache + IndexedDB photos.
+      // deleteWalkthrough is safe to call even if the row is already gone.
+      await deleteWalkthrough(id).catch((err) => {
+        // If the row doesn't exist in DB (e.g. local-only completed record),
+        // still proceed with local cleanup.
+        console.warn("[walkthroughs] deleteWalkthrough error", err);
+      });
+      removeCompletedLocal(id);
+      if (kind === "draft") {
+        setInProgress((prev) => prev.filter((w) => w.id !== id));
       } else {
-        removeCompletedLocal(pendingDelete.id);
-        setCompleted((prev) => prev.filter((r) => r.id !== pendingDelete.id));
+        setCompleted((prev) => prev.filter((r) => r.id !== id));
       }
-      toast.success("Deleted");
+      // Also remove from the other list in case a record appears in both.
+      setInProgress((prev) => prev.filter((w) => w.id !== id));
+      setCompleted((prev) => prev.filter((r) => r.id !== id));
+      toast.success("Walkthrough deleted");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not delete";
       toast.error(msg);
@@ -233,6 +243,7 @@ function WalkthroughsScreen() {
                         [w.address.houseNumber, w.address.streetName]
                           .filter(Boolean)
                           .join(" ") || "this draft",
+                      uploaded: w.uploadStatus === "confirmed",
                     })
                   }
                 />
@@ -260,6 +271,8 @@ function WalkthroughsScreen() {
                       kind: "completed",
                       id: c.id,
                       label: c.propertyAddress || "this walkthrough",
+                      uploaded:
+                        (c as unknown as { uploadStatus?: string }).uploadStatus === "confirmed",
                     })
                   }
                 />
@@ -272,9 +285,15 @@ function WalkthroughsScreen() {
       <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete walkthrough?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {pendingDelete?.uploaded
+                ? "Delete from PropertyWalk only?"
+                : "Delete walkthrough?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingDelete
+              {pendingDelete?.uploaded
+                ? "This walkthrough has been uploaded to Drive. The Drive folder will NOT be deleted. Delete from PropertyWalk only?"
+                : pendingDelete
                 ? `This permanently deletes ${pendingDelete.label}. This cannot be undone.`
                 : ""}
             </AlertDialogDescription>
@@ -289,7 +308,7 @@ function WalkthroughsScreen() {
               disabled={deleting}
               className="bg-critical text-critical-foreground hover:bg-critical/90"
             >
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : pendingDelete?.uploaded ? "Confirm" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -395,6 +414,14 @@ function DraftCard({
               <span className="text-[11px] font-semibold text-muted-foreground">{pct}%</span>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label="Delete walkthrough"
+            className="-mr-1 -mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-critical/10 hover:text-critical"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
         <button
           onClick={onResume}
@@ -425,16 +452,26 @@ function CompletedCard({
   return (
     <SwipeRow onDelete={onDelete}>
       <div className="space-y-3 bg-card p-4">
-        <div>
-          <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400">
-            Completed
-          </span>
-          <p className="mt-1.5 text-base font-bold text-foreground">
-            {record.propertyAddress || "Untitled walkthrough"}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Completed {formatTimestamp(record.completedAt)}
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400">
+              Completed
+            </span>
+            <p className="mt-1.5 truncate text-base font-bold text-foreground">
+              {record.propertyAddress || "Untitled walkthrough"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Completed {formatTimestamp(record.completedAt)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label="Delete walkthrough"
+            className="-mr-1 -mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-critical/10 hover:text-critical"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-xs">

@@ -437,10 +437,39 @@ export async function deleteWalkthrough(id: string): Promise<void> {
     pending.delete(id);
     queued.delete(id);
   }
+
+  // Collect photo filenames referenced by this walkthrough so we can purge
+  // them from IndexedDB after the DB row is deleted.
+  const cached = readCache(id) ?? (await fetchById(id).catch(() => null));
+  const photoNames = new Set<string>();
+  if (cached?.answers) {
+    for (const ans of Object.values(cached.answers)) {
+      ans.photoNames?.forEach((n) => n && photoNames.add(n));
+      ans.poorPhotoNames?.forEach((n) => n && photoNames.add(n));
+      // Older drafts may have stored filenames directly in `photos`.
+      ans.photos?.forEach((p) => {
+        if (p && !p.startsWith("data:") && !p.startsWith("blob:") && !p.startsWith("http")) {
+          photoNames.add(p);
+        }
+      });
+    }
+  }
+
   const { error } = await supabase.from("walkthroughs").delete().eq("id", id);
   if (error) throw error;
+
   clearCache(id);
-  console.log("[walkthrough] deleted", id);
+  removeCompletedLocal(id);
+
+  // Purge photos from IndexedDB. Best-effort — failures are non-fatal.
+  if (photoNames.size > 0) {
+    const { removePhoto } = await import("./photo-store");
+    await Promise.all(
+      Array.from(photoNames).map((n) => removePhoto(n).catch(() => undefined))
+    );
+  }
+
+  console.log("[walkthrough] deleted", id, { photos: photoNames.size });
 }
 
 export function updateWalkthrough(patch: Partial<Walkthrough>): Walkthrough | null {
