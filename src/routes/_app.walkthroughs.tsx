@@ -426,7 +426,10 @@ function CompletedCard({
     <SwipeRow onDelete={onDelete}>
       <div className="space-y-3 bg-card p-4">
         <div>
-          <p className="text-base font-bold text-foreground">
+          <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400">
+            Completed
+          </span>
+          <p className="mt-1.5 text-base font-bold text-foreground">
             {record.propertyAddress || "Untitled walkthrough"}
           </p>
           <p className="text-xs text-muted-foreground">
