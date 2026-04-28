@@ -236,6 +236,51 @@ function AuthScreen() {
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             {mode === "signup" && (
+              <div className="flex flex-col items-center gap-2 pb-2">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  aria-label="Add profile photo"
+                  className="relative rounded-full focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-primary"
+                >
+                  <UserAvatar
+                    url={avatarPreview}
+                    name={fullName}
+                    email={email}
+                    size="2xl"
+                  />
+                  <span
+                    aria-hidden
+                    className="absolute bottom-0 right-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md ring-2 ring-primary"
+                  >
+                    <Camera className="h-4 w-4" />
+                  </span>
+                </button>
+                {avatarPreview ? (
+                  <button
+                    type="button"
+                    onClick={clearAvatar}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary-foreground/80 underline"
+                  >
+                    <X className="h-3 w-3" />
+                    Remove photo
+                  </button>
+                ) : (
+                  <span className="text-xs text-primary-foreground/70">
+                    Add Photo (optional)
+                  </span>
+                )}
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  capture="user"
+                  className="hidden"
+                  onChange={onPickAvatar}
+                />
+              </div>
+            )}
+            {mode === "signup" && (
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-primary-foreground/90">
                   Full Name
