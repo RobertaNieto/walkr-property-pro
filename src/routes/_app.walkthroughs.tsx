@@ -53,8 +53,8 @@ function WalkthroughsScreen() {
   const [loading, setLoading] = useState(true);
   const [resumingId, setResumingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<
-    | { kind: "draft"; id: string; label: string }
-    | { kind: "completed"; id: string; label: string }
+    | { kind: "draft"; id: string; label: string; uploaded: boolean }
+    | { kind: "completed"; id: string; label: string; uploaded: boolean }
     | null
   >(null);
   const [deleting, setDeleting] = useState(false);
