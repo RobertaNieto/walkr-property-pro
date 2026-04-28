@@ -71,6 +71,7 @@ export function WizardLayout({
 }: WizardLayoutProps) {
   const navigate = useNavigate();
   const propertyAddress = useMemo(() => formatPropertyAddress(loadActive()?.address), []);
+  const [homeConfirmOpen, setHomeConfirmOpen] = useState(false);
 
   const handleBack = () => {
     if (onBack) {
@@ -78,6 +79,11 @@ export function WizardLayout({
     } else {
       navigate({ to: "/wizard/menu" });
     }
+  };
+
+  const handleConfirmLeave = () => {
+    setHomeConfirmOpen(false);
+    void navigate({ to: "/" });
   };
 
   return (
