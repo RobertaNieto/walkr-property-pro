@@ -74,6 +74,7 @@ function SectionMenuScreen() {
   const navigate = useNavigate();
   const router = useRouter();
   const [tick, setTick] = useState(0);
+  const [leaveOpen, setLeaveOpen] = useState(false);
   const w: Walkthrough | null = useMemo(() => loadActive(), [tick]);
 
   useEffect(() => {
