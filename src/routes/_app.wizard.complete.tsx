@@ -12,9 +12,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { completeWalkthrough, fetchById, formatPropertyAddress, submitWalkthrough, type Walkthrough } from "@/lib/walkthrough";
 import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
 import { useAuth } from "@/lib/auth";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 
 export const Route = createFileRoute("/_app/wizard/complete")({
   component: CompleteScreen,
