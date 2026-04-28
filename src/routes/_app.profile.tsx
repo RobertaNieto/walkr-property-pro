@@ -12,9 +12,12 @@ export const Route = createFileRoute("/_app/profile")({
 });
 
 const profileSchema = z.object({
-  display_name: z.string().trim().max(100).optional(),
-  phone: z.string().trim().max(40).optional(),
-  license_number: z.string().trim().max(60).optional(),
+  display_name: z.string().trim().min(2, "Enter your full name").max(100),
+  phone: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || v.replace(/\D/g, "").length === 10, "Enter a 10-digit phone number"),
+  license_number: z.string().trim().min(2, "Enter your license number").max(60),
 });
 
 function ProfileScreen() {
