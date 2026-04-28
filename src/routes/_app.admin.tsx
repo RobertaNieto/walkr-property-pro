@@ -44,6 +44,7 @@ interface AgentRow {
   uploaded_count?: number;
   phone?: string | null;
   license_number?: string | null;
+  avatar_url?: string | null;
 }
 
 interface WalkRow {
