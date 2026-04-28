@@ -233,6 +233,7 @@ function WalkthroughsScreen() {
                         [w.address.houseNumber, w.address.streetName]
                           .filter(Boolean)
                           .join(" ") || "this draft",
+                      uploaded: w.uploadStatus === "confirmed",
                     })
                   }
                 />
