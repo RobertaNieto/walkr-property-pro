@@ -1,11 +1,12 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, Loader2, MapPin } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import {
   COMPLETING_KEY,
   completeWalkthrough,
+  formatPropertyAddress,
   loadActive,
   setAnswer,
   type WizardAnswer,
@@ -107,11 +108,21 @@ function ChecklistScreen() {
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-wider text-accent">
               Section 17 of 18 — Final Checklist
             </p>
-            <p className="text-xs text-muted-foreground">Confirm before leaving the property</p>
+            {(() => {
+              const addr = formatPropertyAddress(w?.address);
+              return addr ? (
+                <p className="mt-0.5 flex items-center gap-1 truncate text-xs font-medium text-foreground">
+                  <MapPin className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
+                  <span className="truncate">{addr}</span>
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Confirm before leaving the property</p>
+              );
+            })()}
           </div>
         </div>
       </header>

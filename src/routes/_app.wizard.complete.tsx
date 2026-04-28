@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
-import { completeWalkthrough, fetchById, submitWalkthrough, type Walkthrough } from "@/lib/walkthrough";
+import { completeWalkthrough, fetchById, formatPropertyAddress, submitWalkthrough, type Walkthrough } from "@/lib/walkthrough";
 import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
 import { useAuth } from "@/lib/auth";
 
@@ -87,6 +87,11 @@ function CompleteScreen() {
       <h1 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
         Walkthrough complete
       </h1>
+      {walk && formatPropertyAddress(walk.address) && (
+        <p className="mt-2 text-sm font-semibold text-foreground">
+          {formatPropertyAddress(walk.address)}
+        </p>
+      )}
       <p className="mt-3 max-w-sm text-sm text-muted-foreground">
         Your answers and photos are saved. Upload to Google Drive when you're
         ready.

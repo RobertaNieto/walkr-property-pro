@@ -1,8 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Save } from "lucide-react";
-import { ReactNode } from "react";
+import { MapPin, Save } from "lucide-react";
+import { ReactNode, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { formatTimestamp } from "@/lib/walkthrough";
+import { formatPropertyAddress, formatTimestamp, loadActive } from "@/lib/walkthrough";
 
 const SECTION_COLORS: Record<number, string> = {
   1: "#1B3A6B",
@@ -60,6 +60,7 @@ export function WizardLayout({
   children,
 }: WizardLayoutProps) {
   const navigate = useNavigate();
+  const propertyAddress = useMemo(() => formatPropertyAddress(loadActive()?.address), []);
 
   const handleBack = () => {
     if (onBack) {
@@ -105,6 +106,12 @@ export function WizardLayout({
             <p className="truncate text-[28px] font-bold uppercase leading-tight tracking-tight text-white">
               {sectionName}
             </p>
+            {propertyAddress && (
+              <p className="flex items-center gap-1.5 truncate text-[13px] font-medium text-white/85">
+                <MapPin className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
+                <span className="truncate">{propertyAddress}</span>
+              </p>
+            )}
           </div>
         </div>
       </header>
