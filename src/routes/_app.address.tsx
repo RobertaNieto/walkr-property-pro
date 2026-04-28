@@ -15,6 +15,7 @@ function AddressScreen() {
     houseNumber: "",
     streetName: "",
     city: "",
+    state: "",
   });
   const [attempted, setAttempted] = useState(false);
 
@@ -32,7 +33,10 @@ function AddressScreen() {
   }, [address]);
 
   const valid =
-    address.houseNumber.trim() && address.streetName.trim() && address.city.trim();
+    address.houseNumber.trim() &&
+    address.streetName.trim() &&
+    address.city.trim() &&
+    address.state.trim().length === 2;
 
   const handleNext = () => {
     if (!valid) {
@@ -105,6 +109,27 @@ function AddressScreen() {
                 value={address.city}
                 onChange={(e) => setAddress((a) => ({ ...a, city: e.target.value }))}
                 className={fieldClass(address.city)}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-foreground">
+                State
+              </label>
+              <input
+                autoComplete="off"
+                placeholder="CA"
+                maxLength={2}
+                value={address.state}
+                onChange={(e) =>
+                  setAddress((a) => ({
+                    ...a,
+                    state: e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2),
+                  }))
+                }
+                className={cn(
+                  fieldClass(address.state),
+                  "uppercase tracking-widest",
+                )}
               />
             </div>
           </div>
