@@ -313,8 +313,10 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
 
     const completedMap = new Map<string, number>();
     const uploadedMap = new Map<string, number>();
+    const activeMap = new Map<string, number>();
     (walks ?? []).forEach((w) => {
       if (w.completed_at) completedMap.set(w.user_id, (completedMap.get(w.user_id) ?? 0) + 1);
+      else activeMap.set(w.user_id, (activeMap.get(w.user_id) ?? 0) + 1);
       if (w.upload_status === "confirmed")
         uploadedMap.set(w.user_id, (uploadedMap.get(w.user_id) ?? 0) + 1);
     });
