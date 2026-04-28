@@ -513,6 +513,177 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
   );
 }
 
+function EditAgentDialog({
+  agent,
+  onOpenChange,
+  onSaved,
+}: {
+  agent: AgentRow | null;
+  onOpenChange: (o: boolean) => void;
+  onSaved: (updated: Partial<AgentRow> & { id: string }) => void;
+}) {
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [role, setRole] = useState<"admin" | "agent">("agent");
+  const [status, setStatus] = useState<"active" | "blocked">("active");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (agent) {
+      setFullName(agent.full_name ?? "");
+      setPhone(agent.phone ?? "");
+      setLicenseNumber(agent.license_number ?? "");
+      setRole(agent.role);
+      setStatus(agent.status);
+    }
+  }, [agent]);
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!agent) return;
+    setSaving(true);
+    const trimmedName = fullName.trim();
+    const trimmedPhone = phone.trim();
+    const trimmedLicense = licenseNumber.trim();
+
+    // Update user_roles (full_name, role, status)
+    const { error: rolesErr } = await supabase
+      .from("user_roles")
+      .update({
+        full_name: trimmedName || null,
+        role,
+        status,
+      })
+      .eq("id", agent.id);
+    if (rolesErr) {
+      setSaving(false);
+      toast.error(rolesErr.message);
+      return;
+    }
+
+    // Upsert profile (display_name, phone, license_number)
+    const { error: profErr } = await supabase
+      .from("profiles")
+      .upsert(
+        {
+          id: agent.user_id,
+          display_name: trimmedName || null,
+          phone: trimmedPhone || null,
+          license_number: trimmedLicense || null,
+        },
+        { onConflict: "id" },
+      );
+    if (profErr) {
+      setSaving(false);
+      toast.error(profErr.message);
+      return;
+    }
+
+    setSaving(false);
+    toast.success("Profile updated successfully");
+    onSaved({
+      id: agent.id,
+      full_name: trimmedName || null,
+      phone: trimmedPhone || null,
+      license_number: trimmedLicense || null,
+      role,
+      status,
+    });
+  };
+
+  return (
+    <Dialog open={!!agent} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogDescription>Update this user's information.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={onSubmit} className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Full Name</label>
+            <input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              placeholder="First and Last Name"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Email</label>
+            <input
+              value={agent?.email ?? ""}
+              readOnly
+              className="h-10 w-full rounded-lg border border-input bg-muted px-3 text-sm text-muted-foreground"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Phone Number</label>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(formatPhone(e.target.value))}
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              placeholder="(555) 555-5555"
+              inputMode="tel"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Real Estate License #</label>
+            <input
+              value={licenseNumber}
+              onChange={(e) => setLicenseNumber(e.target.value)}
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              placeholder="License Number"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Role</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as "admin" | "agent")}
+                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              >
+                <option value="agent">Agent</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as "active" | "blocked")}
+                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              >
+                <option value="active">Active</option>
+                <option value="blocked">Blocked</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              disabled={saving}
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-transparent px-4 text-sm font-semibold text-foreground hover:bg-secondary"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save Changes
+            </button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function InviteAgentDialog({
   open,
   onOpenChange,
