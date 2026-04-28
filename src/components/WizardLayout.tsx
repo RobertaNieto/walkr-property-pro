@@ -1,6 +1,16 @@
 import { useNavigate } from "@tanstack/react-router";
-import { MapPin, Save } from "lucide-react";
-import { ReactNode, useMemo } from "react";
+import { Home as HomeIcon, MapPin, Save } from "lucide-react";
+import { ReactNode, useMemo, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { formatPropertyAddress, formatTimestamp, loadActive } from "@/lib/walkthrough";
 
