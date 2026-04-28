@@ -12,9 +12,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { completeWalkthrough, fetchById, formatPropertyAddress, submitWalkthrough, type Walkthrough } from "@/lib/walkthrough";
 import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
 import { useAuth } from "@/lib/auth";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 
 export const Route = createFileRoute("/_app/wizard/complete")({
   component: CompleteScreen,
@@ -29,6 +31,7 @@ type UploadState =
 function CompleteScreen() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const online = useOnlineStatus();
   const [walk, setWalk] = useState<Walkthrough | null>(null);
   const [confirmFresh, setConfirmFresh] = useState(false);
   const [clearing, setClearing] = useState(false);
@@ -64,7 +67,7 @@ function CompleteScreen() {
   };
 
   const handleUpload = async () => {
-    if (!walk || !user) return;
+    if (!walk || !user || !online) return;
     setUpload({
       kind: "uploading",
       progress: { phase: "staging", current: 0, total: 0, message: "Starting..." },
@@ -109,7 +112,7 @@ function CompleteScreen() {
           </Link>
         )}
 
-        <UploadButton state={upload} onUpload={handleUpload} />
+        <UploadButton state={upload} onUpload={handleUpload} online={online} />
 
         <Link
           to="/"
@@ -158,9 +161,11 @@ function CompleteScreen() {
 function UploadButton({
   state,
   onUpload,
+  online,
 }: {
   state: UploadState;
   onUpload: () => void;
+  online: boolean;
 }) {
   if (state.kind === "uploading") {
     const { current, total, message } = state.progress;
@@ -201,22 +206,45 @@ function UploadButton({
         </div>
         <button
           onClick={onUpload}
-          className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-critical px-6 text-base font-semibold text-critical-foreground transition-colors hover:bg-critical/90"
+          disabled={!online}
+          title={!online ? "Upload available when online" : undefined}
+          aria-label={!online ? "Upload available when online" : undefined}
+          className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-critical px-6 text-base font-semibold text-critical-foreground transition-colors hover:bg-critical/90 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-critical"
         >
           <RefreshCw className="h-5 w-5" />
-          Upload Failed — Retry
+          {online ? "Upload Failed — Retry" : "Offline — Retry when online"}
         </button>
       </div>
     );
   }
 
-  return (
+  const button = (
     <button
       onClick={onUpload}
-      className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-colors hover:bg-primary/90"
+      disabled={!online}
+      aria-disabled={!online}
+      className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-primary"
     >
       <CloudUpload className="h-5 w-5" />
       Upload to Drive
     </button>
   );
+
+  if (!online) {
+    return (
+      <TooltipProvider delayDuration={150}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {/* span wrapper so tooltip works on disabled button */}
+            <span className="inline-block w-full" tabIndex={0}>
+              {button}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>Upload available when online</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return button;
 }

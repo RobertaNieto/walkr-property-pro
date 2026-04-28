@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts, useLocation } from
 import { Toaster } from "sonner";
 
 import { AuthProvider } from "@/lib/auth";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -89,6 +90,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <AuthProvider>
+      <OfflineBanner />
       <Outlet />
       <Copyright />
       <Toaster position="top-center" richColors />
