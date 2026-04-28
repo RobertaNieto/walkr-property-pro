@@ -93,6 +93,16 @@ function formatAddress(a: PropertyAddress): string {
   return [street, cityState].filter(Boolean).join(", ");
 }
 
+/**
+ * Public formatter for the property address — used by the wizard header,
+ * review screen, and complete screen so they all show the same string,
+ * e.g. "1128 Reseda Blvd, Los Angeles, CA".
+ */
+export function formatPropertyAddress(a: PropertyAddress | undefined | null): string {
+  if (!a) return "";
+  return formatAddress(a);
+}
+
 function buildCompletedSummary(w: Walkthrough): CompletedSummary {
   let totalPhotos = 0;
   const criticalFlags: CompletedSummary["criticalFlags"] = [];
