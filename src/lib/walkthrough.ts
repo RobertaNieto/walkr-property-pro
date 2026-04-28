@@ -260,9 +260,32 @@ export function getActiveId(): string | null {
   }
 }
 
+export function setActiveId(id: string) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(ACTIVE_KEY, id);
+  } catch (e) {
+    console.warn("[walkthrough] setActiveId failed", e);
+  }
+}
+
 export function loadActive(): Walkthrough | null {
   const id = getActiveId();
   return id ? readCache(id) : null;
+}
+
+/**
+ * Make `id` the active walkthrough. If we don't have it cached locally yet,
+ * fetch from Supabase and prime the cache so the wizard can resume.
+ */
+export async function resumeWalkthrough(id: string): Promise<Walkthrough | null> {
+  let w = readCache(id);
+  if (!w) {
+    w = await fetchById(id);
+    if (w) writeCache(w);
+  }
+  setActiveId(id);
+  return w;
 }
 
 // ---------- DB <-> domain mapping ----------
