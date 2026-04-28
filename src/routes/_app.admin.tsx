@@ -1,5 +1,18 @@
-import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, Mail, ShieldOff, ShieldCheck, UserPlus } from "lucide-react";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  CloudUpload,
+  Loader2,
+  Mail,
+  Search,
+  ShieldCheck,
+  ShieldOff,
+  UserPlus,
+  Users,
+  ClipboardList,
+  Clock,
+} from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -44,33 +57,164 @@ interface WalkRow {
 
 type SortKey = "date" | "agent" | "status";
 
-function formatAddress(w: WalkRow) {
-  const street = [w.house_number, w.street_name].filter(Boolean).join(" ").trim();
-  return [street, w.city, w.state].filter(Boolean).join(", ") || "Untitled";
+// ---------- helpers ----------
+function initialsOf(name?: string | null, email?: string | null) {
+  const src = (name?.trim() || email?.split("@")[0] || "?").trim();
+  const parts = src.split(/\s+/).filter(Boolean);
+  const letters =
+    parts.length >= 2
+      ? parts[0][0] + parts[parts.length - 1][0]
+      : src.slice(0, 2);
+  return letters.toUpperCase();
 }
 
+function formatStreet(w: WalkRow) {
+  return [w.house_number, w.street_name].filter(Boolean).join(" ").trim();
+}
+function formatCityState(w: WalkRow) {
+  return [w.city, w.state].filter(Boolean).join(", ").trim();
+}
+function hasAddress(w: WalkRow) {
+  return Boolean(formatStreet(w) || formatCityState(w));
+}
 function statusOf(w: WalkRow): "in-progress" | "completed" | "uploaded" {
   if (!w.completed_at) return "in-progress";
   if (w.upload_status === "confirmed") return "uploaded";
   return "completed";
 }
+function fmtDate(s: string) {
+  return new Date(s).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
-function StatusBadge({ s }: { s: "in-progress" | "completed" | "uploaded" }) {
-  const map = {
-    "in-progress": "bg-yellow-500/15 text-yellow-700 ring-yellow-500/30 dark:text-yellow-400",
-    completed: "bg-emerald-500/15 text-emerald-700 ring-emerald-500/30 dark:text-emerald-400",
-    uploaded: "bg-blue-500/15 text-blue-700 ring-blue-500/30 dark:text-blue-400",
-  } as const;
-  const labels = { "in-progress": "In Progress", completed: "Completed", uploaded: "Uploaded" };
+// ---------- shared atoms ----------
+function Avatar({
+  name,
+  email,
+  size = "md",
+  tone = "primary",
+}: {
+  name?: string | null;
+  email?: string | null;
+  size?: "sm" | "md" | "lg";
+  tone?: "primary" | "muted";
+}) {
+  const dim =
+    size === "lg" ? "h-12 w-12 text-base" : size === "sm" ? "h-8 w-8 text-[11px]" : "h-10 w-10 text-sm";
+  const toneCls =
+    tone === "primary"
+      ? "bg-primary/10 text-primary ring-1 ring-primary/20"
+      : "bg-muted text-foreground/70 ring-1 ring-border";
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${map[s]}`}>
-      {labels[s]}
+    <span
+      className={`inline-flex shrink-0 items-center justify-center rounded-full font-bold ${dim} ${toneCls}`}
+    >
+      {initialsOf(name, email)}
     </span>
   );
 }
 
+function Pill({
+  children,
+  tone,
+  className = "",
+}: {
+  children: React.ReactNode;
+  tone:
+    | "navy"
+    | "gray"
+    | "green"
+    | "red"
+    | "amber"
+    | "blue"
+    | "successSoft";
+  className?: string;
+}) {
+  const tones: Record<string, string> = {
+    navy: "bg-primary text-primary-foreground",
+    gray: "bg-muted text-foreground/70 ring-1 ring-border",
+    green: "bg-emerald-500/15 text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400",
+    red: "bg-red-500/15 text-red-700 ring-1 ring-red-500/30 dark:text-red-400",
+    amber: "bg-amber-500/15 text-amber-700 ring-1 ring-amber-500/30 dark:text-amber-400",
+    blue: "bg-blue-500/15 text-blue-700 ring-1 ring-blue-500/30 dark:text-blue-400",
+    successSoft: "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-400",
+  };
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${tones[tone]} ${className}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function StatusBadge({ s }: { s: "in-progress" | "completed" | "uploaded" }) {
+  if (s === "in-progress") return <Pill tone="amber">In Progress</Pill>;
+  if (s === "completed") return <Pill tone="blue">Completed</Pill>;
+  return <Pill tone="green">Uploaded</Pill>;
+}
+
+function StatCard({
+  icon,
+  label,
+  value,
+  loading,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  loading?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <div className="text-2xl font-bold leading-none tabular-nums text-foreground">
+          {loading ? <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /> : value}
+        </div>
+        <div className="mt-1 truncate text-xs font-medium text-muted-foreground">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- screen ----------
 function AdminScreen() {
   const { isAdmin, loading } = useAuth();
+
+  // shared summary state (loaded once, refreshed by tabs)
+  const [summary, setSummary] = useState({
+    agents: 0,
+    walkthroughs: 0,
+    uploaded: 0,
+    inProgress: 0,
+    loading: true,
+  });
+
+  const loadSummary = async () => {
+    setSummary((s) => ({ ...s, loading: true }));
+    const [{ data: roles }, { data: walks }] = await Promise.all([
+      supabase.from("user_roles").select("id"),
+      supabase.from("walkthroughs").select("completed_at,upload_status"),
+    ]);
+    const all = walks ?? [];
+    setSummary({
+      agents: roles?.length ?? 0,
+      walkthroughs: all.length,
+      uploaded: all.filter((w) => w.upload_status === "confirmed").length,
+      inProgress: all.filter((w) => !w.completed_at).length,
+      loading: false,
+    });
+  };
+
+  useEffect(() => {
+    if (isAdmin) void loadSummary();
+  }, [isAdmin]);
 
   if (loading) {
     return (
@@ -84,7 +228,7 @@ function AdminScreen() {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background">
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
           <Link
             to="/"
             aria-label="Back"
@@ -92,21 +236,54 @@ function AdminScreen() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="text-lg font-bold text-foreground">Admin Panel</h1>
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold leading-tight text-foreground">Admin Panel</h1>
+            <p className="text-xs text-muted-foreground">Manage agents and walkthroughs</p>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-5">
+      <main className="mx-auto w-full max-w-6xl flex-1 space-y-5 px-4 py-5">
+        {/* Summary bar */}
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard
+            icon={<Users className="h-5 w-5" />}
+            label="Total agents"
+            value={summary.agents}
+            loading={summary.loading}
+          />
+          <StatCard
+            icon={<ClipboardList className="h-5 w-5" />}
+            label="Total walkthroughs"
+            value={summary.walkthroughs}
+            loading={summary.loading}
+          />
+          <StatCard
+            icon={<CloudUpload className="h-5 w-5" />}
+            label="Uploaded to Drive"
+            value={summary.uploaded}
+            loading={summary.loading}
+          />
+          <StatCard
+            icon={<Clock className="h-5 w-5" />}
+            label="In Progress"
+            value={summary.inProgress}
+            loading={summary.loading}
+          />
+        </section>
+
         <Tabs defaultValue="agents" className="w-full">
-          <TabsList className="grid h-11 w-full grid-cols-2">
-            <TabsTrigger value="agents" className="text-sm font-semibold">Agents</TabsTrigger>
-            <TabsTrigger value="walkthroughs" className="text-sm font-semibold">
+          <TabsList className="grid h-11 w-full grid-cols-2 sm:w-auto sm:inline-grid">
+            <TabsTrigger value="agents" className="text-sm font-semibold sm:px-6">
+              Agents
+            </TabsTrigger>
+            <TabsTrigger value="walkthroughs" className="text-sm font-semibold sm:px-6">
               All Walkthroughs
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="agents" className="mt-4">
-            <AgentsTab />
+            <AgentsTab onChange={loadSummary} />
           </TabsContent>
           <TabsContent value="walkthroughs" className="mt-4">
             <WalkthroughsTab />
@@ -117,7 +294,8 @@ function AdminScreen() {
   );
 }
 
-function AgentsTab() {
+// ---------- Agents Tab ----------
+function AgentsTab({ onChange }: { onChange: () => void }) {
   const [rows, setRows] = useState<AgentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -134,8 +312,6 @@ function AgentsTab() {
       setLoading(false);
       return;
     }
-
-    // Aggregate walkthrough counts per agent (admin can read all walkthroughs).
     const { data: walks } = await supabase
       .from("walkthroughs")
       .select("user_id,completed_at,upload_status");
@@ -148,12 +324,13 @@ function AgentsTab() {
         uploadedMap.set(w.user_id, (uploadedMap.get(w.user_id) ?? 0) + 1);
     });
 
-    const enriched = (roles ?? []).map((r) => ({
-      ...(r as AgentRow),
-      completed_count: completedMap.get(r.user_id) ?? 0,
-      uploaded_count: uploadedMap.get(r.user_id) ?? 0,
-    }));
-    setRows(enriched);
+    setRows(
+      (roles ?? []).map((r) => ({
+        ...(r as AgentRow),
+        completed_count: completedMap.get(r.user_id) ?? 0,
+        uploaded_count: uploadedMap.get(r.user_id) ?? 0,
+      })),
+    );
     setLoading(false);
   };
 
@@ -179,13 +356,13 @@ function AgentsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {rows.length} {rows.length === 1 ? "user" : "users"}
         </p>
         <button
           onClick={() => setInviteOpen(true)}
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-accent px-3.5 text-sm font-semibold text-accent-foreground hover:bg-accent/90"
+          className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
         >
           <UserPlus className="h-4 w-4" />
           Invite Agent
@@ -193,7 +370,7 @@ function AgentsTab() {
       </div>
 
       {loading ? (
-        <div className="flex h-24 items-center justify-center">
+        <div className="flex h-32 items-center justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       ) : rows.length === 0 ? (
@@ -201,90 +378,94 @@ function AgentsTab() {
           <p className="text-sm text-muted-foreground">No users yet.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-          <table className="w-full text-sm">
-            <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2.5 text-left font-semibold">Name / Email</th>
-                <th className="px-3 py-2.5 text-left font-semibold">Status</th>
-                <th className="px-3 py-2.5 text-left font-semibold">Invited</th>
-                <th className="px-3 py-2.5 text-left font-semibold">Completed</th>
-                <th className="px-3 py-2.5 text-left font-semibold">Uploaded</th>
-                <th className="px-3 py-2.5 text-right font-semibold">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-b border-border last:border-0">
-                  <td className="px-3 py-2.5">
-                    <div className="font-semibold text-foreground">
-                      {r.full_name || "—"}
-                      {r.role === "admin" && (
-                        <span className="ml-2 inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
-                          ADMIN
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground">{r.email}</div>
-                  </td>
-                  <td className="px-3 py-2.5">
-                    {r.status === "active" ? (
-                      <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-700 ring-1 ring-red-500/30 dark:text-red-400">
-                        Blocked
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2.5 text-xs text-muted-foreground">
-                    {new Date(r.invited_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-3 py-2.5 tabular-nums">{r.completed_count}</td>
-                  <td className="px-3 py-2.5 tabular-nums">{r.uploaded_count}</td>
-                  <td className="px-3 py-2.5 text-right">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {rows.map((r) => (
+            <article
+              key={r.id}
+              className="rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-shadow hover:shadow-[0_4px_14px_rgba(16,24,40,0.08)]"
+            >
+              <div className="flex items-start gap-3">
+                <Avatar name={r.full_name} email={r.email} size="lg" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="truncate text-base font-bold text-foreground">
+                      {r.full_name || "Unnamed"}
+                    </h3>
                     {r.role === "admin" ? (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    ) : r.status === "active" ? (
-                      <button
-                        onClick={() => void toggleBlock(r)}
-                        disabled={busyId === r.id}
-                        className="inline-flex h-8 items-center gap-1 rounded-lg bg-red-600 px-2.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
-                      >
-                        {busyId === r.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <ShieldOff className="h-3.5 w-3.5" />
-                        )}
-                        Block
-                      </button>
+                      <Pill tone="navy">ADMIN</Pill>
                     ) : (
-                      <button
-                        onClick={() => void toggleBlock(r)}
-                        disabled={busyId === r.id}
-                        className="inline-flex h-8 items-center gap-1 rounded-lg bg-emerald-600 px-2.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-                      >
-                        {busyId === r.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <ShieldCheck className="h-3.5 w-3.5" />
-                        )}
-                        Unblock
-                      </button>
+                      <Pill tone="gray">AGENT</Pill>
                     )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    {r.status === "active" ? (
+                      <Pill tone="green">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Active
+                      </Pill>
+                    ) : (
+                      <Pill tone="red">Blocked</Pill>
+                    )}
+                  </div>
+                  <p className="mt-0.5 truncate text-sm text-muted-foreground">{r.email}</p>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Pill tone="gray">
+                      <ClipboardList className="h-3 w-3" />
+                      {r.completed_count} completed
+                    </Pill>
+                    <Pill tone="successSoft">
+                      <CloudUpload className="h-3 w-3" />
+                      {r.uploaded_count} uploaded
+                    </Pill>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                <span className="text-xs text-muted-foreground">
+                  Invited {fmtDate(r.invited_at)}
+                </span>
+                {r.role === "admin" ? (
+                  <span className="text-xs italic text-muted-foreground">No actions</span>
+                ) : r.status === "active" ? (
+                  <button
+                    onClick={() => void toggleBlock(r)}
+                    disabled={busyId === r.id}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-500/40 bg-transparent px-3 text-xs font-semibold text-red-700 hover:bg-red-500/10 disabled:opacity-60 dark:text-red-400"
+                  >
+                    {busyId === r.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <ShieldOff className="h-3.5 w-3.5" />
+                    )}
+                    Block
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => void toggleBlock(r)}
+                    disabled={busyId === r.id}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-transparent px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-60 dark:text-emerald-400"
+                  >
+                    {busyId === r.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                    )}
+                    Unblock
+                  </button>
+                )}
+              </div>
+            </article>
+          ))}
         </div>
       )}
 
       <InviteAgentDialog
         open={inviteOpen}
         onOpenChange={setInviteOpen}
-        onInvited={() => void load()}
+        onInvited={() => {
+          void load();
+          onChange();
+        }}
       />
     </div>
   );
@@ -334,37 +515,50 @@ function InviteAgentDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Invite Agent</DialogTitle>
-          <DialogDescription>
-            Sends an email invite. They become an active agent on signup.
-          </DialogDescription>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        onOpenChange(o);
+        if (!o) reset();
+      }}
+    >
+      <DialogContent className="max-w-md rounded-2xl p-6">
+        <DialogHeader className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <UserPlus className="h-5 w-5" />
+            </div>
+            <div>
+              <DialogTitle className="text-lg">Invite Agent</DialogTitle>
+              <DialogDescription className="text-xs">
+                We'll email an invite. They'll join as an active agent on signup.
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} className="mt-4 space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-semibold">Full name</label>
+            <label className="mb-1.5 block text-sm font-semibold text-foreground">Full name</label>
             <input
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Jane Doe"
               required
-              className="h-11 w-full rounded-xl border-2 border-input bg-card px-3 text-sm focus:border-accent focus:outline-none"
+              className="h-11 w-full rounded-xl border-2 border-input bg-background px-3 text-sm transition-colors focus:border-accent focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-semibold">Email</label>
+            <label className="mb-1.5 block text-sm font-semibold text-foreground">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="agent@example.com"
               required
-              className="h-11 w-full rounded-xl border-2 border-input bg-card px-3 text-sm focus:border-accent focus:outline-none"
+              className="h-11 w-full rounded-xl border-2 border-input bg-background px-3 text-sm transition-colors focus:border-accent focus:outline-none"
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-2">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
@@ -375,7 +569,7 @@ function InviteAgentDialog({
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-60"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
               Send Invite
@@ -387,11 +581,15 @@ function InviteAgentDialog({
   );
 }
 
+// ---------- Walkthroughs Tab ----------
 function WalkthroughsTab() {
   const [rows, setRows] = useState<WalkRow[]>([]);
-  const [agents, setAgents] = useState<Map<string, string>>(new Map());
+  const [agents, setAgents] = useState<Map<string, { name: string; email: string | null }>>(
+    new Map(),
+  );
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("date");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     void (async () => {
@@ -399,7 +597,9 @@ function WalkthroughsTab() {
       const [{ data: walks, error }, { data: roles }] = await Promise.all([
         supabase
           .from("walkthroughs")
-          .select("id,user_id,house_number,street_name,city,state,created_at,completed_at,upload_status")
+          .select(
+            "id,user_id,house_number,street_name,city,state,created_at,completed_at,upload_status",
+          )
           .order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id,full_name,email"),
       ]);
@@ -408,9 +608,12 @@ function WalkthroughsTab() {
         setLoading(false);
         return;
       }
-      const m = new Map<string, string>();
+      const m = new Map<string, { name: string; email: string | null }>();
       (roles ?? []).forEach((r) => {
-        m.set(r.user_id, r.full_name || r.email || r.user_id.slice(0, 8));
+        m.set(r.user_id, {
+          name: r.full_name || r.email || r.user_id.slice(0, 8),
+          email: r.email,
+        });
       });
       setAgents(m);
       setRows((walks ?? []) as WalkRow[]);
@@ -418,89 +621,125 @@ function WalkthroughsTab() {
     })();
   }, []);
 
-  const sorted = useMemo(() => {
-    const arr = [...rows];
+  const filteredSorted = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let arr = rows;
+    if (q) {
+      arr = rows.filter((w) => {
+        const addr = `${formatStreet(w)} ${formatCityState(w)}`.toLowerCase();
+        const agent = (agents.get(w.user_id)?.name ?? "").toLowerCase();
+        return addr.includes(q) || agent.includes(q);
+      });
+    }
+    const out = [...arr];
     if (sortKey === "date") {
-      arr.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      out.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } else if (sortKey === "agent") {
-      arr.sort((a, b) =>
-        (agents.get(a.user_id) ?? "").localeCompare(agents.get(b.user_id) ?? ""),
+      out.sort((a, b) =>
+        (agents.get(a.user_id)?.name ?? "").localeCompare(agents.get(b.user_id)?.name ?? ""),
       );
     } else {
       const order = { "in-progress": 0, completed: 1, uploaded: 2 } as const;
-      arr.sort((a, b) => order[statusOf(a)] - order[statusOf(b)]);
+      out.sort((a, b) => order[statusOf(a)] - order[statusOf(b)]);
     }
-    return arr;
-  }, [rows, sortKey, agents]);
+    return out;
+  }, [rows, sortKey, agents, query]);
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {rows.length} {rows.length === 1 ? "walkthrough" : "walkthroughs"}
-        </p>
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1 sm:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search address or agent…"
+            className="h-10 w-full rounded-xl border-2 border-input bg-card pl-9 pr-3 text-sm transition-colors focus:border-accent focus:outline-none"
+          />
+        </div>
         <div className="flex items-center gap-2">
           <label className="text-xs font-semibold text-muted-foreground">Sort:</label>
           <select
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="h-9 rounded-lg border border-input bg-card px-2 text-sm focus:border-accent focus:outline-none"
+            className="h-10 rounded-xl border-2 border-input bg-card px-3 text-sm font-medium focus:border-accent focus:outline-none"
           >
-            <option value="date">Date</option>
-            <option value="agent">Agent</option>
+            <option value="date">Date (newest first)</option>
+            <option value="agent">Agent name</option>
             <option value="status">Status</option>
           </select>
         </div>
       </div>
 
+      <p className="text-sm text-muted-foreground">
+        {filteredSorted.length} of {rows.length}{" "}
+        {rows.length === 1 ? "walkthrough" : "walkthroughs"}
+      </p>
+
       {loading ? (
-        <div className="flex h-24 items-center justify-center">
+        <div className="flex h-32 items-center justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
-      ) : sorted.length === 0 ? (
+      ) : filteredSorted.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
-          <p className="text-sm text-muted-foreground">No walkthroughs yet.</p>
+          <p className="text-sm text-muted-foreground">
+            {query ? "No walkthroughs match your search." : "No walkthroughs yet."}
+          </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-          <table className="w-full text-sm">
-            <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2.5 text-left font-semibold">Property</th>
-                <th className="px-3 py-2.5 text-left font-semibold">Agent</th>
-                <th className="px-3 py-2.5 text-left font-semibold">Started</th>
-                <th className="px-3 py-2.5 text-left font-semibold">Status</th>
-                <th className="px-3 py-2.5 text-right font-semibold">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((w) => (
-                <tr key={w.id} className="border-b border-border last:border-0">
-                  <td className="px-3 py-2.5 font-semibold text-foreground">
-                    {formatAddress(w)}
-                  </td>
-                  <td className="px-3 py-2.5 text-muted-foreground">
-                    {agents.get(w.user_id) ?? w.user_id.slice(0, 8)}
-                  </td>
-                  <td className="px-3 py-2.5 text-xs text-muted-foreground">
-                    {new Date(w.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <StatusBadge s={statusOf(w)} />
-                  </td>
-                  <td className="px-3 py-2.5 text-right">
-                    <Link
-                      to="/review/$id"
-                      params={{ id: w.id }}
-                      className="inline-flex h-8 items-center rounded-lg bg-primary px-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                    >
-                      View Report
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {filteredSorted.map((w) => {
+            const agent = agents.get(w.user_id);
+            const street = formatStreet(w);
+            const city = formatCityState(w);
+            const has = hasAddress(w);
+            return (
+              <article
+                key={w.id}
+                className="rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-shadow hover:shadow-[0_4px_14px_rgba(16,24,40,0.08)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    {has ? (
+                      <>
+                        <h3 className="truncate text-base font-bold text-foreground">
+                          {street || city}
+                        </h3>
+                        {street && city && (
+                          <p className="mt-0.5 truncate text-sm text-muted-foreground">{city}</p>
+                        )}
+                      </>
+                    ) : (
+                      <h3 className="truncate text-base italic text-muted-foreground">
+                        Address not set
+                      </h3>
+                    )}
+                  </div>
+                  <StatusBadge s={statusOf(w)} />
+                </div>
+
+                <div className="mt-3 flex items-center gap-2">
+                  <Avatar name={agent?.name} email={agent?.email} size="sm" tone="muted" />
+                  <span className="truncate text-sm font-medium text-foreground">
+                    {agent?.name ?? w.user_id.slice(0, 8)}
+                  </span>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                  <span className="text-xs text-muted-foreground">
+                    Started {fmtDate(w.created_at)}
+                  </span>
+                  <Link
+                    to="/review/$id"
+                    params={{ id: w.id }}
+                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                  >
+                    View Report
+                  </Link>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
     </div>
