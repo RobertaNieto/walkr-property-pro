@@ -51,11 +51,14 @@ export type Database = {
           completed_at: string | null
           config: Json
           created_at: string
+          drive_folder_url: string | null
           house_number: string
           id: string
           last_route: string | null
           street_name: string
           updated_at: string
+          upload_status: string
+          uploaded_at: string | null
           user_id: string
         }
         Insert: {
@@ -64,11 +67,14 @@ export type Database = {
           completed_at?: string | null
           config?: Json
           created_at?: string
+          drive_folder_url?: string | null
           house_number?: string
           id?: string
           last_route?: string | null
           street_name?: string
           updated_at?: string
+          upload_status?: string
+          uploaded_at?: string | null
           user_id: string
         }
         Update: {
@@ -77,11 +83,14 @@ export type Database = {
           completed_at?: string | null
           config?: Json
           created_at?: string
+          drive_folder_url?: string | null
           house_number?: string
           id?: string
           last_route?: string | null
           street_name?: string
           updated_at?: string
+          upload_status?: string
+          uploaded_at?: string | null
           user_id?: string
         }
         Relationships: []
