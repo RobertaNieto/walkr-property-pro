@@ -156,23 +156,42 @@ function ProfileScreen() {
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-4">
-                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-secondary text-2xl font-bold text-muted-foreground">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    (displayName || user?.email || "?").charAt(0).toUpperCase()
-                  )}
-                </div>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-input bg-card px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-secondary">
-                  {uploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4" />
-                  )}
-                  {uploading ? "Uploading…" : "Change photo"}
-                  <input type="file" accept="image/*" className="hidden" onChange={uploadAvatar} />
-                </label>
+              <div className="flex flex-col items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  aria-label="Change profile photo"
+                  className="relative rounded-full focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background disabled:opacity-70"
+                >
+                  <UserAvatar
+                    url={avatarUrl}
+                    name={displayName}
+                    email={user?.email}
+                    size="2xl"
+                  />
+                  <span
+                    aria-hidden
+                    className="absolute bottom-0 right-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md ring-2 ring-background"
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4" />
+                    )}
+                  </span>
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  {uploading ? "Uploading…" : "Tap photo to change"}
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  capture="user"
+                  className="hidden"
+                  onChange={uploadAvatar}
+                />
               </div>
 
               <div className="space-y-4">
