@@ -313,20 +313,6 @@ function WalkthroughsScreen() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                void confirmDelete();
-              }}
-              disabled={deleting}
-              className="bg-critical text-critical-foreground hover:bg-critical/90"
-            >
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
