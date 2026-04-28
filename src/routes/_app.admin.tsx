@@ -415,6 +415,12 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
                     )}
                   </div>
                   <p className="mt-0.5 truncate text-sm text-muted-foreground">{r.email}</p>
+                  {(r.phone || r.license_number) && (
+                    <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                      {r.phone && <p className="truncate">📞 {r.phone}</p>}
+                      {r.license_number && <p className="truncate">License #{r.license_number}</p>}
+                    </div>
+                  )}
 
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Pill tone="gray">
