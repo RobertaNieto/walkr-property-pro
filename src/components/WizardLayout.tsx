@@ -178,6 +178,21 @@ export function WizardLayout({
           </div>
         </div>
       </footer>
+
+      <AlertDialog open={homeConfirmOpen} onOpenChange={setHomeConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave walkthrough?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your progress is saved automatically.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmLeave}>Leave</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
