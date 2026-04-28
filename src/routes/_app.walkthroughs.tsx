@@ -148,7 +148,7 @@ function WalkthroughsScreen() {
     try {
       if (pendingDelete.kind === "draft") {
         await deleteWalkthrough(pendingDelete.id);
-        setInProgress(null);
+        setInProgress((prev) => prev.filter((w) => w.id !== pendingDelete.id));
       } else {
         removeCompletedLocal(pendingDelete.id);
         setCompleted((prev) => prev.filter((r) => r.id !== pendingDelete.id));
