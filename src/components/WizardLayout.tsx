@@ -106,6 +106,12 @@ export function WizardLayout({
             <p className="truncate text-[28px] font-bold uppercase leading-tight tracking-tight text-white">
               {sectionName}
             </p>
+            {propertyAddress && (
+              <p className="flex items-center gap-1.5 truncate text-[13px] font-medium text-white/85">
+                <MapPin className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
+                <span className="truncate">{propertyAddress}</span>
+              </p>
+            )}
           </div>
         </div>
       </header>
