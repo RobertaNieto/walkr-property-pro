@@ -78,35 +78,53 @@ function ProfileScreen() {
     else toast.success("Profile saved");
   };
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const uploadAvatar = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = ""; // reset so re-selecting the same file re-fires
     if (!file || !user) return;
+    if (!/^image\/(jpeg|jpg|png|webp)$/i.test(file.type)) {
+      toast.error("Please choose a JPG, PNG, or WebP image");
+      return;
+    }
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image must be under 5 MB");
       return;
     }
+
     setUploading(true);
-    const ext = file.name.split(".").pop() || "jpg";
-    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from("avatars")
-      .upload(path, file, { upsert: true, contentType: file.type });
-    if (upErr) {
-      setUploading(false);
-      toast.error(upErr.message);
-      return;
-    }
-    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-    const url = pub.publicUrl;
-    const { error: updErr } = await supabase
-      .from("profiles")
-      .update({ avatar_url: url })
-      .eq("id", user.id);
-    setUploading(false);
-    if (updErr) toast.error(updErr.message);
-    else {
+    try {
+      const compressed = await compressImage(file, { maxBytes: 500 * 1024, maxDim: 1024 });
+      // Stable path so old photo is overwritten on each upload.
+      const path = `${user.id}/avatar.jpg`;
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, compressed, {
+          upsert: true,
+          contentType: "image/jpeg",
+          cacheControl: "60",
+        });
+      if (upErr) throw upErr;
+
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      // Cache-bust so the new image renders immediately.
+      const url = `${pub.publicUrl}?v=${Date.now()}`;
+
+      const { error: updErr } = await supabase
+        .from("profiles")
+        .update({ avatar_url: url })
+        .eq("id", user.id);
+      if (updErr) throw updErr;
+
       setAvatarUrl(url);
+      notifyProfileUpdated();
       toast.success("Photo updated");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Upload failed";
+      toast.error(msg);
+    } finally {
+      setUploading(false);
     }
   };
 
