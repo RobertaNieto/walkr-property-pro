@@ -138,7 +138,7 @@ function AuthScreen() {
     setSubmitting(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: emailResult.data!,
           password: pwResult.data!,
           options: {
@@ -152,6 +152,35 @@ function AuthScreen() {
           },
         });
         if (error) throw error;
+
+        // Best-effort optional avatar upload — only possible if the signup
+        // returned an active session (auto-confirm enabled). If not, the
+        // user can add a photo later from the profile screen.
+        const newUserId = signUpData.user?.id;
+        if (avatarFile && signUpData.session && newUserId) {
+          try {
+            const compressed = await compressImage(avatarFile, {
+              maxBytes: 500 * 1024,
+              maxDim: 1024,
+            });
+            const path = `${newUserId}/avatar.jpg`;
+            const { error: upErr } = await supabase.storage
+              .from("avatars")
+              .upload(path, compressed, {
+                upsert: true,
+                contentType: "image/jpeg",
+                cacheControl: "60",
+              });
+            if (!upErr) {
+              const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+              const url = `${pub.publicUrl}?v=${Date.now()}`;
+              await supabase.from("profiles").update({ avatar_url: url }).eq("id", newUserId);
+            }
+          } catch (e) {
+            console.warn("[auth] avatar upload skipped:", e);
+          }
+        }
+
         toast.success("Account created — you're signed in");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
