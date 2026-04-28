@@ -306,6 +306,9 @@ interface DbRow {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
+  upload_status?: string | null;
+  drive_folder_url?: string | null;
+  uploaded_at?: string | null;
 }
 
 function fromDb(row: DbRow): Walkthrough {
@@ -323,6 +326,9 @@ function fromDb(row: DbRow): Walkthrough {
     answers: row.answers ?? {},
     lastRoute: row.last_route ?? undefined,
     completedAt: row.completed_at ? new Date(row.completed_at).getTime() : null,
+    uploadStatus: (row.upload_status as Walkthrough["uploadStatus"]) ?? "pending",
+    driveFolderUrl: row.drive_folder_url ?? null,
+    uploadedAt: row.uploaded_at ? new Date(row.uploaded_at).getTime() : null,
   };
 }
 
@@ -351,9 +357,18 @@ export async function fetchLatestInProgress(userId: string): Promise<Walkthrough
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  const w = fromDb(data as DbRow);
-  writeCache(w);
-  return w;
+  return fromDb(data as DbRow);
+}
+
+export async function fetchAllInProgress(userId: string): Promise<Walkthrough[]> {
+  const { data, error } = await supabase
+    .from("walkthroughs")
+    .select("*")
+    .eq("user_id", userId)
+    .is("completed_at", null)
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((r) => fromDb(r as DbRow));
 }
 
 export async function fetchCompleted(userId: string): Promise<Walkthrough[]> {
@@ -363,7 +378,7 @@ export async function fetchCompleted(userId: string): Promise<Walkthrough[]> {
     .eq("user_id", userId)
     .not("completed_at", "is", null)
     .order("completed_at", { ascending: false })
-    .limit(20);
+    .limit(50);
   if (error) throw error;
   return (data ?? []).map((r) => fromDb(r as DbRow));
 }
@@ -377,6 +392,7 @@ export async function fetchById(id: string): Promise<Walkthrough | null> {
   if (error) throw error;
   return data ? fromDb(data as DbRow) : null;
 }
+
 
 interface DbPatch {
   house_number?: string;
