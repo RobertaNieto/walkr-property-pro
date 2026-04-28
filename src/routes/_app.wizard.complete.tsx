@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
-import { completeWalkthrough, fetchById, submitWalkthrough, type Walkthrough } from "@/lib/walkthrough";
+import { completeWalkthrough, fetchById, formatPropertyAddress, submitWalkthrough, type Walkthrough } from "@/lib/walkthrough";
 import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
 import { useAuth } from "@/lib/auth";
 
