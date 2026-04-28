@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { loadActive, updateWalkthrough, type Walkthrough } from "@/lib/walkthrough";
 import {
   buildQuestionList,
+  hasUserAnswer,
   isQuestionAnswered,
   SECTIONS,
   type QuestionDef,
@@ -104,13 +105,21 @@ function SectionMenuScreen() {
     for (const s of SECTIONS) {
       const items = byIndex.get(s.index) ?? [];
       if (items.length === 0) continue; // skipped due to config
-      const answered = items.filter((x) =>
-        isQuestionAnswered(x, ctx.answers[x.id]),
-      ).length;
-      const firstUnanswered = items.find((x) => !isQuestionAnswered(x, ctx.answers[x.id]));
+      // "answered" counts only questions the user has actually filled in —
+      // optional questions with no input must NOT inflate progress on a fresh
+      // walkthrough.
+      const answered = items.filter((x) => hasUserAnswer(x, ctx.answers[x.id])).length;
+      // Section is "complete" only when every question passes validation AND
+      // the user has actually provided input for every required question.
+      const allValid = items.every((x) => isQuestionAnswered(x, ctx.answers[x.id]));
+      const requiredItems = items.filter((x) => (x as any).required || (x as any).field === "rating");
+      const allRequiredAnswered = requiredItems.every((x) => hasUserAnswer(x, ctx.answers[x.id]));
+      const firstUnanswered =
+        items.find((x) => !hasUserAnswer(x, ctx.answers[x.id]) && ((x as any).required || (x as any).field === "rating"))
+        ?? items.find((x) => !isQuestionAnswered(x, ctx.answers[x.id]));
       const firstQuestionId = (firstUnanswered ?? items[0])?.id;
       let status: SectionRow["status"] = "todo";
-      if (answered >= items.length) status = "complete";
+      if (allValid && allRequiredAnswered && answered > 0) status = "complete";
       else if (answered > 0) status = "in_progress";
       out.push({
         index: s.index,
