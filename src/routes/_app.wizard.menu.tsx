@@ -19,6 +19,7 @@ import {
   ClipboardList,
   CheckSquare,
   Check,
+  MapPin,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
