@@ -738,7 +738,13 @@ function WalkthroughsTab() {
                 </div>
 
                 <div className="mt-3 flex items-center gap-2">
-                  <Avatar name={agent?.name} email={agent?.email} size="sm" tone="muted" />
+                  <Avatar
+                    url={agent?.avatar_url}
+                    name={agent?.name}
+                    email={agent?.email}
+                    size="sm"
+                    tone="muted"
+                  />
                   <span className="truncate text-sm font-medium text-foreground">
                     {agent?.name ?? w.user_id.slice(0, 8)}
                   </span>
