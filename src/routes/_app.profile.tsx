@@ -5,15 +5,19 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { formatPhone } from "@/lib/format-phone";
 
 export const Route = createFileRoute("/_app/profile")({
   component: ProfileScreen,
 });
 
 const profileSchema = z.object({
-  display_name: z.string().trim().max(100).optional(),
-  phone: z.string().trim().max(40).optional(),
-  license_number: z.string().trim().max(60).optional(),
+  display_name: z.string().trim().min(2, "Enter your full name").max(100),
+  phone: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || v.replace(/\D/g, "").length === 10, "Enter a 10-digit phone number"),
+  license_number: z.string().trim().min(2, "Enter your license number").max(60),
 });
 
 function ProfileScreen() {
@@ -38,7 +42,7 @@ function ProfileScreen() {
         if (error) toast.error(error.message);
         if (data) {
           setDisplayName(data.display_name ?? "");
-          setPhone(data.phone ?? "");
+          setPhone(data.phone ? formatPhone(data.phone) : "");
           setLicense(data.license_number ?? "");
           setAvatarUrl(data.avatar_url);
         }
@@ -160,32 +164,34 @@ function ProfileScreen() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold">Display name</label>
+                  <label className="mb-1.5 block text-sm font-semibold">Full name</label>
                   <input
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Jane Doe"
+                    placeholder="First and Last Name"
+                    autoComplete="name"
                     maxLength={100}
                     className="h-12 w-full rounded-2xl border-2 border-input bg-card px-4 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold">Phone</label>
+                  <label className="mb-1.5 block text-sm font-semibold">Phone number</label>
                   <input
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="(555) 123-4567"
+                    onChange={(e) => setPhone(formatPhone(e.target.value))}
+                    placeholder="(555) 555-5555"
                     inputMode="tel"
-                    maxLength={40}
+                    autoComplete="tel"
+                    maxLength={14}
                     className="h-12 w-full rounded-2xl border-2 border-input bg-card px-4 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold">License #</label>
+                  <label className="mb-1.5 block text-sm font-semibold">Real Estate License #</label>
                   <input
                     value={license}
                     onChange={(e) => setLicense(e.target.value)}
-                    placeholder="DRE 01234567"
+                    placeholder="License Number"
                     maxLength={60}
                     className="h-12 w-full rounded-2xl border-2 border-input bg-card px-4 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
                   />
