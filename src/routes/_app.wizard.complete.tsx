@@ -31,6 +31,7 @@ type UploadState =
 function CompleteScreen() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const online = useOnlineStatus();
   const [walk, setWalk] = useState<Walkthrough | null>(null);
   const [confirmFresh, setConfirmFresh] = useState(false);
   const [clearing, setClearing] = useState(false);
