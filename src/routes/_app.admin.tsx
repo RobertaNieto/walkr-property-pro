@@ -393,7 +393,7 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
               className="rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-shadow hover:shadow-[0_4px_14px_rgba(16,24,40,0.08)]"
             >
               <div className="flex items-start gap-3">
-                <Avatar name={r.full_name} email={r.email} size="lg" />
+                <Avatar url={r.avatar_url} name={r.full_name} email={r.email} size="lg" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="truncate text-base font-bold text-foreground">
