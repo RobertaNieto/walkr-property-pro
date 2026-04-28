@@ -337,6 +337,7 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
         ...(r as AgentRow),
         completed_count: completedMap.get(r.user_id) ?? 0,
         uploaded_count: uploadedMap.get(r.user_id) ?? 0,
+        active_count: activeMap.get(r.user_id) ?? 0,
         phone: profMap.get(r.user_id)?.phone ?? null,
         license_number: profMap.get(r.user_id)?.license_number ?? null,
         avatar_url: profMap.get(r.user_id)?.avatar_url ?? null,
