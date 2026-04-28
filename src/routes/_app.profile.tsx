@@ -42,7 +42,7 @@ function ProfileScreen() {
         if (error) toast.error(error.message);
         if (data) {
           setDisplayName(data.display_name ?? "");
-          setPhone(data.phone ?? "");
+          setPhone(data.phone ? formatPhone(data.phone) : "");
           setLicense(data.license_number ?? "");
           setAvatarUrl(data.avatar_url);
         }
