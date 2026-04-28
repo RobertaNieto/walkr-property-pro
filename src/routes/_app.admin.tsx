@@ -314,9 +314,10 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
       setLoading(false);
       return;
     }
-    const { data: walks } = await supabase
-      .from("walkthroughs")
-      .select("user_id,completed_at,upload_status");
+    const [{ data: walks }, { data: profs }] = await Promise.all([
+      supabase.from("walkthroughs").select("user_id,completed_at,upload_status"),
+      supabase.from("profiles").select("id,phone,license_number"),
+    ]);
 
     const completedMap = new Map<string, number>();
     const uploadedMap = new Map<string, number>();
@@ -325,12 +326,18 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
       if (w.upload_status === "confirmed")
         uploadedMap.set(w.user_id, (uploadedMap.get(w.user_id) ?? 0) + 1);
     });
+    const profMap = new Map<string, { phone: string | null; license_number: string | null }>();
+    (profs ?? []).forEach((p) => {
+      profMap.set(p.id, { phone: p.phone ?? null, license_number: p.license_number ?? null });
+    });
 
     setRows(
       (roles ?? []).map((r) => ({
         ...(r as AgentRow),
         completed_count: completedMap.get(r.user_id) ?? 0,
         uploaded_count: uploadedMap.get(r.user_id) ?? 0,
+        phone: profMap.get(r.user_id)?.phone ?? null,
+        license_number: profMap.get(r.user_id)?.license_number ?? null,
       })),
     );
     setLoading(false);
