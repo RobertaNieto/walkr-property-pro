@@ -41,6 +41,8 @@ interface AgentRow {
   invited_at: string;
   completed_count?: number;
   uploaded_count?: number;
+  phone?: string | null;
+  license_number?: string | null;
 }
 
 interface WalkRow {
