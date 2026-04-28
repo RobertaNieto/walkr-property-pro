@@ -1589,6 +1589,53 @@ export function isQuestionAnswered(qIn: QuestionDef, ansMaybe: SkipContext["answ
   return true;
 }
 
+/**
+ * Strict "did the user actually provide input for this question" check.
+ *
+ * Unlike `isQuestionAnswered` (which returns true for any optional question so
+ * that navigation isn't blocked), this returns true ONLY when the user has
+ * supplied a meaningful value. Used for section progress on the menu so that
+ * a brand new walkthrough — which has zero answers regardless of which fields
+ * are optional — shows every section as "not started".
+ */
+export function hasUserAnswer(qIn: QuestionDef, ansMaybe: SkipContext["answers"][string] | undefined): boolean {
+  const q = qIn as any;
+  const ans = ansMaybe as any;
+  if (!ans) return false;
+
+  switch (q.field) {
+    case "text":
+      if (ans.text && ans.text.trim().length > 0) return true;
+      if (q.withRating && ans.rating !== undefined) return true;
+      return false;
+    case "longtext":
+      return !!(ans.text && ans.text.trim().length > 0);
+    case "number":
+      return ans.number !== undefined && !Number.isNaN(ans.number);
+    case "yesno":
+      return ans.bool !== undefined;
+    case "choice":
+      if (ans.choice) return true;
+      if (q.withRating && ans.rating !== undefined) return true;
+      return false;
+    case "multichoice":
+      return Array.isArray(ans.choices) && ans.choices.length > 0;
+    case "rating":
+      if (ans.rating !== undefined) return true;
+      if ((ans.photos?.length ?? 0) > 0) return true;
+      return false;
+    case "photo":
+    case "video":
+      return (ans.photos?.length ?? 0) > 0;
+    default:
+      // Fallback: any notes / photos / checklist entries count as input.
+      if (ans.notes && ans.notes.trim().length > 0) return true;
+      if ((ans.photos?.length ?? 0) > 0) return true;
+      if (ans.checklist && Object.values(ans.checklist).some(Boolean)) return true;
+      return false;
+  }
+}
+
 function pickAnswerValue(q: QuestionDef, ans: SkipContext["answers"][string]): AnswerValue {
   switch (q.field) {
     case "yesno":
