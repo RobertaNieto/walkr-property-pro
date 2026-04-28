@@ -48,9 +48,10 @@ function WalkthroughsScreen() {
   const { tab } = Route.useSearch();
   const resolvedTab: "in-progress" | "completed" = tab === "completed" ? "completed" : "in-progress";
   const [activeTab, setActiveTab] = useState<"in-progress" | "completed">(resolvedTab);
-  const [inProgress, setInProgress] = useState<Walkthrough | null>(null);
+  const [inProgress, setInProgress] = useState<Walkthrough[]>([]);
   const [completed, setCompleted] = useState<CompletedRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resumingId, setResumingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<
     | { kind: "draft"; id: string; label: string }
     | { kind: "completed"; id: string; label: string }
