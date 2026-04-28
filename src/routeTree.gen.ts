@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as DebugRouteImport } from './routes/debug'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -36,11 +35,6 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DebugRoute = DebugRouteImport.update({
-  id: '/debug',
-  path: '/debug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -121,7 +115,6 @@ const AppWizardQQidRoute = AppWizardQQidRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/debug': typeof DebugRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/address': typeof AppAddressRoute
@@ -140,7 +133,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/debug': typeof DebugRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/address': typeof AppAddressRoute
@@ -161,7 +153,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
-  '/debug': typeof DebugRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_app/address': typeof AppAddressRoute
@@ -182,7 +173,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/debug'
     | '/forgot-password'
     | '/reset-password'
     | '/address'
@@ -201,7 +191,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/debug'
     | '/forgot-password'
     | '/reset-password'
     | '/address'
@@ -221,7 +210,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/auth'
-    | '/debug'
     | '/forgot-password'
     | '/reset-password'
     | '/_app/address'
@@ -242,7 +230,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
-  DebugRoute: typeof DebugRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
@@ -261,13 +248,6 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/debug': {
-      id: '/debug'
-      path: '/debug'
-      fullPath: '/debug'
-      preLoaderRoute: typeof DebugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -414,7 +394,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
-  DebugRoute: DebugRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }
