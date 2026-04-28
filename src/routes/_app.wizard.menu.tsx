@@ -198,6 +198,16 @@ function SectionMenuScreen() {
           <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight">
             Where would you like to start?
           </h1>
+          {(() => {
+            const addr = formatPropertyAddress(w?.address);
+            if (!addr) return null;
+            return (
+              <p className="mt-2 flex items-center gap-1.5 text-[15px] font-semibold text-white">
+                <MapPin className="h-4 w-4 shrink-0 text-white/80" aria-hidden />
+                <span className="truncate">{addr}</span>
+              </p>
+            );
+          })()}
           <p className="mt-1 text-sm text-white/80">
             Tap any section to begin. You can return here anytime from the menu.
           </p>
