@@ -61,15 +61,6 @@ interface WalkRow {
 type SortKey = "date" | "agent" | "status";
 
 // ---------- helpers ----------
-function initialsOf(name?: string | null, email?: string | null) {
-  const src = (name?.trim() || email?.split("@")[0] || "?").trim();
-  const parts = src.split(/\s+/).filter(Boolean);
-  const letters =
-    parts.length >= 2
-      ? parts[0][0] + parts[parts.length - 1][0]
-      : src.slice(0, 2);
-  return letters.toUpperCase();
-}
 
 function formatStreet(w: WalkRow) {
   return [w.house_number, w.street_name].filter(Boolean).join(" ").trim();
