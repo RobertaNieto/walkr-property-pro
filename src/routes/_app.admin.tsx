@@ -598,9 +598,9 @@ function InviteAgentDialog({
 // ---------- Walkthroughs Tab ----------
 function WalkthroughsTab() {
   const [rows, setRows] = useState<WalkRow[]>([]);
-  const [agents, setAgents] = useState<Map<string, { name: string; email: string | null }>>(
-    new Map(),
-  );
+  const [agents, setAgents] = useState<
+    Map<string, { name: string; email: string | null; avatar_url: string | null }>
+  >(new Map());
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [query, setQuery] = useState("");
@@ -608,7 +608,7 @@ function WalkthroughsTab() {
   useEffect(() => {
     void (async () => {
       setLoading(true);
-      const [{ data: walks, error }, { data: roles }] = await Promise.all([
+      const [{ data: walks, error }, { data: roles }, { data: profs }] = await Promise.all([
         supabase
           .from("walkthroughs")
           .select(
@@ -616,17 +616,22 @@ function WalkthroughsTab() {
           )
           .order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id,full_name,email"),
+        supabase.from("profiles").select("id,avatar_url"),
       ]);
       if (error) {
         toast.error(error.message);
         setLoading(false);
         return;
       }
-      const m = new Map<string, { name: string; email: string | null }>();
+      const avatarMap = new Map<string, string | null>();
+      (profs ?? []).forEach((p) => avatarMap.set(p.id, p.avatar_url ?? null));
+
+      const m = new Map<string, { name: string; email: string | null; avatar_url: string | null }>();
       (roles ?? []).forEach((r) => {
         m.set(r.user_id, {
           name: r.full_name || r.email || r.user_id.slice(0, 8),
           email: r.email,
+          avatar_url: avatarMap.get(r.user_id) ?? null,
         });
       });
       setAgents(m);
