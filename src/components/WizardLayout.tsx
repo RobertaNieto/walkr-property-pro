@@ -60,6 +60,7 @@ export function WizardLayout({
   children,
 }: WizardLayoutProps) {
   const navigate = useNavigate();
+  const propertyAddress = useMemo(() => formatPropertyAddress(loadActive()?.address), []);
 
   const handleBack = () => {
     if (onBack) {
