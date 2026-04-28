@@ -161,9 +161,15 @@ function WelcomeScreen() {
             <Link
               to="/profile"
               aria-label="Profile"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-primary-foreground ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
             >
-              <UserIcon className="h-5 w-5" />
+              <UserAvatar
+                url={profile?.avatar_url}
+                name={profile?.display_name}
+                email={user.email}
+                size="md"
+                className="h-9 w-9"
+              />
             </Link>
           </>
         )}
