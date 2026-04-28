@@ -307,7 +307,7 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
     }
     const [{ data: walks }, { data: profs }] = await Promise.all([
       supabase.from("walkthroughs").select("user_id,completed_at,upload_status"),
-      supabase.from("profiles").select("id,phone,license_number"),
+      supabase.from("profiles").select("id,phone,license_number,avatar_url"),
     ]);
 
     const completedMap = new Map<string, number>();
@@ -317,9 +317,16 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
       if (w.upload_status === "confirmed")
         uploadedMap.set(w.user_id, (uploadedMap.get(w.user_id) ?? 0) + 1);
     });
-    const profMap = new Map<string, { phone: string | null; license_number: string | null }>();
+    const profMap = new Map<
+      string,
+      { phone: string | null; license_number: string | null; avatar_url: string | null }
+    >();
     (profs ?? []).forEach((p) => {
-      profMap.set(p.id, { phone: p.phone ?? null, license_number: p.license_number ?? null });
+      profMap.set(p.id, {
+        phone: p.phone ?? null,
+        license_number: p.license_number ?? null,
+        avatar_url: p.avatar_url ?? null,
+      });
     });
 
     setRows(
@@ -329,6 +336,7 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
         uploaded_count: uploadedMap.get(r.user_id) ?? 0,
         phone: profMap.get(r.user_id)?.phone ?? null,
         license_number: profMap.get(r.user_id)?.license_number ?? null,
+        avatar_url: profMap.get(r.user_id)?.avatar_url ?? null,
       })),
     );
     setLoading(false);
