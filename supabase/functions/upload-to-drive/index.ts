@@ -453,7 +453,7 @@ Deno.serve(async (req) => {
       }
       const bytes = new Uint8Array(await blob.arrayBuffer());
       const mime = fname.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
-      await uploadFileToDrive(token, fname, mime, bytes, subfolderId);
+      await uploadFileToDrive(token, fname, mime, bytes, photosFolderId);
       uploaded++;
     }
 
