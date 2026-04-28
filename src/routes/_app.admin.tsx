@@ -42,6 +42,7 @@ interface AgentRow {
   invited_at: string;
   completed_count?: number;
   uploaded_count?: number;
+  active_count?: number;
   phone?: string | null;
   license_number?: string | null;
   avatar_url?: string | null;
@@ -259,7 +260,7 @@ function AdminScreen() {
           />
           <StatCard
             icon={<Clock className="h-5 w-5" />}
-            label="In Progress"
+            label="Active Walkthroughs"
             value={summary.inProgress}
             loading={summary.loading}
           />
@@ -312,8 +313,10 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
 
     const completedMap = new Map<string, number>();
     const uploadedMap = new Map<string, number>();
+    const activeMap = new Map<string, number>();
     (walks ?? []).forEach((w) => {
       if (w.completed_at) completedMap.set(w.user_id, (completedMap.get(w.user_id) ?? 0) + 1);
+      else activeMap.set(w.user_id, (activeMap.get(w.user_id) ?? 0) + 1);
       if (w.upload_status === "confirmed")
         uploadedMap.set(w.user_id, (uploadedMap.get(w.user_id) ?? 0) + 1);
     });
@@ -334,6 +337,7 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
         ...(r as AgentRow),
         completed_count: completedMap.get(r.user_id) ?? 0,
         uploaded_count: uploadedMap.get(r.user_id) ?? 0,
+        active_count: activeMap.get(r.user_id) ?? 0,
         phone: profMap.get(r.user_id)?.phone ?? null,
         license_number: profMap.get(r.user_id)?.license_number ?? null,
         avatar_url: profMap.get(r.user_id)?.avatar_url ?? null,
@@ -429,6 +433,10 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
                     <Pill tone="successSoft">
                       <CloudUpload className="h-3 w-3" />
                       {r.uploaded_count} uploaded
+                    </Pill>
+                    <Pill tone="amber">
+                      <Clock className="h-3 w-3" />
+                      {r.active_count} active
                     </Pill>
                   </div>
                 </div>
