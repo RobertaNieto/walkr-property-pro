@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, LogOut, Upload } from "lucide-react";
+import { ArrowLeft, Loader2, LogOut, Shield, Upload } from "lucide-react";
 import { ChangeEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -17,7 +17,7 @@ const profileSchema = z.object({
 });
 
 function ProfileScreen() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -199,6 +199,16 @@ function ProfileScreen() {
               >
                 {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save changes"}
               </button>
+
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary/10 text-sm font-semibold text-primary hover:bg-primary/15"
+                >
+                  <Shield className="h-4 w-4" />
+                  Admin Panel
+                </Link>
+              )}
 
               <button
                 onClick={handleSignOut}
