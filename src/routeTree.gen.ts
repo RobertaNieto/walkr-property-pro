@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppWalkthroughsRouteImport } from './routes/_app.walkthroughs'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppConfigRouteImport } from './routes/_app.config'
+import { Route as AppAdminRouteImport } from './routes/_app.admin'
 import { Route as AppAddressRouteImport } from './routes/_app.address'
 import { Route as AppWizardMenuRouteImport } from './routes/_app.wizard.menu'
 import { Route as AppWizardLockboxRouteImport } from './routes/_app.wizard.lockbox'
@@ -64,6 +65,11 @@ const AppProfileRoute = AppProfileRouteImport.update({
 const AppConfigRoute = AppConfigRouteImport.update({
   id: '/config',
   path: '/config',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAddressRoute = AppAddressRouteImport.update({
@@ -118,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/address': typeof AppAddressRoute
+  '/admin': typeof AppAdminRoute
   '/config': typeof AppConfigRoute
   '/profile': typeof AppProfileRoute
   '/walkthroughs': typeof AppWalkthroughsRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/address': typeof AppAddressRoute
+  '/admin': typeof AppAdminRoute
   '/config': typeof AppConfigRoute
   '/profile': typeof AppProfileRoute
   '/walkthroughs': typeof AppWalkthroughsRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_app/address': typeof AppAddressRoute
+  '/_app/admin': typeof AppAdminRoute
   '/_app/config': typeof AppConfigRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/walkthroughs': typeof AppWalkthroughsRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/address'
+    | '/admin'
     | '/config'
     | '/profile'
     | '/walkthroughs'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/address'
+    | '/admin'
     | '/config'
     | '/profile'
     | '/walkthroughs'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/_app/address'
+    | '/_app/admin'
     | '/_app/config'
     | '/_app/profile'
     | '/_app/walkthroughs'
@@ -292,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppConfigRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/address': {
       id: '/_app/address'
       path: '/address'
@@ -360,6 +379,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAddressRoute: typeof AppAddressRoute
+  AppAdminRoute: typeof AppAdminRoute
   AppConfigRoute: typeof AppConfigRoute
   AppProfileRoute: typeof AppProfileRoute
   AppWalkthroughsRoute: typeof AppWalkthroughsRoute
@@ -375,6 +395,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAddressRoute: AppAddressRoute,
+  AppAdminRoute: AppAdminRoute,
   AppConfigRoute: AppConfigRoute,
   AppProfileRoute: AppProfileRoute,
   AppWalkthroughsRoute: AppWalkthroughsRoute,
