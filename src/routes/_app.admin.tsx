@@ -260,7 +260,7 @@ function AdminScreen() {
           />
           <StatCard
             icon={<Clock className="h-5 w-5" />}
-            label="In Progress"
+            label="Active Walkthroughs"
             value={summary.inProgress}
             loading={summary.loading}
           />
