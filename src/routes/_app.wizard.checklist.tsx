@@ -1,11 +1,12 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, Loader2, MapPin } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import {
   COMPLETING_KEY,
   completeWalkthrough,
+  formatPropertyAddress,
   loadActive,
   setAnswer,
   type WizardAnswer,
