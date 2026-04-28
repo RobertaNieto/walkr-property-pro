@@ -1,8 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Save } from "lucide-react";
-import { ReactNode } from "react";
+import { MapPin, Save } from "lucide-react";
+import { ReactNode, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { formatTimestamp } from "@/lib/walkthrough";
+import { formatPropertyAddress, formatTimestamp, loadActive } from "@/lib/walkthrough";
 
 const SECTION_COLORS: Record<number, string> = {
   1: "#1B3A6B",
