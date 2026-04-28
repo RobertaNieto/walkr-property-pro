@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserAvatar } from "@/components/UserAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 
@@ -43,6 +44,7 @@ interface AgentRow {
   uploaded_count?: number;
   phone?: string | null;
   license_number?: string | null;
+  avatar_url?: string | null;
 }
 
 interface WalkRow {
@@ -60,15 +62,6 @@ interface WalkRow {
 type SortKey = "date" | "agent" | "status";
 
 // ---------- helpers ----------
-function initialsOf(name?: string | null, email?: string | null) {
-  const src = (name?.trim() || email?.split("@")[0] || "?").trim();
-  const parts = src.split(/\s+/).filter(Boolean);
-  const letters =
-    parts.length >= 2
-      ? parts[0][0] + parts[parts.length - 1][0]
-      : src.slice(0, 2);
-  return letters.toUpperCase();
-}
 
 function formatStreet(w: WalkRow) {
   return [w.house_number, w.street_name].filter(Boolean).join(" ").trim();
@@ -94,28 +87,26 @@ function fmtDate(s: string) {
 
 // ---------- shared atoms ----------
 function Avatar({
+  url,
   name,
   email,
   size = "md",
   tone = "primary",
 }: {
+  url?: string | null;
   name?: string | null;
   email?: string | null;
   size?: "sm" | "md" | "lg";
   tone?: "primary" | "muted";
 }) {
-  const dim =
-    size === "lg" ? "h-12 w-12 text-base" : size === "sm" ? "h-8 w-8 text-[11px]" : "h-10 w-10 text-sm";
-  const toneCls =
-    tone === "primary"
-      ? "bg-primary/10 text-primary ring-1 ring-primary/20"
-      : "bg-muted text-foreground/70 ring-1 ring-border";
   return (
-    <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-bold ${dim} ${toneCls}`}
-    >
-      {initialsOf(name, email)}
-    </span>
+    <UserAvatar
+      url={url}
+      name={name}
+      email={email}
+      size={size}
+      muted={tone === "muted"}
+    />
   );
 }
 
@@ -316,7 +307,7 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
     }
     const [{ data: walks }, { data: profs }] = await Promise.all([
       supabase.from("walkthroughs").select("user_id,completed_at,upload_status"),
-      supabase.from("profiles").select("id,phone,license_number"),
+      supabase.from("profiles").select("id,phone,license_number,avatar_url"),
     ]);
 
     const completedMap = new Map<string, number>();
@@ -326,9 +317,16 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
       if (w.upload_status === "confirmed")
         uploadedMap.set(w.user_id, (uploadedMap.get(w.user_id) ?? 0) + 1);
     });
-    const profMap = new Map<string, { phone: string | null; license_number: string | null }>();
+    const profMap = new Map<
+      string,
+      { phone: string | null; license_number: string | null; avatar_url: string | null }
+    >();
     (profs ?? []).forEach((p) => {
-      profMap.set(p.id, { phone: p.phone ?? null, license_number: p.license_number ?? null });
+      profMap.set(p.id, {
+        phone: p.phone ?? null,
+        license_number: p.license_number ?? null,
+        avatar_url: p.avatar_url ?? null,
+      });
     });
 
     setRows(
@@ -338,6 +336,7 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
         uploaded_count: uploadedMap.get(r.user_id) ?? 0,
         phone: profMap.get(r.user_id)?.phone ?? null,
         license_number: profMap.get(r.user_id)?.license_number ?? null,
+        avatar_url: profMap.get(r.user_id)?.avatar_url ?? null,
       })),
     );
     setLoading(false);
@@ -394,7 +393,7 @@ function AgentsTab({ onChange }: { onChange: () => void }) {
               className="rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-shadow hover:shadow-[0_4px_14px_rgba(16,24,40,0.08)]"
             >
               <div className="flex items-start gap-3">
-                <Avatar name={r.full_name} email={r.email} size="lg" />
+                <Avatar url={r.avatar_url} name={r.full_name} email={r.email} size="lg" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="truncate text-base font-bold text-foreground">
@@ -599,9 +598,9 @@ function InviteAgentDialog({
 // ---------- Walkthroughs Tab ----------
 function WalkthroughsTab() {
   const [rows, setRows] = useState<WalkRow[]>([]);
-  const [agents, setAgents] = useState<Map<string, { name: string; email: string | null }>>(
-    new Map(),
-  );
+  const [agents, setAgents] = useState<
+    Map<string, { name: string; email: string | null; avatar_url: string | null }>
+  >(new Map());
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [query, setQuery] = useState("");
@@ -609,7 +608,7 @@ function WalkthroughsTab() {
   useEffect(() => {
     void (async () => {
       setLoading(true);
-      const [{ data: walks, error }, { data: roles }] = await Promise.all([
+      const [{ data: walks, error }, { data: roles }, { data: profs }] = await Promise.all([
         supabase
           .from("walkthroughs")
           .select(
@@ -617,17 +616,22 @@ function WalkthroughsTab() {
           )
           .order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id,full_name,email"),
+        supabase.from("profiles").select("id,avatar_url"),
       ]);
       if (error) {
         toast.error(error.message);
         setLoading(false);
         return;
       }
-      const m = new Map<string, { name: string; email: string | null }>();
+      const avatarMap = new Map<string, string | null>();
+      (profs ?? []).forEach((p) => avatarMap.set(p.id, p.avatar_url ?? null));
+
+      const m = new Map<string, { name: string; email: string | null; avatar_url: string | null }>();
       (roles ?? []).forEach((r) => {
         m.set(r.user_id, {
           name: r.full_name || r.email || r.user_id.slice(0, 8),
           email: r.email,
+          avatar_url: avatarMap.get(r.user_id) ?? null,
         });
       });
       setAgents(m);
@@ -734,7 +738,13 @@ function WalkthroughsTab() {
                 </div>
 
                 <div className="mt-3 flex items-center gap-2">
-                  <Avatar name={agent?.name} email={agent?.email} size="sm" tone="muted" />
+                  <Avatar
+                    url={agent?.avatar_url}
+                    name={agent?.name}
+                    email={agent?.email}
+                    size="sm"
+                    tone="muted"
+                  />
                   <span className="truncate text-sm font-medium text-foreground">
                     {agent?.name ?? w.user_id.slice(0, 8)}
                   </span>

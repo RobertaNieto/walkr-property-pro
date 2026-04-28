@@ -9,11 +9,12 @@ import {
   PlayCircle,
   RefreshCw,
   Shield,
-  User as UserIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { UserAvatar } from "@/components/UserAvatar";
+import { useMyProfile } from "@/hooks/use-my-profile";
 import { useAuth } from "@/lib/auth";
 import {
   createWalkthrough,
@@ -65,6 +66,7 @@ function StatusBadge({ status }: { status: WalkStatus }) {
 function WelcomeScreen() {
   const navigate = useNavigate();
   const { user, loading: authLoading, isAdmin } = useAuth();
+  const { profile } = useMyProfile();
   const [inProgress, setInProgress] = useState<Walkthrough[]>([]);
   const [completed, setCompleted] = useState<Walkthrough[]>([]);
   const [loading, setLoading] = useState(false);
@@ -159,9 +161,15 @@ function WelcomeScreen() {
             <Link
               to="/profile"
               aria-label="Profile"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-primary-foreground ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
             >
-              <UserIcon className="h-5 w-5" />
+              <UserAvatar
+                url={profile?.avatar_url}
+                name={profile?.display_name}
+                email={user.email}
+                size="md"
+                className="h-9 w-9"
+              />
             </Link>
           </>
         )}

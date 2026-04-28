@@ -1,12 +1,14 @@
 import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { Camera, Eye, EyeOff, Loader2, X } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import logo from "@/assets/logo.png";
+import { UserAvatar } from "@/components/UserAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatPhone } from "@/lib/format-phone";
+import { compressImage } from "@/lib/image-compress";
 import { cn } from "@/lib/utils";
 
 const emailSchema = z.string().trim().email("Enter a valid email").max(255);
@@ -57,6 +59,39 @@ function AuthScreen() {
   const [showPw, setShowPw] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Revoke preview URL on unmount/swap to avoid leaks.
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+
+  const onPickAvatar = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!/^image\/(jpeg|jpg|png|webp)$/i.test(file.type)) {
+      toast.error("Please choose a JPG, PNG, or WebP image");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5 MB");
+      return;
+    }
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const clearAvatar = () => {
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(null);
+    setAvatarPreview(null);
+  };
 
   if (loading) {
     return (
@@ -103,7 +138,7 @@ function AuthScreen() {
     setSubmitting(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: emailResult.data!,
           password: pwResult.data!,
           options: {
@@ -117,6 +152,35 @@ function AuthScreen() {
           },
         });
         if (error) throw error;
+
+        // Best-effort optional avatar upload — only possible if the signup
+        // returned an active session (auto-confirm enabled). If not, the
+        // user can add a photo later from the profile screen.
+        const newUserId = signUpData.user?.id;
+        if (avatarFile && signUpData.session && newUserId) {
+          try {
+            const compressed = await compressImage(avatarFile, {
+              maxBytes: 500 * 1024,
+              maxDim: 1024,
+            });
+            const path = `${newUserId}/avatar.jpg`;
+            const { error: upErr } = await supabase.storage
+              .from("avatars")
+              .upload(path, compressed, {
+                upsert: true,
+                contentType: "image/jpeg",
+                cacheControl: "60",
+              });
+            if (!upErr) {
+              const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+              const url = `${pub.publicUrl}?v=${Date.now()}`;
+              await supabase.from("profiles").update({ avatar_url: url }).eq("id", newUserId);
+            }
+          } catch (e) {
+            console.warn("[auth] avatar upload skipped:", e);
+          }
+        }
+
         toast.success("Account created — you're signed in");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -171,6 +235,51 @@ function AuthScreen() {
           </div>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            {mode === "signup" && (
+              <div className="flex flex-col items-center gap-2 pb-2">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  aria-label="Add profile photo"
+                  className="relative rounded-full focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-primary"
+                >
+                  <UserAvatar
+                    url={avatarPreview}
+                    name={fullName}
+                    email={email}
+                    size="2xl"
+                  />
+                  <span
+                    aria-hidden
+                    className="absolute bottom-0 right-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md ring-2 ring-primary"
+                  >
+                    <Camera className="h-4 w-4" />
+                  </span>
+                </button>
+                {avatarPreview ? (
+                  <button
+                    type="button"
+                    onClick={clearAvatar}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary-foreground/80 underline"
+                  >
+                    <X className="h-3 w-3" />
+                    Remove photo
+                  </button>
+                ) : (
+                  <span className="text-xs text-primary-foreground/70">
+                    Add Photo (optional)
+                  </span>
+                )}
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  capture="user"
+                  className="hidden"
+                  onChange={onPickAvatar}
+                />
+              </div>
+            )}
             {mode === "signup" && (
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-primary-foreground/90">

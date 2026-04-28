@@ -1,11 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, LogOut, Shield, Upload } from "lucide-react";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ArrowLeft, Camera, Loader2, LogOut, Shield } from "lucide-react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { UserAvatar } from "@/components/UserAvatar";
+import { notifyProfileUpdated } from "@/hooks/use-my-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatPhone } from "@/lib/format-phone";
+import { compressImage } from "@/lib/image-compress";
 
 export const Route = createFileRoute("/_app/profile")({
   component: ProfileScreen,
@@ -72,38 +75,59 @@ function ProfileScreen() {
       .eq("id", user.id);
     setSaving(false);
     if (error) toast.error(error.message);
-    else toast.success("Profile saved");
+    else {
+      notifyProfileUpdated();
+      toast.success("Profile saved");
+    }
   };
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const uploadAvatar = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = ""; // reset so re-selecting the same file re-fires
     if (!file || !user) return;
+    if (!/^image\/(jpeg|jpg|png|webp)$/i.test(file.type)) {
+      toast.error("Please choose a JPG, PNG, or WebP image");
+      return;
+    }
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image must be under 5 MB");
       return;
     }
+
     setUploading(true);
-    const ext = file.name.split(".").pop() || "jpg";
-    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from("avatars")
-      .upload(path, file, { upsert: true, contentType: file.type });
-    if (upErr) {
-      setUploading(false);
-      toast.error(upErr.message);
-      return;
-    }
-    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-    const url = pub.publicUrl;
-    const { error: updErr } = await supabase
-      .from("profiles")
-      .update({ avatar_url: url })
-      .eq("id", user.id);
-    setUploading(false);
-    if (updErr) toast.error(updErr.message);
-    else {
+    try {
+      const compressed = await compressImage(file, { maxBytes: 500 * 1024, maxDim: 1024 });
+      // Stable path so old photo is overwritten on each upload.
+      const path = `${user.id}/avatar.jpg`;
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, compressed, {
+          upsert: true,
+          contentType: "image/jpeg",
+          cacheControl: "60",
+        });
+      if (upErr) throw upErr;
+
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      // Cache-bust so the new image renders immediately.
+      const url = `${pub.publicUrl}?v=${Date.now()}`;
+
+      const { error: updErr } = await supabase
+        .from("profiles")
+        .update({ avatar_url: url })
+        .eq("id", user.id);
+      if (updErr) throw updErr;
+
       setAvatarUrl(url);
+      notifyProfileUpdated();
       toast.success("Photo updated");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Upload failed";
+      toast.error(msg);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -135,23 +159,42 @@ function ProfileScreen() {
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-4">
-                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-secondary text-2xl font-bold text-muted-foreground">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    (displayName || user?.email || "?").charAt(0).toUpperCase()
-                  )}
-                </div>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-input bg-card px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-secondary">
-                  {uploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4" />
-                  )}
-                  {uploading ? "Uploading…" : "Change photo"}
-                  <input type="file" accept="image/*" className="hidden" onChange={uploadAvatar} />
-                </label>
+              <div className="flex flex-col items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  aria-label="Change profile photo"
+                  className="relative rounded-full focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background disabled:opacity-70"
+                >
+                  <UserAvatar
+                    url={avatarUrl}
+                    name={displayName}
+                    email={user?.email}
+                    size="2xl"
+                  />
+                  <span
+                    aria-hidden
+                    className="absolute bottom-0 right-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md ring-2 ring-background"
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4" />
+                    )}
+                  </span>
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  {uploading ? "Uploading…" : "Tap photo to change"}
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  capture="user"
+                  className="hidden"
+                  onChange={uploadAvatar}
+                />
               </div>
 
               <div className="space-y-4">
