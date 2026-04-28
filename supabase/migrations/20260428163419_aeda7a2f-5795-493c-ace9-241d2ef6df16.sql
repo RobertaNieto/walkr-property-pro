@@ -1,0 +1,1 @@
+ALTER TABLE public.walkthroughs ADD COLUMN IF NOT EXISTS state text NOT NULL DEFAULT '';

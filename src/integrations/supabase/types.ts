@@ -55,6 +55,7 @@ export type Database = {
           house_number: string
           id: string
           last_route: string | null
+          state: string
           street_name: string
           updated_at: string
           upload_status: string
@@ -71,6 +72,7 @@ export type Database = {
           house_number?: string
           id?: string
           last_route?: string | null
+          state?: string
           street_name?: string
           updated_at?: string
           upload_status?: string
@@ -87,6 +89,7 @@ export type Database = {
           house_number?: string
           id?: string
           last_route?: string | null
+          state?: string
           street_name?: string
           updated_at?: string
           upload_status?: string
