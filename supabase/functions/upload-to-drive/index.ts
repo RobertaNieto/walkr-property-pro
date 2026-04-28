@@ -433,6 +433,7 @@ Deno.serve(async (req) => {
     // Create "Photos" and "Videos" subfolders inside the property folder
     const photosFolderId = await createDriveFolder(token, "Photos", subfolderId);
     const videosFolderId = await createDriveFolder(token, "Videos", subfolderId);
+    void videosFolderId; // reserved for future video uploads
 
     // Collect photo filenames from answers
     const photoNames = new Set<string>();
