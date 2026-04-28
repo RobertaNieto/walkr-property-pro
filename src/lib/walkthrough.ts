@@ -62,6 +62,9 @@ export interface Walkthrough {
   answers: WizardAnswers;
   lastRoute?: string;
   completedAt?: number | null;
+  uploadStatus?: "pending" | "uploading" | "confirmed" | "failed";
+  driveFolderUrl?: string | null;
+  uploadedAt?: number | null;
 }
 
 const ACTIVE_KEY = "propertywalk:active-id";
