@@ -10,6 +10,7 @@ export interface PropertyAddress {
   houseNumber: string;
   streetName: string;
   city: string;
+  state: string;
 }
 
 export interface PreWalkConfig {
