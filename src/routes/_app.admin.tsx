@@ -94,28 +94,26 @@ function fmtDate(s: string) {
 
 // ---------- shared atoms ----------
 function Avatar({
+  url,
   name,
   email,
   size = "md",
   tone = "primary",
 }: {
+  url?: string | null;
   name?: string | null;
   email?: string | null;
   size?: "sm" | "md" | "lg";
   tone?: "primary" | "muted";
 }) {
-  const dim =
-    size === "lg" ? "h-12 w-12 text-base" : size === "sm" ? "h-8 w-8 text-[11px]" : "h-10 w-10 text-sm";
-  const toneCls =
-    tone === "primary"
-      ? "bg-primary/10 text-primary ring-1 ring-primary/20"
-      : "bg-muted text-foreground/70 ring-1 ring-border";
   return (
-    <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-bold ${dim} ${toneCls}`}
-    >
-      {initialsOf(name, email)}
-    </span>
+    <UserAvatar
+      url={url}
+      name={name}
+      email={email}
+      size={size}
+      muted={tone === "muted"}
+    />
   );
 }
 
