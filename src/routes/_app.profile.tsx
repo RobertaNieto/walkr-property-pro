@@ -75,7 +75,10 @@ function ProfileScreen() {
       .eq("id", user.id);
     setSaving(false);
     if (error) toast.error(error.message);
-    else toast.success("Profile saved");
+    else {
+      notifyProfileUpdated();
+      toast.success("Profile saved");
+    }
   };
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
