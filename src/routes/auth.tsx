@@ -1,12 +1,14 @@
 import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { Camera, Eye, EyeOff, Loader2, X } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import logo from "@/assets/logo.png";
+import { UserAvatar } from "@/components/UserAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatPhone } from "@/lib/format-phone";
+import { compressImage } from "@/lib/image-compress";
 import { cn } from "@/lib/utils";
 
 const emailSchema = z.string().trim().email("Enter a valid email").max(255);
