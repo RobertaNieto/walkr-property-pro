@@ -430,6 +430,9 @@ Deno.serve(async (req) => {
     const folderName = `${sanitize(walk.house_number)}_${sanitize(walk.street_name)}_${sanitize(walk.city)}_${sanitize(walk.state)}`;
     const subfolderId = await createDriveFolder(token, folderName, PARENT_FOLDER);
 
+    // Create a "Photos" subfolder inside the property folder
+    const photosFolderId = await createDriveFolder(token, "Photos", subfolderId);
+
     // Collect photo filenames from answers
     const photoNames = new Set<string>();
     for (const ans of Object.values(walk.answers ?? {})) {
@@ -450,7 +453,7 @@ Deno.serve(async (req) => {
       }
       const bytes = new Uint8Array(await blob.arrayBuffer());
       const mime = fname.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
-      await uploadFileToDrive(token, fname, mime, bytes, subfolderId);
+      await uploadFileToDrive(token, fname, mime, bytes, photosFolderId);
       uploaded++;
     }
 
