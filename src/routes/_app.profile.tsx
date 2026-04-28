@@ -1,11 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, LogOut, Shield, Upload } from "lucide-react";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ArrowLeft, Camera, Loader2, LogOut, Shield } from "lucide-react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { UserAvatar } from "@/components/UserAvatar";
+import { notifyProfileUpdated } from "@/hooks/use-my-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatPhone } from "@/lib/format-phone";
+import { compressImage } from "@/lib/image-compress";
 
 export const Route = createFileRoute("/_app/profile")({
   component: ProfileScreen,
