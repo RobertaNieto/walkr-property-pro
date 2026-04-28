@@ -261,6 +261,8 @@ function WalkthroughsScreen() {
                       kind: "completed",
                       id: c.id,
                       label: c.propertyAddress || "this walkthrough",
+                      uploaded:
+                        (c as unknown as { uploadStatus?: string }).uploadStatus === "confirmed",
                     })
                   }
                 />
