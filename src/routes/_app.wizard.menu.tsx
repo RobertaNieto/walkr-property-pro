@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { loadActive, updateWalkthrough, type Walkthrough } from "@/lib/walkthrough";
 import {
   buildQuestionList,
+  hasUserAnswer,
   isQuestionAnswered,
   SECTIONS,
   type QuestionDef,
