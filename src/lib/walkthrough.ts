@@ -10,6 +10,7 @@ export interface PropertyAddress {
   houseNumber: string;
   streetName: string;
   city: string;
+  zipCode: string;
   state: string;
 }
 
@@ -89,8 +90,9 @@ export type CompletedRecord = CompletedSummary;
 
 function formatAddress(a: PropertyAddress): string {
   const street = [a.houseNumber, a.streetName].filter(Boolean).join(" ").trim();
-  const cityState = [a.city, a.state].filter(Boolean).join(", ");
-  return [street, cityState].filter(Boolean).join(", ");
+  const stateZip = [a.state, a.zipCode].filter(Boolean).join(" ").trim();
+  const cityStateZip = [a.city, stateZip].filter((s) => s && s.length > 0).join(", ");
+  return [street, cityStateZip].filter(Boolean).join(", ");
 }
 
 /**
@@ -310,6 +312,7 @@ interface DbRow {
   street_name: string;
   city: string;
   state: string;
+  zip_code: string | null;
   config: PreWalkConfig;
   answers: WizardAnswers;
   last_route: string | null;
@@ -330,6 +333,7 @@ function fromDb(row: DbRow): Walkthrough {
       houseNumber: row.house_number,
       streetName: row.street_name,
       city: row.city,
+      zipCode: row.zip_code ?? "",
       state: row.state ?? "",
     },
     config: row.config ?? {},
@@ -409,6 +413,7 @@ interface DbPatch {
   street_name?: string;
   city?: string;
   state?: string;
+  zip_code?: string;
   config?: PreWalkConfig;
   answers?: WizardAnswers;
   last_route?: string | null;
@@ -494,6 +499,7 @@ export function updateWalkthrough(patch: Partial<Walkthrough>): Walkthrough | nu
     dbPatch.street_name = next.address.streetName;
     dbPatch.city = next.address.city;
     dbPatch.state = next.address.state;
+    dbPatch.zip_code = next.address.zipCode;
   }
   if (patch.config) dbPatch.config = next.config;
   if (patch.answers) dbPatch.answers = next.answers;
