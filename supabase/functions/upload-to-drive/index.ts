@@ -579,6 +579,212 @@ function sectionSortKey(name: string): string {
   return `Z${name}`;
 }
 
+// ----- Full schema enumeration (mirrors src/lib/wizard-schema.ts) -----
+// Returns the ordered list of every question id that should appear in the PDF
+// for a given walkthrough config + answers, regardless of whether the user
+// answered it. Unanswered questions render as "N/A".
+
+function parseCount(v: string | undefined): number {
+  if (!v) return 0;
+  const m = v.match(/^(\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+function bathCountCfg(c: Record<string, string | undefined>): number {
+  if (!c.bathrooms) return 0;
+  const n = parseFloat(c.bathrooms);
+  return Number.isFinite(n) ? Math.ceil(n) : 0;
+}
+function bedCountCfg(c: Record<string, string | undefined>): number {
+  return parseCount(c.bedrooms);
+}
+
+function enumerateQuestionIds(
+  config: Record<string, string | undefined>,
+  answers: Record<string, AnswerRow>,
+): string[] {
+  const out: string[] = [];
+
+  // S1
+  out.push("s1_lockbox_code", "s1_lockbox_photo", "s1_key_works");
+
+  // S2
+  out.push(
+    "s2_trash_cleared",
+    "s2_front_straight",
+    "s2_front_left",
+    "s2_front_right",
+    "s2_frontdoor",
+    "s2_roofline",
+    "s2_exterior_paint",
+    "s2_siding_photo",
+    "s2_siding_type",
+    "s2_foundation_type",
+    "s2_driveway_photo",
+    "s2_driveway_condition",
+    "s2_landscape",
+    "s2_additional",
+  );
+
+  // S3
+  out.push(
+    "s3_left",
+    "s3_right",
+    "s3_back",
+    "s3_yard_outview",
+    "s3_yard_houseview",
+    "s3_fence_photo",
+    "s3_outbuildings",
+    "s3_additional",
+  );
+
+  // S4 — Garage (only if present)
+  if (config.garage && config.garage !== "None") {
+    out.push(
+      "s4_exterior",
+      "s4_interior",
+      "s4_roofline",
+      "s4_attached",
+      "s4_door_works",
+      "s4_additional",
+    );
+  }
+
+  // S5
+  out.push("s5_overall", "s5_type", "s5_condition");
+
+  // S6 — Pool & Spa
+  if (config.pool === "Yes") {
+    out.push(
+      "s6_pool_1",
+      "s6_pool_2",
+      "s6_pool_equipment",
+      "s6_pool_location",
+      "s6_pool_clean",
+      "s6_pool_water",
+    );
+  }
+  if (config.spa === "Yes") {
+    out.push("s6_spa_1", "s6_spa_2", "s6_spa_location", "s6_spa_condition");
+  }
+
+  // S7
+  out.push("s7_hot_water", "s7_gas_stove", "s7_smells", "s7_noises");
+
+  // S8 — Living Room
+  out.push("s8_mls", "s8_floor_photo");
+  if (config.fireplace === "Yes") out.push("s8_fireplace_photo");
+  out.push("s8_windows_photo", "s8_ceiling_photo", "s8_floor_type");
+  if (config.fireplace === "Yes") out.push("s8_fireplace_type");
+  out.push(
+    "s8_window_type",
+    "s8_window_condition",
+    "s8_lights",
+    "s8_baseboards",
+    "s8_paint",
+    "s8_additional",
+  );
+
+  // S9 — Kitchen
+  out.push(
+    "s9_mls",
+    "s9_cab_closed",
+    "s9_cab_open_1",
+    "s9_cab_overall",
+    "s9_pantry_exists",
+  );
+  if (answers["s9_pantry_exists"]?.bool === true) out.push("s9_pantry");
+  out.push(
+    "s9_bases",
+    "s9_counters_photo",
+    "s9_counters_cond",
+    "s9_sink_photo",
+    "s9_sink_cond",
+    "s9_floor_photo",
+    "s9_floor_cond",
+    "s9_stove",
+    "s9_fridge",
+    "s9_dishwasher",
+    "s9_microwave",
+  );
+  if (answers["s9_microwave"]?.bool === true) out.push("s9_microwave_rating");
+  out.push("s9_lights", "s9_baseboards", "s9_additional");
+
+  // S10 — Hallways
+  out.push("s10_wide", "s10_floor", "s10_lights", "s10_baseboards", "s10_paint");
+
+  // S11 — Bathrooms
+  const bathTotal = bathCountCfg(config);
+  for (let n = 1; n <= bathTotal; n++) {
+    const id = (k: string) => `s11_b${n}_${k}`;
+    if (n > 1) out.push(id("exists"));
+    // If bathroom 2+ marked not present, skip its loop questions entirely
+    if (n > 1 && answers[id("exists")]?.bool === false) continue;
+    out.push(id("type"), id("mls"));
+    const t = answers[id("type")]?.choice;
+    if (t === "Full bath") out.push(id("tub"));
+    if (t === "Full bath" || t === "Three-quarter bath") out.push(id("shower"));
+    out.push(id("sink"), id("toilet"));
+    if (t === "Full bath") out.push(id("tub_cond"));
+    if (t === "Full bath" || t === "Three-quarter bath") out.push(id("shower_cond"));
+    out.push(
+      id("sink_cond"),
+      id("toilet_cond"),
+      id("floor"),
+      id("lights"),
+      id("baseboards"),
+      id("water_pooling"),
+      id("active_leaks"),
+      id("smells"),
+      id("microbial"),
+      id("additional"),
+    );
+  }
+
+  // S12 — Bedrooms
+  const bedTotal = bedCountCfg(config);
+  for (let n = 1; n <= bedTotal; n++) {
+    const id = (k: string) => `s12_b${n}_${k}`;
+    out.push(
+      id("mls"),
+      id("closet"),
+      id("closet_cond"),
+      id("windows"),
+      id("window_cond"),
+      id("floor"),
+      id("lights"),
+      id("baseboards"),
+      id("paint"),
+      id("feature"),
+      id("additional"),
+    );
+  }
+
+  // S13 — Laundry
+  out.push("s13_wide", "s13_hookups", "s13_condition", "s13_additional");
+
+  // S14 — Mechanical
+  out.push(
+    "s14_hvac_photo",
+    "s14_hvac_cond",
+    "s14_furnace_photo",
+    "s14_furnace_cond",
+    "s14_thermo_photo",
+    "s14_thermo_cond",
+    "s14_wh_loc",
+    "s14_wh_photo",
+    "s14_wh_strapped",
+    "s14_additional",
+  );
+
+  // S15 — Videos
+  out.push("s15_exterior_brief", "s15_interior_video", "s15_critical_videos");
+
+  // S16
+  out.push("s16_neighbors", "s16_other");
+
+  return out;
+}
+
 async function buildSummaryPdf(
   walk: Walkthrough,
   agentName: string,
