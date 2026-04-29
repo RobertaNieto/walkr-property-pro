@@ -824,8 +824,9 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const walkId = body.walkthroughId as string;
+    const isReupload = body.mode === "reupload";
     walkIdForFailure = walkId;
-    console.log("[upload-to-drive] request payload", { walkthroughId: walkId });
+    console.log("[upload-to-drive] request payload", { walkthroughId: walkId, mode: isReupload ? "reupload" : "initial" });
     if (!walkId) throw new Error("Upload failed: missing walkthroughId in request payload");
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
