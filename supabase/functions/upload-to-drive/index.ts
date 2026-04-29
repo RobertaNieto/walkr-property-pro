@@ -140,25 +140,68 @@ async function getAccessToken(): Promise<string> {
 }
 
 // ----- Drive helpers -----
+// All calls below pass `supportsAllDrives=true` and `includeItemsFromAllDrives=true`
+// so they work whether the configured GOOGLE_DRIVE_FOLDER_ID lives in My Drive
+// or inside a Shared Drive. Service accounts have no personal storage quota,
+// so uploads MUST go into a Shared Drive (folder shared with the SA, owned by
+// the Shared Drive itself) — without the supportsAllDrives flag the API
+// returns 403 storageQuotaExceeded.
+
+const DRIVE_QS = "supportsAllDrives=true&includeItemsFromAllDrives=true";
+
+function escapeDriveQuery(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+async function findFolderByName(
+  token: string,
+  name: string,
+  parentId: string,
+): Promise<string | null> {
+  const q = encodeURIComponent(
+    `name = '${escapeDriveQuery(name)}' and '${parentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+  );
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&${DRIVE_QS}&corpora=allDrives`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) {
+    console.warn("[upload-to-drive] folder lookup failed", { name, parentId, status: res.status, body: await res.text() });
+    return null;
+  }
+  const json = await res.json();
+  const id = json.files?.[0]?.id;
+  return id ?? null;
+}
 
 async function createDriveFolder(
   token: string,
   name: string,
   parentId: string,
 ): Promise<string> {
-  const res = await fetch("https://www.googleapis.com/drive/v3/files", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+  // Reuse existing folder when present so re-uploading the same property
+  // doesn't create duplicates.
+  const existing = await findFolderByName(token, name, parentId);
+  if (existing) {
+    console.log("[upload-to-drive] reusing existing Drive folder", { name, parentId, folderId: existing });
+    return existing;
+  }
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files?${DRIVE_QS}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        mimeType: "application/vnd.google-apps.folder",
+        parents: [parentId],
+      }),
     },
-    body: JSON.stringify({
-      name,
-      mimeType: "application/vnd.google-apps.folder",
-      parents: [parentId],
-    }),
-  });
-  if (!res.ok) throw new Error(`Folder create failed: ${await res.text()}`);
+  );
+  if (!res.ok) throw new Error(`Folder create failed (${name}): ${await res.text()}`);
   const json = await res.json();
   return json.id as string;
 }
@@ -184,7 +227,7 @@ async function uploadFileToDrive(
   payload.set(tail, head.length + body.length);
 
   const res = await fetch(
-    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+    `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&${DRIVE_QS}`,
     {
       method: "POST",
       headers: {
@@ -201,15 +244,22 @@ async function setFolderShareableLink(
   token: string,
   folderId: string,
 ): Promise<string> {
-  // Make folder readable by anyone with link
-  await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}/permissions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+  // Make folder readable by anyone with link. Failure here is non-fatal —
+  // the folder still exists, just without an anonymous share link.
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${folderId}/permissions?${DRIVE_QS}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ role: "reader", type: "anyone" }),
     },
-    body: JSON.stringify({ role: "reader", type: "anyone" }),
-  });
+  );
+  if (!res.ok) {
+    console.warn("[upload-to-drive] share link permission failed (non-fatal)", { folderId, status: res.status, body: await res.text() });
+  }
   return `https://drive.google.com/drive/folders/${folderId}`;
 }
 
