@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, CloudUpload, Eye, Image as ImageIcon, Loader2, PlayCircle, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, CloudUpload, Eye, Image as ImageIcon, Loader2, PlayCircle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Progress } from "@/components/ui/progress";
+import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import { fetchById } from "@/lib/walkthrough";
 import { toast } from "sonner";
 import {
   AlertDialog,
