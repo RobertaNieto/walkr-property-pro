@@ -99,6 +99,8 @@ function WalkthroughsScreen() {
             0
           ),
           criticalFlags: [] as { questionId: string; notes?: string }[],
+          uploadStatus: w.uploadStatus,
+          driveFolderUrl: w.driveFolderUrl,
         })),
         ...localOnly,
       ] as typeof local;
@@ -123,6 +125,8 @@ function WalkthroughsScreen() {
               0
             ),
             criticalFlags: [],
+            uploadStatus: w.uploadStatus,
+            driveFolderUrl: w.driveFolderUrl,
           };
           const existing = listCompletedLocal().filter((r) => r.id !== record.id);
           localStorage.setItem(
@@ -455,12 +459,17 @@ function CompletedCard({
   userId: string | null;
   onDelete: () => void;
 }) {
-  const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
+  const alreadyUploaded = record.uploadStatus === "confirmed";
+  const existingDriveUrl = record.driveFolderUrl ?? null;
+  const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">(
+    alreadyUploaded ? "success" : "idle",
+  );
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [driveUrl, setDriveUrl] = useState<string | null>(null);
+  const [driveUrl, setDriveUrl] = useState<string | null>(existingDriveUrl);
+  const [confirmReupload, setConfirmReupload] = useState(false);
 
-  const handleUpload = async () => {
+  const runUpload = async (mode: "initial" | "reupload") => {
     if (!userId) {
       setStatus("error");
       setError("Not signed in");
@@ -468,14 +477,13 @@ function CompletedCard({
     }
     setStatus("uploading");
     setError(null);
-    setDriveUrl(null);
     try {
       const walk = await fetchById(record.id);
       if (!walk) throw new Error("Walkthrough not found");
-      const res = await uploadWithRetry(walk, userId, (p) => setProgress(p));
+      const res = await uploadWithRetry(walk, userId, (p) => setProgress(p), 3, { mode });
       if (res.success) {
         setStatus("success");
-        setDriveUrl(res.driveFolderUrl ?? null);
+        setDriveUrl(res.driveFolderUrl ?? existingDriveUrl);
       } else {
         setStatus("error");
         setError(res.error ?? "Upload failed");
@@ -484,6 +492,12 @@ function CompletedCard({
       setStatus("error");
       setError(e instanceof Error ? e.message : String(e));
     }
+  };
+
+  const handleUpload = () => runUpload("initial");
+  const handleReupload = () => {
+    setConfirmReupload(false);
+    void runUpload("reupload");
   };
 
   const pct =
@@ -555,15 +569,25 @@ function CompletedCard({
             View report
           </Link>
           {status === "success" && driveUrl ? (
-            <a
-              href={driveUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Uploaded ✓ View in Drive
-            </a>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <a
+                href={driveUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                View in Drive →
+              </a>
+              <button
+                type="button"
+                onClick={() => setConfirmReupload(true)}
+                className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                <CloudUpload className="h-3.5 w-3.5" />
+                Re-upload to Drive
+              </button>
+            </div>
           ) : status === "error" ? (
             <button
               type="button"
@@ -591,6 +615,23 @@ function CompletedCard({
           )}
         </div>
       </div>
+
+      <AlertDialog open={confirmReupload} onOpenChange={setConfirmReupload}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Re-upload to Drive?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will overwrite the existing folder contents for this property. Continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleReupload(); }}>
+              Re-upload
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SwipeRow>
   );
 }

@@ -73,6 +73,7 @@ export async function uploadWalkthroughToDrive(
   walk: Walkthrough,
   userId: string,
   onProgress?: (p: UploadProgress) => void,
+  options?: { mode?: "initial" | "reupload" },
 ): Promise<UploadResult> {
   try {
     if (!userId) throw new Error("You must be signed in before uploading to Drive");
@@ -125,9 +126,9 @@ export async function uploadWalkthroughToDrive(
       total,
       message: "Uploading to Google Drive...",
     });
-    console.log("[drive-upload] invoking upload-to-drive", { walkthroughId: walk.id });
+    console.log("[drive-upload] invoking upload-to-drive", { walkthroughId: walk.id, mode: options?.mode ?? "initial" });
     const { data, error } = await supabase.functions.invoke("upload-to-drive", {
-      body: { walkthroughId: walk.id },
+      body: { walkthroughId: walk.id, mode: options?.mode ?? "initial" },
     });
     if (error) throw new Error(await getFunctionErrorMessage(error));
     if (!data?.success) throw new Error(data?.error ?? "Upload failed");
@@ -153,10 +154,11 @@ export async function uploadWithRetry(
   userId: string,
   onProgress?: (p: UploadProgress) => void,
   maxAttempts = 3,
+  options?: { mode?: "initial" | "reupload" },
 ): Promise<UploadResult> {
   let lastErr = "";
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const res = await uploadWalkthroughToDrive(walk, userId, onProgress);
+    const res = await uploadWalkthroughToDrive(walk, userId, onProgress, options);
     if (res.success) return res;
     lastErr = res.error ?? "Unknown error";
     console.warn(`[upload] attempt ${attempt} failed: ${lastErr}`);

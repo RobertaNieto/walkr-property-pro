@@ -26,6 +26,16 @@ import {
 import { useAuth } from "@/lib/auth";
 import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
 import { Progress } from "@/components/ui/progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { preloadPhoto, resolvePhotoSrc } from "@/lib/photo-store";
 import { cn } from "@/lib/utils";
 import {
@@ -131,6 +141,7 @@ function ReviewScreen() {
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [driveUrl, setDriveUrl] = useState<string | null>(null);
+  const [confirmReupload, setConfirmReupload] = useState(false);
 
   // Section refs for scroll-to behavior
   const sectionsRef = useRef<HTMLDivElement | null>(null);
@@ -148,6 +159,10 @@ function ReviewScreen() {
         if (remote) {
           setWalk(enrichPhotos(remote));
           setNotFound(false);
+          if (remote.uploadStatus === "confirmed" && remote.driveFolderUrl) {
+            setUploadStatus("success");
+            setDriveUrl(remote.driveFolderUrl);
+          }
         } else {
           setNotFound(true);
         }
@@ -346,19 +361,25 @@ function ReviewScreen() {
     if (typeof window !== "undefined") window.print();
   };
 
-  const handleUpload = async () => {
+  const runUpload = async (mode: "initial" | "reupload") => {
     if (!walk || !user) return;
     setUploadStatus("uploading");
     setUploadError(null);
-    setDriveUrl(null);
-    const res = await uploadWithRetry(walk, user.id, (p) => setUploadProgress(p));
+    if (mode === "initial") setDriveUrl(null);
+    const res = await uploadWithRetry(walk, user.id, (p) => setUploadProgress(p), 3, { mode });
     if (res.success) {
       setUploadStatus("success");
-      setDriveUrl(res.driveFolderUrl ?? null);
+      setDriveUrl(res.driveFolderUrl ?? driveUrl);
     } else {
       setUploadStatus("error");
       setUploadError(res.error ?? "Upload failed");
     }
+  };
+
+  const handleUpload = () => runUpload("initial");
+  const handleReupload = () => {
+    setConfirmReupload(false);
+    void runUpload("reupload");
   };
 
   return (
@@ -775,15 +796,25 @@ function ReviewScreen() {
             </div>
           )}
           {uploadStatus === "success" && driveUrl && (
-            <a
-              href={driveUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-success text-sm font-semibold text-success-foreground"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Uploaded ✓ View in Drive
-            </a>
+            <div className="space-y-2">
+              <a
+                href={driveUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-success text-sm font-semibold text-success-foreground"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                View in Drive →
+              </a>
+              <button
+                type="button"
+                onClick={() => setConfirmReupload(true)}
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                <CloudUpload className="h-3.5 w-3.5" />
+                Re-upload to Drive
+              </button>
+            </div>
           )}
           {uploadStatus === "error" && (
             <button
@@ -833,6 +864,23 @@ function ReviewScreen() {
           onNext={() => setLightboxIndex((i) => (i === null ? null : (i + 1) % photos.length))}
         />
       )}
+
+      <AlertDialog open={confirmReupload} onOpenChange={setConfirmReupload}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Re-upload to Drive?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will overwrite the existing folder contents for this property. Continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleReupload(); }}>
+              Re-upload
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

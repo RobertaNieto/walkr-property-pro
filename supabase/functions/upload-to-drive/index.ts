@@ -240,6 +240,65 @@ async function uploadFileToDrive(
   if (!res.ok) throw new Error(`Upload failed (${name}): ${await res.text()}`);
 }
 
+// Permanently delete every non-trashed file inside a Drive folder.
+// Used during re-upload so the folder ends up with the latest content only.
+async function purgeFolderContents(token: string, folderId: string): Promise<number> {
+  let deleted = 0;
+  let pageToken: string | undefined;
+  do {
+    const params = new URLSearchParams({
+      q: `'${folderId}' in parents and trashed = false`,
+      fields: "nextPageToken, files(id, name)",
+      pageSize: "1000",
+      supportsAllDrives: "true",
+      includeItemsFromAllDrives: "true",
+    });
+    if (pageToken) params.set("pageToken", pageToken);
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to list folder ${folderId} for purge: ${await res.text()}`);
+    }
+    const json = (await res.json()) as { files?: { id: string; name: string }[]; nextPageToken?: string };
+    const files = json.files ?? [];
+    for (const f of files) {
+      const delRes = await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?${DRIVE_QS}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!delRes.ok && delRes.status !== 404) {
+        console.warn("[upload-to-drive] purge: delete failed (non-fatal)", { id: f.id, name: f.name, status: delRes.status });
+      } else {
+        deleted++;
+      }
+    }
+    pageToken = json.nextPageToken;
+  } while (pageToken);
+  return deleted;
+}
+
+// Find a single file by name in a folder, optionally restricted to a mime type.
+async function findFileByName(
+  token: string,
+  name: string,
+  parentId: string,
+): Promise<string | null> {
+  const params = new URLSearchParams({
+    q: `name = '${escapeDriveQuery(name)}' and '${parentId}' in parents and trashed = false`,
+    fields: "files(id, name)",
+    pageSize: "10",
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
+  });
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+  const json = (await res.json()) as { files?: { id: string }[] };
+  return json.files?.[0]?.id ?? null;
+}
+
 async function setFolderShareableLink(
   token: string,
   folderId: string,
@@ -765,8 +824,9 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const walkId = body.walkthroughId as string;
+    const isReupload = body.mode === "reupload";
     walkIdForFailure = walkId;
-    console.log("[upload-to-drive] request payload", { walkthroughId: walkId });
+    console.log("[upload-to-drive] request payload", { walkthroughId: walkId, mode: isReupload ? "reupload" : "initial" });
     if (!walkId) throw new Error("Upload failed: missing walkthroughId in request payload");
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
@@ -826,6 +886,29 @@ Deno.serve(async (req) => {
     console.log("[upload-to-drive] Photos subfolder ready", { walkthroughId: walkId, photosFolderId });
     const videosFolderId = await createDriveFolder(token, "Videos", subfolderId);
     console.log("[upload-to-drive] Videos subfolder ready", { walkthroughId: walkId, videosFolderId });
+
+    // Re-upload mode: purge existing contents so the folder reflects only the
+    // current walkthrough state. Done after subfolders are ready so we don't
+    // delete the subfolders themselves.
+    if (isReupload) {
+      console.log("[upload-to-drive] re-upload: purging existing folder contents", { walkthroughId: walkId });
+      const [photosDeleted, videosDeleted] = await Promise.all([
+        purgeFolderContents(token, photosFolderId),
+        purgeFolderContents(token, videosFolderId),
+      ]);
+      // Delete prior SUMMARY.pdf at the property root
+      const priorPdfId = await findFileByName(token, "SUMMARY.pdf", subfolderId);
+      if (priorPdfId) {
+        const delRes = await fetch(`https://www.googleapis.com/drive/v3/files/${priorPdfId}?${DRIVE_QS}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!delRes.ok && delRes.status !== 404) {
+          console.warn("[upload-to-drive] re-upload: failed to delete prior SUMMARY.pdf (non-fatal)", { status: delRes.status });
+        }
+      }
+      console.log("[upload-to-drive] re-upload: purge complete", { walkthroughId: walkId, photosDeleted, videosDeleted, priorPdfDeleted: Boolean(priorPdfId) });
+    }
 
     // Collect photo filenames from answers
     const photoNames = new Set<string>();
