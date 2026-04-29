@@ -272,6 +272,254 @@ function ratingLabel(r?: number): string {
   return "—";
 }
 
+// ----- Human-readable label resolver for question IDs -----
+
+const SECTION_NAMES: Record<string, string> = {
+  s1: "Arrival & Access",
+  s2: "Exterior Front",
+  s3: "Exterior Sides & Back",
+  s4: "Garage",
+  s5: "Roof",
+  s6: "Pool & Spa",
+  s7: "Entry & First Impressions",
+  s8: "Living Room",
+  s9: "Kitchen",
+  s10: "Hallways",
+  s13: "Laundry",
+  s14: "Mechanical Systems",
+  s15: "Walkthrough Videos",
+  s16: "Miscellaneous",
+};
+
+// Explicit overrides where the auto-generated label would be unclear.
+const LABEL_OVERRIDES: Record<string, string> = {
+  // Section 1
+  s1_lockbox_code: "Lockbox Code",
+  s1_lockbox_photo: "Lockbox Location Photo",
+  s1_key_works: "Key Works in Lock",
+  // Section 2
+  s2_trash_cleared: "Obstructions Cleared",
+  s2_front_straight: "Front of Property",
+  s2_front_left: "Front Left Angle",
+  s2_front_right: "Front Right Angle",
+  s2_frontdoor: "Front Door",
+  s2_roofline: "Roofline & Fascia",
+  s2_exterior_paint: "Exterior Paint Condition",
+  s2_siding_photo: "Siding Photo",
+  s2_siding_type: "Siding Type",
+  s2_foundation_type: "Foundation Type",
+  s2_driveway_photo: "Driveway Photo",
+  s2_driveway_condition: "Driveway Condition",
+  s2_landscape: "Landscape Condition",
+  s2_additional: "Additional Exterior Details",
+  // Section 3
+  s3_left: "Left Side of House",
+  s3_right: "Right Side of House",
+  s3_back: "Back of House",
+  s3_yard_outview: "Backyard — Outward View",
+  s3_yard_houseview: "Backyard — House View",
+  s3_fence_photo: "Fence Photo",
+  s3_outbuildings: "Outbuildings or Sheds",
+  s3_additional: "Additional Backyard Details",
+  // Section 4
+  s4_exterior: "Garage Exterior",
+  s4_interior: "Garage Interior",
+  s4_roofline: "Garage Roofline",
+  s4_attached: "Attached or Detached",
+  s4_door_works: "Garage Door Works",
+  s4_additional: "Additional Garage Details",
+  // Section 5
+  s5_overall: "Overall Roof Photo",
+  s5_type: "Roof Type",
+  s5_condition: "Roof Condition",
+  // Section 6
+  s6_pool_1: "Pool — Angle 1",
+  s6_pool_2: "Pool — Angle 2",
+  s6_pool_equipment: "Pool Equipment",
+  s6_pool_location: "Pool Location",
+  s6_pool_clean: "Pool Cleanliness",
+  s6_pool_water: "Pool Water Level",
+  s6_spa_1: "Spa — Angle 1",
+  s6_spa_2: "Spa — Angle 2",
+  s6_spa_location: "Spa Location",
+  s6_spa_condition: "Spa Condition",
+  // Section 7
+  s7_hot_water: "Hot Water Working",
+  s7_gas_stove: "Gas Stove Working",
+  s7_smells: "Unusual Smells",
+  s7_noises: "Unusual Noises",
+  // Section 8
+  s8_mls: "Living Room — Wide Photo",
+  s8_floor_photo: "Living Room — Floor Photo",
+  s8_fireplace_photo: "Living Room — Fireplace Photo",
+  s8_windows_photo: "Living Room — Windows Photo",
+  s8_ceiling_photo: "Living Room — Ceiling Photo",
+  s8_floor_type: "Flooring Type & Condition",
+  s8_fireplace_type: "Fireplace Type",
+  s8_window_type: "Window Type",
+  s8_window_condition: "Window Condition",
+  s8_lights: "Light Fixtures Condition",
+  s8_baseboards: "Baseboards Condition",
+  s8_paint: "Paint Condition",
+  s8_additional: "Additional Living Room Details",
+  // Section 9
+  s9_mls: "Kitchen — Wide Photo",
+  s9_cab_closed: "Cabinets Closed",
+  s9_cab_open_1: "Cabinets Open Sample",
+  s9_cab_overall: "Cabinets Overall Condition",
+  s9_pantry_exists: "Pantry Present",
+  s9_pantry: "Pantry Photo",
+  s9_bases: "Cabinet Bases Photo",
+  s9_counters_photo: "Kitchen Counters",
+  s9_counters_cond: "Counters Condition",
+  s9_sink_photo: "Sink & Faucet Photo",
+  s9_sink_cond: "Sink Condition",
+  s9_floor_photo: "Kitchen Floor Photo",
+  s9_floor_cond: "Kitchen Floor Condition",
+  s9_stove: "Stove & Oven",
+  s9_fridge: "Refrigerator",
+  s9_dishwasher: "Dishwasher",
+  s9_microwave: "Microwave Present",
+  s9_microwave_rating: "Microwave Condition",
+  s9_lights: "Light Fixtures Condition",
+  s9_baseboards: "Baseboards Condition",
+  s9_additional: "Additional Kitchen Details",
+  // Section 10
+  s10_wide: "Hallway Wide Photo",
+  s10_floor: "Hallway Flooring Condition",
+  s10_lights: "Light Fixtures Condition",
+  s10_baseboards: "Baseboards Condition",
+  s10_paint: "Paint Condition",
+  // Section 13
+  s13_wide: "Laundry Wide Photo",
+  s13_hookups: "Laundry Hookups",
+  s13_condition: "Laundry Condition",
+  s13_additional: "Additional Laundry Details",
+  // Section 14
+  s14_hvac_photo: "HVAC Photo",
+  s14_hvac_cond: "HVAC Condition",
+  s14_furnace_photo: "Furnace Photo",
+  s14_furnace_cond: "Furnace Condition",
+  s14_thermo_photo: "Thermostat Photo",
+  s14_thermo_cond: "Thermostat Condition",
+  s14_wh_loc: "Water Heater Location",
+  s14_wh_photo: "Water Heater Photo",
+  s14_wh_strapped: "Water Heater Double-Strapped",
+  s14_additional: "Mechanical Systems Notes",
+  // Section 15
+  s15_exterior_brief: "Exterior Walkthrough Video",
+  s15_interior_video: "Interior Walkthrough Video",
+  s15_critical_videos: "Issue Close-Up Videos",
+  // Section 16
+  s16_neighbors: "Final Observations",
+  s16_other: "Additional Notes",
+};
+
+// Per-loop suffix labels for bedroom/bathroom item keys.
+const BATH_SUFFIX_LABELS: Record<string, string> = {
+  type: "Bathroom Type",
+  exists: "Bathroom Present",
+  mls: "Wide Photo",
+  tub: "Tub Photo",
+  shower: "Shower Photo",
+  sink: "Sink Photo",
+  toilet: "Toilet Photo",
+  tub_cond: "Tub Condition",
+  shower_cond: "Shower Condition",
+  sink_cond: "Sink Condition",
+  toilet_cond: "Toilet Condition",
+  floor: "Flooring Condition",
+  lights: "Light Fixtures Condition",
+  baseboards: "Baseboards Condition",
+  water_pooling: "Water Pooling",
+  active_leaks: "Active Leaks",
+  smells: "Unusual Smells",
+  microbial: "Microbial Growth",
+  additional: "Additional Details",
+};
+
+const BED_SUFFIX_LABELS: Record<string, string> = {
+  mls: "Wide Photo",
+  closet: "Closet Photo",
+  closet_cond: "Closet Condition",
+  windows: "Windows Photo",
+  window_cond: "Window Condition",
+  floor: "Flooring Condition",
+  lights: "Light Fixtures Condition",
+  baseboards: "Baseboards Condition",
+  paint: "Paint Condition",
+  feature: "Unique Feature Photo",
+  additional: "Additional Details",
+};
+
+function titleCase(s: string): string {
+  return s
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
+interface QidInfo {
+  section: string;
+  label: string;
+}
+
+function resolveQid(qid: string): QidInfo {
+  // Bathroom loop: s11_b{n}_{key}
+  let m = qid.match(/^s11_b(\d+)_(.+)$/);
+  if (m) {
+    const n = m[1];
+    const key = m[2];
+    return {
+      section: `Bathroom ${n}`,
+      label: BATH_SUFFIX_LABELS[key] ?? titleCase(key),
+    };
+  }
+  // Bedroom loop: s12_b{n}_{key}
+  m = qid.match(/^s12_b(\d+)_(.+)$/);
+  if (m) {
+    const n = m[1];
+    const key = m[2];
+    return {
+      section: `Bedroom ${n}`,
+      label: BED_SUFFIX_LABELS[key] ?? titleCase(key),
+    };
+  }
+  // Section prefix: s{N}_...
+  const sm = qid.match(/^(s\d+)_(.+)$/);
+  const sectionKey = sm?.[1] ?? "";
+  const section = SECTION_NAMES[sectionKey] ?? "Other";
+  const label = LABEL_OVERRIDES[qid] ?? titleCase(sm?.[2] ?? qid);
+  return { section, label };
+}
+
+const SECTION_ORDER = [
+  "Arrival & Access",
+  "Exterior Front",
+  "Exterior Sides & Back",
+  "Garage",
+  "Roof",
+  "Pool & Spa",
+  "Entry & First Impressions",
+  "Living Room",
+  "Kitchen",
+  "Hallways",
+];
+
+function sectionSortKey(name: string): string {
+  const idx = SECTION_ORDER.indexOf(name);
+  if (idx >= 0) return `A${String(idx).padStart(3, "0")}`;
+  const bath = name.match(/^Bathroom (\d+)$/);
+  if (bath) return `B${String(bath[1]).padStart(3, "0")}`;
+  const bed = name.match(/^Bedroom (\d+)$/);
+  if (bed) return `C${String(bed[1]).padStart(3, "0")}`;
+  const tail = ["Laundry", "Mechanical Systems", "Walkthrough Videos", "Miscellaneous"];
+  const ti = tail.indexOf(name);
+  if (ti >= 0) return `D${String(ti).padStart(3, "0")}`;
+  return `Z${name}`;
+}
+
 async function buildSummaryPdf(
   walk: Walkthrough,
   agentName: string,
