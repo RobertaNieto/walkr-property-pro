@@ -758,16 +758,59 @@ function ReviewScreen() {
       {/* Sticky action bar */}
       <div className="sticky bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur print:hidden">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-3 sm:px-6">
-          <button
-            type="button"
-            onClick={() => alert("Google Drive upload coming soon")}
-            aria-disabled
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary/60 text-sm font-semibold text-primary-foreground/80"
-          >
-            <Lock className="h-4 w-4" />
-            Upload to Google Drive →
-            <CloudUpload className="h-4 w-4" />
-          </button>
+          {uploadStatus === "uploading" && (
+            <div className="rounded-2xl border border-border bg-card p-3">
+              <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {uploadProgress?.message ?? "Starting upload..."}
+              </div>
+              <Progress
+                value={
+                  uploadProgress && uploadProgress.total > 0
+                    ? Math.round((uploadProgress.current / uploadProgress.total) * 100)
+                    : uploadProgress?.phase === "drive"
+                      ? 90
+                      : 5
+                }
+              />
+            </div>
+          )}
+          {uploadStatus === "success" && driveUrl && (
+            <a
+              href={driveUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-success text-sm font-semibold text-success-foreground"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Uploaded ✓ View in Drive
+            </a>
+          )}
+          {uploadStatus === "error" && (
+            <button
+              type="button"
+              onClick={handleUpload}
+              className="inline-flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-2xl bg-destructive text-sm font-semibold text-destructive-foreground"
+            >
+              <span className="inline-flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Upload Failed — Retry
+              </span>
+              {uploadError && (
+                <span className="text-[11px] font-normal opacity-90">{uploadError}</span>
+              )}
+            </button>
+          )}
+          {uploadStatus === "idle" && (
+            <button
+              type="button"
+              onClick={handleUpload}
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Upload to Google Drive
+              <CloudUpload className="h-4 w-4" />
+            </button>
+          )}
           <button
             type="button"
             onClick={() =>
