@@ -164,13 +164,56 @@ export function PhotoCapture({
         <div className="grid grid-cols-3 gap-2">
           {photos.map((entry, i) => {
             const src = resolvePhotoSrc(entry) ?? localCache.current[entry];
+            const meta = fileMeta.current[entry];
+            const displayName = meta?.original ?? entry;
+            const sizeMb = meta ? Math.max(1, Math.round(meta.size / (1024 * 1024))) : null;
+            const loaded = !!src || !!meta;
             return (
-              <div key={i} className="relative aspect-square overflow-hidden rounded-xl bg-secondary">
-                {src && (isVideo ? (
-                  <video src={src} className="h-full w-full object-cover" />
-                ) : (
+              <div
+                key={i}
+                className="relative aspect-square overflow-hidden rounded-xl bg-secondary"
+              >
+                {isVideo ? (
+                  // Always show a clear video confirmation card, even when the
+                  // <video> poster fails to render on iOS Safari.
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-zinc-900 px-2 text-center">
+                    {loaded ? (
+                      <>
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm">
+                          <Play className="h-5 w-5 fill-white text-white" />
+                        </div>
+                        <p className="line-clamp-1 max-w-full text-[10px] font-medium text-white/90">
+                          {displayName}
+                        </p>
+                        {sizeMb !== null && (
+                          <p className="text-[10px] text-white/60">{sizeMb} MB</p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <Loader2 className="h-6 w-6 animate-spin text-white/80" />
+                        <p className="text-[10px] text-white/70">Loading…</p>
+                      </>
+                    )}
+                  </div>
+                ) : src ? (
                   <img src={src} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
-                ))}
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-zinc-800 text-center">
+                    <Camera className="h-6 w-6 text-white/80" />
+                    <p className="text-[10px] font-medium text-white/90">Photo added ✓</p>
+                  </div>
+                )}
+
+                {loaded && (
+                  <div
+                    className="absolute left-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow"
+                    aria-label="Attached"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={() => remove(i)}
