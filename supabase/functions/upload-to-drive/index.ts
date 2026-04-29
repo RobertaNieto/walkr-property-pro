@@ -639,34 +639,65 @@ async function buildSummaryPdf(
   if (criticals.length > 0) {
     drawText("Critical Items", { font: bold, size: 14, color: rgb(0.75, 0.1, 0.1), gap: 4 });
     for (const c of criticals) {
-      drawText(`• ${c.qid}`, { size: 11, color: rgb(0.75, 0.1, 0.1) });
+      const info = resolveQid(c.qid);
+      drawText(`• ${info.section} — ${info.label}`, { size: 11, color: rgb(0.75, 0.1, 0.1) });
       if (c.notes) drawText(`  ${c.notes}`, { font: italic, size: 10 });
     }
   }
 
-  // ---- Pages 3+: section by section ----
+  // ---- Pages 3+: grouped section by section ----
   newPage();
   drawText("Walkthrough Detail", { font: bold, size: 18, gap: 10 });
+
+  // Group answers by resolved section name.
+  const grouped = new Map<string, { qid: string; label: string; ans: AnswerRow }[]>();
   for (const [qid, ans] of Object.entries(walk.answers ?? {})) {
-    ensure(60);
-    drawText(qid, { font: bold, size: 12 });
-    const parts: string[] = [];
-    if (ans.text) parts.push(ans.text);
-    if (ans.choice) parts.push(ans.choice);
-    if (ans.choices?.length) parts.push(ans.choices.join(", "));
-    if (typeof ans.bool === "boolean") parts.push(ans.bool ? "Yes" : "No");
-    if (typeof ans.number === "number") parts.push(String(ans.number));
-    if (ans.rating) parts.push(`Rating: ${ratingLabel(ans.rating)}`);
-    if (parts.length) drawText(parts.join("  •  "), { size: 11 });
-    if (ans.notes) drawText(`Notes: ${ans.notes}`, { font: italic, size: 10 });
-    const allPhotos = [
-      ...(ans.photoNames ?? []),
-      ...(ans.poorPhotoNames ?? []),
-    ];
-    if (allPhotos.length) {
-      drawText(`Photos: ${allPhotos.join(", ")}`, { size: 9, color: rgb(0.4, 0.4, 0.4) });
-    }
+    const info = resolveQid(qid);
+    const arr = grouped.get(info.section) ?? [];
+    arr.push({ qid, label: info.label, ans });
+    grouped.set(info.section, arr);
+  }
+
+  const sortedSections = Array.from(grouped.keys()).sort((a, b) =>
+    sectionSortKey(a).localeCompare(sectionSortKey(b)),
+  );
+
+  for (const sectionName of sortedSections) {
+    const items = grouped.get(sectionName)!;
+    ensure(40);
+    y -= 4;
+    drawText(sectionName.toUpperCase(), { font: bold, size: 14, color: rgb(0.1, 0.2, 0.5), gap: 6 });
+    ensure(8);
+    page.drawLine({
+      start: { x: margin, y: y + 2 },
+      end: { x: pageW - margin, y: y + 2 },
+      thickness: 0.5,
+      color: rgb(0.7, 0.7, 0.7),
+    });
     y -= 6;
+
+    for (const { label, ans } of items) {
+      ensure(50);
+      drawText(label, { font: bold, size: 11 });
+      const parts: string[] = [];
+      if (ans.text) parts.push(ans.text);
+      if (ans.choice) parts.push(ans.choice);
+      if (ans.choices?.length) parts.push(ans.choices.join(", "));
+      if (typeof ans.bool === "boolean") parts.push(ans.bool ? "Yes" : "No");
+      if (typeof ans.number === "number") parts.push(String(ans.number));
+      if (ans.rating) parts.push(`Rating: ${ratingLabel(ans.rating)}`);
+      if (parts.length) drawText(parts.join("  •  "), { size: 11 });
+      if (ans.notes) drawText(`Notes: ${ans.notes}`, { font: italic, size: 10 });
+      const allPhotos = [
+        ...(ans.photoNames ?? []),
+        ...(ans.poorPhotoNames ?? []),
+      ];
+      if (allPhotos.length) {
+        drawText(`Photos: ${allPhotos.join(", ")}`, { size: 9, color: rgb(0.4, 0.4, 0.4) });
+      }
+      y -= 6;
+    }
+    y -= 8;
   }
 
   // ---- Final page: sign-off ----
