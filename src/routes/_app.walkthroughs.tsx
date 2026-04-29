@@ -569,15 +569,25 @@ function CompletedCard({
             View report
           </Link>
           {status === "success" && driveUrl ? (
-            <a
-              href={driveUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Uploaded ✓ View in Drive
-            </a>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <a
+                href={driveUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                View in Drive →
+              </a>
+              <button
+                type="button"
+                onClick={() => setConfirmReupload(true)}
+                className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                <CloudUpload className="h-3.5 w-3.5" />
+                Re-upload to Drive
+              </button>
+            </div>
           ) : status === "error" ? (
             <button
               type="button"
@@ -605,6 +615,23 @@ function CompletedCard({
           )}
         </div>
       </div>
+
+      <AlertDialog open={confirmReupload} onOpenChange={setConfirmReupload}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Re-upload to Drive?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will overwrite the existing folder contents for this property. Continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleReupload(); }}>
+              Re-upload
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SwipeRow>
   );
 }
