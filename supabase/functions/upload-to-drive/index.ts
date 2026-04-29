@@ -140,25 +140,68 @@ async function getAccessToken(): Promise<string> {
 }
 
 // ----- Drive helpers -----
+// All calls below pass `supportsAllDrives=true` and `includeItemsFromAllDrives=true`
+// so they work whether the configured GOOGLE_DRIVE_FOLDER_ID lives in My Drive
+// or inside a Shared Drive. Service accounts have no personal storage quota,
+// so uploads MUST go into a Shared Drive (folder shared with the SA, owned by
+// the Shared Drive itself) — without the supportsAllDrives flag the API
+// returns 403 storageQuotaExceeded.
+
+const DRIVE_QS = "supportsAllDrives=true&includeItemsFromAllDrives=true";
+
+function escapeDriveQuery(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+async function findFolderByName(
+  token: string,
+  name: string,
+  parentId: string,
+): Promise<string | null> {
+  const q = encodeURIComponent(
+    `name = '${escapeDriveQuery(name)}' and '${parentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+  );
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&${DRIVE_QS}&corpora=allDrives`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) {
+    console.warn("[upload-to-drive] folder lookup failed", { name, parentId, status: res.status, body: await res.text() });
+    return null;
+  }
+  const json = await res.json();
+  const id = json.files?.[0]?.id;
+  return id ?? null;
+}
 
 async function createDriveFolder(
   token: string,
   name: string,
   parentId: string,
 ): Promise<string> {
-  const res = await fetch("https://www.googleapis.com/drive/v3/files", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+  // Reuse existing folder when present so re-uploading the same property
+  // doesn't create duplicates.
+  const existing = await findFolderByName(token, name, parentId);
+  if (existing) {
+    console.log("[upload-to-drive] reusing existing Drive folder", { name, parentId, folderId: existing });
+    return existing;
+  }
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files?${DRIVE_QS}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        mimeType: "application/vnd.google-apps.folder",
+        parents: [parentId],
+      }),
     },
-    body: JSON.stringify({
-      name,
-      mimeType: "application/vnd.google-apps.folder",
-      parents: [parentId],
-    }),
-  });
-  if (!res.ok) throw new Error(`Folder create failed: ${await res.text()}`);
+  );
+  if (!res.ok) throw new Error(`Folder create failed (${name}): ${await res.text()}`);
   const json = await res.json();
   return json.id as string;
 }
@@ -184,7 +227,7 @@ async function uploadFileToDrive(
   payload.set(tail, head.length + body.length);
 
   const res = await fetch(
-    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+    `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&${DRIVE_QS}`,
     {
       method: "POST",
       headers: {
@@ -201,15 +244,22 @@ async function setFolderShareableLink(
   token: string,
   folderId: string,
 ): Promise<string> {
-  // Make folder readable by anyone with link
-  await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}/permissions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+  // Make folder readable by anyone with link. Failure here is non-fatal —
+  // the folder still exists, just without an anonymous share link.
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${folderId}/permissions?${DRIVE_QS}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ role: "reader", type: "anyone" }),
     },
-    body: JSON.stringify({ role: "reader", type: "anyone" }),
-  });
+  );
+  if (!res.ok) {
+    console.warn("[upload-to-drive] share link permission failed (non-fatal)", { folderId, status: res.status, body: await res.text() });
+  }
   return `https://drive.google.com/drive/folders/${folderId}`;
 }
 
@@ -494,8 +544,9 @@ Deno.serve(async (req) => {
 
     // Create "Photos" and "Videos" subfolders inside the property folder
     const photosFolderId = await createDriveFolder(token, "Photos", subfolderId);
+    console.log("[upload-to-drive] Photos subfolder ready", { walkthroughId: walkId, photosFolderId });
     const videosFolderId = await createDriveFolder(token, "Videos", subfolderId);
-    void videosFolderId; // reserved for future video uploads
+    console.log("[upload-to-drive] Videos subfolder ready", { walkthroughId: walkId, videosFolderId });
 
     // Collect photo filenames from answers
     const photoNames = new Set<string>();
@@ -503,18 +554,18 @@ Deno.serve(async (req) => {
       (ans.photoNames ?? []).forEach((n) => n && photoNames.add(n));
       (ans.poorPhotoNames ?? []).forEach((n) => n && photoNames.add(n));
     }
-    console.log("[upload-to-drive] staged filenames from walkthrough", { walkthroughId: walkId, total: photoNames.size });
+    const allFiles = Array.from(photoNames);
+    console.log("[upload-to-drive] staged filenames from walkthrough", { walkthroughId: walkId, total: allFiles.length });
 
-    // Download each photo from the staging bucket and upload to Drive
-    let uploaded = 0;
-    for (const fname of photoNames) {
+    // Upload one staged file: download from Supabase Storage, push to Drive.
+    const uploadOne = async (fname: string): Promise<boolean> => {
       const path = `${userId}/${walkId}/${fname}`;
       const { data: blob, error: dlErr } = await admin.storage
         .from("walkthrough-photos")
         .download(path);
       if (dlErr || !blob) {
-        console.warn(`[upload-to-drive] missing photo ${path}`, dlErr);
-        continue;
+        console.warn("[upload-to-drive] missing photo in storage", { path, error: dlErr?.message });
+        return false;
       }
       const bytes = new Uint8Array(await blob.arrayBuffer());
       const lower = fname.toLowerCase();
@@ -526,9 +577,36 @@ Deno.serve(async (req) => {
             ? "video/mp4"
             : "image/jpeg";
       const targetFolderId = mime.startsWith("video/") ? videosFolderId : photosFolderId;
-      console.log("[upload-to-drive] uploading staged file to Drive", { walkthroughId: walkId, filename: fname, mime, bytes: bytes.length });
-      await uploadFileToDrive(token, fname, mime, bytes, targetFolderId);
-      uploaded++;
+      try {
+        await uploadFileToDrive(token, fname, mime, bytes, targetFolderId);
+        console.log("[upload-to-drive] file uploaded ✓", { filename: fname, mime, bytes: bytes.length });
+        return true;
+      } catch (err) {
+        console.error("[upload-to-drive] file upload ✗", { filename: fname, error: err instanceof Error ? err.message : String(err) });
+        throw err;
+      }
+    };
+
+    // Run uploads in parallel chunks so 75+ files finish under the 150s
+    // edge-function timeout. Concurrency 6 keeps us well under Drive's
+    // per-user write quota.
+    const CONCURRENCY = 6;
+    let uploaded = 0;
+    let failed = 0;
+    for (let i = 0; i < allFiles.length; i += CONCURRENCY) {
+      const chunk = allFiles.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(chunk.map(uploadOne));
+      for (const r of results) {
+        if (r.status === "fulfilled") {
+          if (r.value) uploaded++;
+        } else {
+          failed++;
+        }
+      }
+      console.log("[upload-to-drive] chunk done", { walkthroughId: walkId, progress: `${Math.min(i + CONCURRENCY, allFiles.length)}/${allFiles.length}`, uploaded, failed });
+    }
+    if (failed > 0) {
+      throw new Error(`Drive upload incomplete: ${failed} of ${allFiles.length} files failed`);
     }
 
     // Generate Drive shareable link
@@ -536,7 +614,10 @@ Deno.serve(async (req) => {
     console.log("[upload-to-drive] Drive folder share link ready", { walkthroughId: walkId, driveLink, uploaded });
 
     // Build & upload SUMMARY.pdf
+    console.log("[upload-to-drive] generating SUMMARY.pdf", { walkthroughId: walkId });
     const pdfBytes = await buildSummaryPdf(walk, agentName, driveLink);
+    console.log("[upload-to-drive] SUMMARY.pdf generated", { walkthroughId: walkId, bytes: pdfBytes.length });
+    console.log("[upload-to-drive] uploading SUMMARY.pdf to Drive", { walkthroughId: walkId, parentId: subfolderId });
     await uploadFileToDrive(
       token,
       "SUMMARY.pdf",
@@ -544,7 +625,7 @@ Deno.serve(async (req) => {
       pdfBytes,
       subfolderId,
     );
-    console.log("[upload-to-drive] SUMMARY.pdf uploaded", { walkthroughId: walkId });
+    console.log("[upload-to-drive] SUMMARY.pdf uploaded ✓", { walkthroughId: walkId });
 
     // Mark confirmed
     await admin
