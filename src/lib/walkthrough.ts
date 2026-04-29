@@ -123,6 +123,8 @@ function buildCompletedSummary(w: Walkthrough): CompletedSummary {
     completedAt: w.completedAt ?? Date.now(),
     totalPhotos,
     criticalFlags,
+    uploadStatus: w.uploadStatus,
+    driveFolderUrl: w.driveFolderUrl,
   };
 }
 
