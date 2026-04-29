@@ -269,6 +269,7 @@ function WalkthroughsScreen() {
                 <CompletedCard
                   key={c.id}
                   record={c}
+                  userId={user?.id ?? null}
                   onDelete={() =>
                     setPendingDelete({
                       kind: "completed",
