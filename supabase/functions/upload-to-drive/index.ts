@@ -65,9 +65,18 @@ function base64UrlEncode(data: Uint8Array | string): string {
 async function getAccessToken(): Promise<string> {
   const email = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_EMAIL");
   let pk = Deno.env.get("GOOGLE_PRIVATE_KEY");
-  if (!email || !pk) throw new Error("Missing Google service account secrets");
+  console.log("[upload-to-drive] checking Google Drive secrets", {
+    hasServiceAccountEmail: Boolean(email),
+    hasPrivateKey: Boolean(pk),
+  });
+  if (!email) throw new Error("Google Drive upload failed: GOOGLE_SERVICE_ACCOUNT_EMAIL is missing");
+  if (!pk) throw new Error("Google Drive upload failed: GOOGLE_PRIVATE_KEY is missing");
   // Handle escaped newlines in env vars
   pk = pk.replace(/\\n/g, "\n");
+  console.log("[upload-to-drive] normalized private key", {
+    hasBeginMarker: pk.includes("-----BEGIN PRIVATE KEY-----"),
+    hasNewlines: pk.includes("\n"),
+  });
 
   const header = { alg: "RS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
@@ -83,20 +92,33 @@ async function getAccessToken(): Promise<string> {
   const claimB64 = base64UrlEncode(JSON.stringify(claim));
   const signingInput = `${headerB64}.${claimB64}`;
 
-  const keyData = pemToBinary(pk);
-  const cryptoKey = await crypto.subtle.importKey(
-    "pkcs8",
-    keyData,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    cryptoKey,
-    new TextEncoder().encode(signingInput),
-  );
+  let cryptoKey: CryptoKey;
+  try {
+    const keyData = pemToBinary(pk);
+    cryptoKey = await crypto.subtle.importKey(
+      "pkcs8",
+      keyData,
+      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+  } catch (error) {
+    console.error("[upload-to-drive] private key import failed", error);
+    throw new Error("Google Drive upload failed: GOOGLE_PRIVATE_KEY could not be parsed as a service-account private key");
+  }
+  let sig: ArrayBuffer;
+  try {
+    sig = await crypto.subtle.sign(
+      "RSASSA-PKCS1-v1_5",
+      cryptoKey,
+      new TextEncoder().encode(signingInput),
+    );
+  } catch (error) {
+    console.error("[upload-to-drive] RS256 JWT signing failed", error);
+    throw new Error("Google Drive upload failed: JWT signing with RS256 failed");
+  }
   const jwt = `${signingInput}.${base64UrlEncode(new Uint8Array(sig))}`;
+  console.log("[upload-to-drive] RS256 JWT signed, exchanging token");
 
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -108,9 +130,12 @@ async function getAccessToken(): Promise<string> {
   });
   if (!res.ok) {
     const t = await res.text();
-    throw new Error(`Token exchange failed: ${res.status} ${t}`);
+    console.error("[upload-to-drive] OAuth2 token exchange failed", { status: res.status, body: t });
+    throw new Error(`Google Drive upload failed: OAuth2 token exchange failed (${res.status}) ${t}`);
   }
   const json = await res.json();
+  if (!json.access_token) throw new Error("Google Drive upload failed: OAuth2 token exchange returned no access token");
+  console.log("[upload-to-drive] OAuth2 token exchange succeeded");
   return json.access_token as string;
 }
 
@@ -361,12 +386,15 @@ async function buildSummaryPdf(
 // ----- Main handler -----
 
 Deno.serve(async (req) => {
+  console.log("[upload-to-drive] function called", { method: req.method, url: req.url });
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let walkIdForFailure: string | undefined;
   try {
     const authHeader = req.headers.get("Authorization");
+    console.log("[upload-to-drive] auth header present", { hasAuthHeader: Boolean(authHeader) });
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing auth" }), {
         status: 401,
@@ -378,7 +406,16 @@ Deno.serve(async (req) => {
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const PUB_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
     const PARENT_FOLDER = Deno.env.get("GOOGLE_DRIVE_FOLDER_ID");
-    if (!PARENT_FOLDER) throw new Error("Missing GOOGLE_DRIVE_FOLDER_ID");
+    console.log("[upload-to-drive] environment check", {
+      hasSupabaseUrl: Boolean(SUPABASE_URL),
+      hasServiceRoleKey: Boolean(SERVICE_KEY),
+      hasPublishableKey: Boolean(PUB_KEY),
+      hasDriveFolderId: Boolean(PARENT_FOLDER),
+    });
+    if (!SUPABASE_URL) throw new Error("Upload failed: backend URL is missing");
+    if (!SERVICE_KEY) throw new Error("Upload failed: service role key is missing");
+    if (!PUB_KEY) throw new Error("Upload failed: publishable key is missing");
+    if (!PARENT_FOLDER) throw new Error("Google Drive upload failed: GOOGLE_DRIVE_FOLDER_ID is missing");
 
     // Identify user via the auth header (RLS-safe client)
     const userClient = createClient(SUPABASE_URL, PUB_KEY, {
@@ -399,7 +436,9 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const walkId = body.walkthroughId as string;
-    if (!walkId) throw new Error("Missing walkthroughId");
+    walkIdForFailure = walkId;
+    console.log("[upload-to-drive] request payload", { walkthroughId: walkId });
+    if (!walkId) throw new Error("Upload failed: missing walkthroughId in request payload");
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
@@ -409,7 +448,7 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("id", walkId)
       .single();
-    if (walkErr || !walkRow) throw new Error("Walkthrough not found");
+    if (walkErr || !walkRow) throw new Error(`Upload failed: walkthrough ${walkId} was not found`);
     if (walkRow.user_id !== userId) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
@@ -417,12 +456,14 @@ Deno.serve(async (req) => {
       });
     }
     const walk = walkRow as Walkthrough;
+    console.log("[upload-to-drive] walkthrough loaded", { walkthroughId: walk.id, userId: walk.user_id });
 
     // Mark as uploading
     await admin
       .from("walkthroughs")
       .update({ upload_status: "uploading" })
       .eq("id", walkId);
+    console.log("[upload-to-drive] marked walkthrough uploading", { walkthroughId: walkId });
 
     // Get Google access token
     const token = await getAccessToken();
@@ -447,7 +488,9 @@ Deno.serve(async (req) => {
     ]
       .filter(Boolean)
       .join("_");
+    console.log("[upload-to-drive] creating Drive folder", { walkthroughId: walkId, folderName });
     const subfolderId = await createDriveFolder(token, folderName, PARENT_FOLDER);
+    console.log("[upload-to-drive] Drive folder created", { walkthroughId: walkId, subfolderId });
 
     // Create "Photos" and "Videos" subfolders inside the property folder
     const photosFolderId = await createDriveFolder(token, "Photos", subfolderId);
@@ -460,6 +503,7 @@ Deno.serve(async (req) => {
       (ans.photoNames ?? []).forEach((n) => n && photoNames.add(n));
       (ans.poorPhotoNames ?? []).forEach((n) => n && photoNames.add(n));
     }
+    console.log("[upload-to-drive] staged filenames from walkthrough", { walkthroughId: walkId, total: photoNames.size });
 
     // Download each photo from the staging bucket and upload to Drive
     let uploaded = 0;
@@ -473,13 +517,23 @@ Deno.serve(async (req) => {
         continue;
       }
       const bytes = new Uint8Array(await blob.arrayBuffer());
-      const mime = fname.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
-      await uploadFileToDrive(token, fname, mime, bytes, photosFolderId);
+      const lower = fname.toLowerCase();
+      const mime = lower.endsWith(".png")
+        ? "image/png"
+        : lower.endsWith(".mov")
+          ? "video/quicktime"
+          : lower.endsWith(".mp4")
+            ? "video/mp4"
+            : "image/jpeg";
+      const targetFolderId = mime.startsWith("video/") ? videosFolderId : photosFolderId;
+      console.log("[upload-to-drive] uploading staged file to Drive", { walkthroughId: walkId, filename: fname, mime, bytes: bytes.length });
+      await uploadFileToDrive(token, fname, mime, bytes, targetFolderId);
       uploaded++;
     }
 
     // Generate Drive shareable link
     const driveLink = await setFolderShareableLink(token, subfolderId);
+    console.log("[upload-to-drive] Drive folder share link ready", { walkthroughId: walkId, driveLink, uploaded });
 
     // Build & upload SUMMARY.pdf
     const pdfBytes = await buildSummaryPdf(walk, agentName, driveLink);
@@ -490,6 +544,7 @@ Deno.serve(async (req) => {
       pdfBytes,
       subfolderId,
     );
+    console.log("[upload-to-drive] SUMMARY.pdf uploaded", { walkthroughId: walkId });
 
     // Mark confirmed
     await admin
@@ -516,18 +571,18 @@ Deno.serve(async (req) => {
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
       const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const admin = createClient(SUPABASE_URL, SERVICE_KEY);
-      const reqBody = await req.clone().json().catch(() => ({}));
-      if (reqBody?.walkthroughId) {
+      if (walkIdForFailure) {
         await admin
           .from("walkthroughs")
           .update({ upload_status: "failed" })
-          .eq("id", reqBody.walkthroughId);
+          .eq("id", walkIdForFailure);
       }
     } catch {
       // ignore
     }
+    const message = e instanceof Error ? e.message : String(e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+      JSON.stringify({ success: false, error: message, details: message }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
