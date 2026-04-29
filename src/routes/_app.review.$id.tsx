@@ -26,6 +26,16 @@ import {
 import { useAuth } from "@/lib/auth";
 import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
 import { Progress } from "@/components/ui/progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { preloadPhoto, resolvePhotoSrc } from "@/lib/photo-store";
 import { cn } from "@/lib/utils";
 import {
