@@ -1,4 +1,4 @@
-import { Camera, Loader2, X } from "lucide-react";
+import { Camera, CheckCircle2, Loader2, Play, X } from "lucide-react";
 import { ChangeEvent, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { compressImage, removePhoto, resolvePhotoSrc, savePhoto } from "@/lib/photo-store";
