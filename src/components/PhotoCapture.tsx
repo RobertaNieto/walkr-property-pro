@@ -87,6 +87,7 @@ export function PhotoCapture({
         // Belt-and-suspenders: keep an instance-local copy so the thumbnail
         // renders even if the IDB write or memCache lookup is somehow slow.
         localCache.current[name] = compressed;
+        fileMeta.current[name] = { size: file.size, original: file.name };
         newPhotos.push(name);
         newNames.push(name);
       }
