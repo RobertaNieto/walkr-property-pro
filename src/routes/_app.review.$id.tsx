@@ -25,6 +25,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useAuth } from "@/lib/auth";
+import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import { Progress } from "@/components/ui/progress";
 import { preloadPhoto, resolvePhotoSrc } from "@/lib/photo-store";
 import { cn } from "@/lib/utils";
 import {
