@@ -73,6 +73,7 @@ export async function uploadWalkthroughToDrive(
   walk: Walkthrough,
   userId: string,
   onProgress?: (p: UploadProgress) => void,
+  options?: { mode?: "initial" | "reupload" },
 ): Promise<UploadResult> {
   try {
     if (!userId) throw new Error("You must be signed in before uploading to Drive");
