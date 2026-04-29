@@ -15,6 +15,7 @@ function AddressScreen() {
     houseNumber: "",
     streetName: "",
     city: "",
+    zipCode: "",
     state: "",
   });
   const [attempted, setAttempted] = useState(false);
@@ -36,6 +37,7 @@ function AddressScreen() {
     address.houseNumber.trim() &&
     address.streetName.trim() &&
     address.city.trim() &&
+    address.zipCode.trim().length === 5 &&
     address.state.trim().length === 2;
 
   const handleNext = () => {
@@ -109,6 +111,28 @@ function AddressScreen() {
                 value={address.city}
                 onChange={(e) => setAddress((a) => ({ ...a, city: e.target.value }))}
                 className={fieldClass(address.city)}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-foreground">
+                Zip code
+              </label>
+              <input
+                inputMode="numeric"
+                autoComplete="postal-code"
+                placeholder="90210"
+                maxLength={5}
+                value={address.zipCode}
+                onChange={(e) =>
+                  setAddress((a) => ({
+                    ...a,
+                    zipCode: e.target.value.replace(/[^0-9]/g, "").slice(0, 5),
+                  }))
+                }
+                className={cn(
+                  fieldClass(address.zipCode),
+                  attempted && address.zipCode.trim().length !== 5 ? "field-error" : ""
+                )}
               />
             </div>
             <div>

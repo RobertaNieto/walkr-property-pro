@@ -20,6 +20,7 @@ interface Walkthrough {
   street_name: string;
   city: string;
   state: string;
+  zip_code: string | null;
   config: Record<string, unknown>;
   answers: Record<string, AnswerRow>;
   completed_at: string | null;
@@ -210,8 +211,10 @@ async function buildSummaryPdf(
   const pageH = 792;
   const margin = 50;
 
-  const cityState = [walk.city, walk.state].filter(Boolean).join(", ");
-  const address = `${walk.house_number} ${walk.street_name}, ${cityState}`;
+  const stateZip = [walk.state, walk.zip_code ?? ""].filter(Boolean).join(" ").trim();
+  const cityLine = [walk.city, stateZip].filter((s) => s && s.length > 0).join(", ");
+  const street = `${walk.house_number} ${walk.street_name}`.trim();
+  const address = [street, cityLine].filter(Boolean).join(", ");
   const completedAt = walk.completed_at
     ? new Date(walk.completed_at).toLocaleString()
     : "—";
@@ -425,9 +428,25 @@ Deno.serve(async (req) => {
     const token = await getAccessToken();
 
     // Create subfolder HOUSENUMBER_STREETNAME_CITY_STATE
-    const sanitize = (s: string) =>
+    // Folder name: HOUSENUMBER_STREET_CITY_STATE_ZIPCODE
+    // Spaces become hyphens; only [A-Z0-9-] allowed; uppercased.
+    const slug = (s: string) =>
+      (s ?? "")
+        .toUpperCase()
+        .trim()
+        .replace(/\s+/g, "-")
+        .replace(/[^A-Z0-9-]/g, "");
+    const sanitizeNum = (s: string) =>
       (s ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-    const folderName = `${sanitize(walk.house_number)}_${sanitize(walk.street_name)}_${sanitize(walk.city)}_${sanitize(walk.state)}`;
+    const folderName = [
+      sanitizeNum(walk.house_number),
+      slug(walk.street_name),
+      slug(walk.city),
+      sanitizeNum(walk.state),
+      sanitizeNum(walk.zip_code ?? ""),
+    ]
+      .filter(Boolean)
+      .join("_");
     const subfolderId = await createDriveFolder(token, folderName, PARENT_FOLDER);
 
     // Create "Photos" and "Videos" subfolders inside the property folder

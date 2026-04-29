@@ -100,6 +100,7 @@ export type Database = {
           upload_status: string
           uploaded_at: string | null
           user_id: string
+          zip_code: string
         }
         Insert: {
           answers?: Json
@@ -117,6 +118,7 @@ export type Database = {
           upload_status?: string
           uploaded_at?: string | null
           user_id: string
+          zip_code?: string
         }
         Update: {
           answers?: Json
@@ -134,6 +136,7 @@ export type Database = {
           upload_status?: string
           uploaded_at?: string | null
           user_id?: string
+          zip_code?: string
         }
         Relationships: []
       }
