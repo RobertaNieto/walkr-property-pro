@@ -571,18 +571,18 @@ Deno.serve(async (req) => {
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
       const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const admin = createClient(SUPABASE_URL, SERVICE_KEY);
-      const reqBody = await req.clone().json().catch(() => ({}));
-      if (reqBody?.walkthroughId) {
+      if (walkIdForFailure) {
         await admin
           .from("walkthroughs")
           .update({ upload_status: "failed" })
-          .eq("id", reqBody.walkthroughId);
+          .eq("id", walkIdForFailure);
       }
     } catch {
       // ignore
     }
+    const message = e instanceof Error ? e.message : String(e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+      JSON.stringify({ success: false, error: message, details: message }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
