@@ -99,6 +99,8 @@ function WalkthroughsScreen() {
             0
           ),
           criticalFlags: [] as { questionId: string; notes?: string }[],
+          uploadStatus: w.uploadStatus,
+          driveFolderUrl: w.driveFolderUrl,
         })),
         ...localOnly,
       ] as typeof local;
@@ -123,6 +125,8 @@ function WalkthroughsScreen() {
               0
             ),
             criticalFlags: [],
+            uploadStatus: w.uploadStatus,
+            driveFolderUrl: w.driveFolderUrl,
           };
           const existing = listCompletedLocal().filter((r) => r.id !== record.id);
           localStorage.setItem(
