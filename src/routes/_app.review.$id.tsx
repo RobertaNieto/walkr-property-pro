@@ -159,6 +159,10 @@ function ReviewScreen() {
         if (remote) {
           setWalk(enrichPhotos(remote));
           setNotFound(false);
+          if (remote.uploadStatus === "confirmed" && remote.driveFolderUrl) {
+            setUploadStatus("success");
+            setDriveUrl(remote.driveFolderUrl);
+          }
         } else {
           setNotFound(true);
         }
