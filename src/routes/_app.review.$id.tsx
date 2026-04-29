@@ -127,6 +127,12 @@ function ReviewScreen() {
   // Photo lightbox state
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
+  // Drive upload state
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [driveUrl, setDriveUrl] = useState<string | null>(null);
+
   // Section refs for scroll-to behavior
   const sectionsRef = useRef<HTMLDivElement | null>(null);
   const photosRef = useRef<HTMLDivElement | null>(null);
