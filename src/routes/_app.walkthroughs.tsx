@@ -448,11 +448,51 @@ function DraftCard({
 
 function CompletedCard({
   record,
+  userId,
   onDelete,
 }: {
   record: CompletedRecord;
+  userId: string | null;
   onDelete: () => void;
 }) {
+  const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
+  const [progress, setProgress] = useState<UploadProgress | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [driveUrl, setDriveUrl] = useState<string | null>(null);
+
+  const handleUpload = async () => {
+    if (!userId) {
+      setStatus("error");
+      setError("Not signed in");
+      return;
+    }
+    setStatus("uploading");
+    setError(null);
+    setDriveUrl(null);
+    try {
+      const walk = await fetchById(record.id);
+      if (!walk) throw new Error("Walkthrough not found");
+      const res = await uploadWithRetry(walk, userId, (p) => setProgress(p));
+      if (res.success) {
+        setStatus("success");
+        setDriveUrl(res.driveFolderUrl ?? null);
+      } else {
+        setStatus("error");
+        setError(res.error ?? "Upload failed");
+      }
+    } catch (e) {
+      setStatus("error");
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const pct =
+    progress && progress.total > 0
+      ? Math.round((progress.current / progress.total) * 100)
+      : progress?.phase === "drive"
+        ? 90
+        : 5;
+
   return (
     <SwipeRow onDelete={onDelete}>
       <div className="space-y-3 bg-card p-4">
@@ -495,6 +535,16 @@ function CompletedCard({
           </span>
         </div>
 
+        {status === "uploading" && (
+          <div className="rounded-xl border border-border bg-muted/40 p-2.5">
+            <div className="mb-1.5 flex items-center gap-2 text-xs font-medium text-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              {progress?.message ?? "Starting upload..."}
+            </div>
+            <Progress value={pct} className="h-1.5" />
+          </div>
+        )}
+
         <div className="flex gap-2 pt-1">
           <Link
             to="/review/$id"
@@ -504,17 +554,44 @@ function CompletedCard({
             <Eye className="h-4 w-4" />
             View report
           </Link>
-          <button
-            disabled
-            aria-disabled
-            title="Coming in Phase 5"
-            className="inline-flex h-10 flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-xl border border-border bg-muted text-sm font-semibold text-muted-foreground"
-          >
-            <CloudUpload className="h-4 w-4" />
-            Upload to Drive
-          </button>
+          {status === "success" && driveUrl ? (
+            <a
+              href={driveUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Uploaded ✓ View in Drive
+            </a>
+          ) : status === "error" ? (
+            <button
+              type="button"
+              onClick={handleUpload}
+              title={error ?? undefined}
+              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-critical text-sm font-semibold text-critical-foreground transition-colors hover:bg-critical/90"
+            >
+              <AlertTriangle className="h-4 w-4" />
+              Upload Failed — Retry
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleUpload}
+              disabled={status === "uploading"}
+              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-sm font-semibold text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
+            >
+              {status === "uploading" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CloudUpload className="h-4 w-4" />
+              )}
+              Upload to Drive
+            </button>
+          )}
         </div>
       </div>
     </SwipeRow>
   );
 }
+
