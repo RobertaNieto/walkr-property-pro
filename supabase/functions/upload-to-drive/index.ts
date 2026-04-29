@@ -386,12 +386,15 @@ async function buildSummaryPdf(
 // ----- Main handler -----
 
 Deno.serve(async (req) => {
+  console.log("[upload-to-drive] function called", { method: req.method, url: req.url });
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let walkIdForFailure: string | undefined;
   try {
     const authHeader = req.headers.get("Authorization");
+    console.log("[upload-to-drive] auth header present", { hasAuthHeader: Boolean(authHeader) });
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing auth" }), {
         status: 401,
@@ -403,7 +406,16 @@ Deno.serve(async (req) => {
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const PUB_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
     const PARENT_FOLDER = Deno.env.get("GOOGLE_DRIVE_FOLDER_ID");
-    if (!PARENT_FOLDER) throw new Error("Missing GOOGLE_DRIVE_FOLDER_ID");
+    console.log("[upload-to-drive] environment check", {
+      hasSupabaseUrl: Boolean(SUPABASE_URL),
+      hasServiceRoleKey: Boolean(SERVICE_KEY),
+      hasPublishableKey: Boolean(PUB_KEY),
+      hasDriveFolderId: Boolean(PARENT_FOLDER),
+    });
+    if (!SUPABASE_URL) throw new Error("Upload failed: backend URL is missing");
+    if (!SERVICE_KEY) throw new Error("Upload failed: service role key is missing");
+    if (!PUB_KEY) throw new Error("Upload failed: publishable key is missing");
+    if (!PARENT_FOLDER) throw new Error("Google Drive upload failed: GOOGLE_DRIVE_FOLDER_ID is missing");
 
     // Identify user via the auth header (RLS-safe client)
     const userClient = createClient(SUPABASE_URL, PUB_KEY, {
@@ -424,7 +436,9 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const walkId = body.walkthroughId as string;
-    if (!walkId) throw new Error("Missing walkthroughId");
+    walkIdForFailure = walkId;
+    console.log("[upload-to-drive] request payload", { walkthroughId: walkId });
+    if (!walkId) throw new Error("Upload failed: missing walkthroughId in request payload");
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
@@ -434,7 +448,7 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("id", walkId)
       .single();
-    if (walkErr || !walkRow) throw new Error("Walkthrough not found");
+    if (walkErr || !walkRow) throw new Error(`Upload failed: walkthrough ${walkId} was not found`);
     if (walkRow.user_id !== userId) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
@@ -442,12 +456,14 @@ Deno.serve(async (req) => {
       });
     }
     const walk = walkRow as Walkthrough;
+    console.log("[upload-to-drive] walkthrough loaded", { walkthroughId: walk.id, userId: walk.user_id });
 
     // Mark as uploading
     await admin
       .from("walkthroughs")
       .update({ upload_status: "uploading" })
       .eq("id", walkId);
+    console.log("[upload-to-drive] marked walkthrough uploading", { walkthroughId: walkId });
 
     // Get Google access token
     const token = await getAccessToken();
