@@ -10,7 +10,7 @@ import {
   Film,
   Image as ImageIcon,
   Loader2,
-  Lock,
+  Loader2,
   Play,
   Printer,
   Share2,
