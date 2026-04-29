@@ -115,6 +115,28 @@ function AddressScreen() {
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-foreground">
+                Zip code
+              </label>
+              <input
+                inputMode="numeric"
+                autoComplete="postal-code"
+                placeholder="90210"
+                maxLength={5}
+                value={address.zipCode}
+                onChange={(e) =>
+                  setAddress((a) => ({
+                    ...a,
+                    zipCode: e.target.value.replace(/[^0-9]/g, "").slice(0, 5),
+                  }))
+                }
+                className={cn(
+                  fieldClass(address.zipCode),
+                  attempted && address.zipCode.trim().length !== 5 ? "field-error" : ""
+                )}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-foreground">
                 State
               </label>
               <input
