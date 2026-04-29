@@ -15,6 +15,7 @@ function AddressScreen() {
     houseNumber: "",
     streetName: "",
     city: "",
+    zipCode: "",
     state: "",
   });
   const [attempted, setAttempted] = useState(false);
@@ -36,6 +37,7 @@ function AddressScreen() {
     address.houseNumber.trim() &&
     address.streetName.trim() &&
     address.city.trim() &&
+    address.zipCode.trim().length === 5 &&
     address.state.trim().length === 2;
 
   const handleNext = () => {
