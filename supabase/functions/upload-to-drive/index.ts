@@ -887,6 +887,29 @@ Deno.serve(async (req) => {
     const videosFolderId = await createDriveFolder(token, "Videos", subfolderId);
     console.log("[upload-to-drive] Videos subfolder ready", { walkthroughId: walkId, videosFolderId });
 
+    // Re-upload mode: purge existing contents so the folder reflects only the
+    // current walkthrough state. Done after subfolders are ready so we don't
+    // delete the subfolders themselves.
+    if (isReupload) {
+      console.log("[upload-to-drive] re-upload: purging existing folder contents", { walkthroughId: walkId });
+      const [photosDeleted, videosDeleted] = await Promise.all([
+        purgeFolderContents(token, photosFolderId),
+        purgeFolderContents(token, videosFolderId),
+      ]);
+      // Delete prior SUMMARY.pdf at the property root
+      const priorPdfId = await findFileByName(token, "SUMMARY.pdf", subfolderId);
+      if (priorPdfId) {
+        const delRes = await fetch(`https://www.googleapis.com/drive/v3/files/${priorPdfId}?${DRIVE_QS}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!delRes.ok && delRes.status !== 404) {
+          console.warn("[upload-to-drive] re-upload: failed to delete prior SUMMARY.pdf (non-fatal)", { status: delRes.status });
+        }
+      }
+      console.log("[upload-to-drive] re-upload: purge complete", { walkthroughId: walkId, photosDeleted, videosDeleted, priorPdfDeleted: Boolean(priorPdfId) });
+    }
+
     // Collect photo filenames from answers
     const photoNames = new Set<string>();
     for (const ans of Object.values(walk.answers ?? {})) {
