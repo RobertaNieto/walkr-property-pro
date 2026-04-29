@@ -796,15 +796,25 @@ function ReviewScreen() {
             </div>
           )}
           {uploadStatus === "success" && driveUrl && (
-            <a
-              href={driveUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-success text-sm font-semibold text-success-foreground"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Uploaded ✓ View in Drive
-            </a>
+            <div className="space-y-2">
+              <a
+                href={driveUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-success text-sm font-semibold text-success-foreground"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                View in Drive →
+              </a>
+              <button
+                type="button"
+                onClick={() => setConfirmReupload(true)}
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                <CloudUpload className="h-3.5 w-3.5" />
+                Re-upload to Drive
+              </button>
+            </div>
           )}
           {uploadStatus === "error" && (
             <button
