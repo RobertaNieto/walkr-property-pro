@@ -910,22 +910,60 @@ async function buildSummaryPdf(
     }
   }
 
-  // ---- Pages 3+: grouped section by section ----
+  // ---- Pages 3+: every schema question, grouped section by section ----
   newPage();
   drawText("Walkthrough Detail", { font: bold, size: 18, gap: 10 });
 
-  // Group answers by resolved section name.
-  const grouped = new Map<string, { qid: string; label: string; ans: AnswerRow }[]>();
-  for (const [qid, ans] of Object.entries(walk.answers ?? {})) {
-    const info = resolveQid(qid);
-    const arr = grouped.get(info.section) ?? [];
-    arr.push({ qid, label: info.label, ans });
-    grouped.set(info.section, arr);
+  // Enumerate every question id that should appear for this walkthrough config,
+  // then group by resolved section. Unanswered questions render as "N/A" so
+  // nothing from the schema is silently omitted.
+  const enumeratedIds = enumerateQuestionIds(
+    cfg as Record<string, string | undefined>,
+    walk.answers ?? {},
+  );
+  const seen = new Set<string>(enumeratedIds);
+  // Append any answer ids the enumerator didn't know about (defensive).
+  for (const qid of Object.keys(walk.answers ?? {})) {
+    if (!seen.has(qid)) {
+      enumeratedIds.push(qid);
+      seen.add(qid);
+    }
   }
 
-  const sortedSections = Array.from(grouped.keys()).sort((a, b) =>
+  type DetailRow = { qid: string; label: string; ans: AnswerRow | undefined };
+  const grouped = new Map<string, DetailRow[]>();
+  const sectionOrderSeen: string[] = [];
+  for (const qid of enumeratedIds) {
+    const info = resolveQid(qid);
+    if (!grouped.has(info.section)) {
+      grouped.set(info.section, []);
+      sectionOrderSeen.push(info.section);
+    }
+    grouped.get(info.section)!.push({
+      qid,
+      label: info.label,
+      ans: walk.answers?.[qid],
+    });
+  }
+
+  const sortedSections = sectionOrderSeen.slice().sort((a, b) =>
     sectionSortKey(a).localeCompare(sectionSortKey(b)),
   );
+
+  const formatAnswer = (ans: AnswerRow | undefined): string => {
+    if (!ans) return "N/A";
+    const parts: string[] = [];
+    if (ans.text && ans.text.trim()) parts.push(ans.text.trim());
+    if (ans.choice) parts.push(ans.choice);
+    if (ans.choices?.length) parts.push(ans.choices.join(", "));
+    if (typeof ans.bool === "boolean") parts.push(ans.bool ? "Yes" : "No");
+    if (typeof ans.number === "number") parts.push(String(ans.number));
+    if (ans.rating) parts.push(`Rating: ${ratingLabel(ans.rating)}`);
+    const hasPhotos =
+      (ans.photos?.length ?? 0) > 0 || (ans.poorPhotos?.length ?? 0) > 0;
+    if (parts.length === 0 && hasPhotos) parts.push("Photo captured");
+    return parts.length ? parts.join("  •  ") : "N/A";
+  };
 
   for (const sectionName of sortedSections) {
     const items = grouped.get(sectionName)!;
@@ -944,18 +982,15 @@ async function buildSummaryPdf(
     for (const { label, ans } of items) {
       ensure(50);
       drawText(label, { font: bold, size: 11 });
-      const parts: string[] = [];
-      if (ans.text) parts.push(ans.text);
-      if (ans.choice) parts.push(ans.choice);
-      if (ans.choices?.length) parts.push(ans.choices.join(", "));
-      if (typeof ans.bool === "boolean") parts.push(ans.bool ? "Yes" : "No");
-      if (typeof ans.number === "number") parts.push(String(ans.number));
-      if (ans.rating) parts.push(`Rating: ${ratingLabel(ans.rating)}`);
-      if (parts.length) drawText(parts.join("  •  "), { size: 11 });
-      if (ans.notes) drawText(`Notes: ${ans.notes}`, { font: italic, size: 10 });
+      const value = formatAnswer(ans);
+      drawText(value, {
+        size: 11,
+        color: value === "N/A" ? rgb(0.55, 0.55, 0.55) : rgb(0, 0, 0),
+      });
+      if (ans?.notes) drawText(`Notes: ${ans.notes}`, { font: italic, size: 10 });
       const allPhotos = [
-        ...(ans.photoNames ?? []),
-        ...(ans.poorPhotoNames ?? []),
+        ...(ans?.photoNames ?? []),
+        ...(ans?.poorPhotoNames ?? []),
       ];
       if (allPhotos.length) {
         drawText(`Photos: ${allPhotos.join(", ")}`, { size: 9, color: rgb(0.4, 0.4, 0.4) });
