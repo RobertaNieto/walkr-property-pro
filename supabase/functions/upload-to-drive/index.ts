@@ -65,9 +65,18 @@ function base64UrlEncode(data: Uint8Array | string): string {
 async function getAccessToken(): Promise<string> {
   const email = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_EMAIL");
   let pk = Deno.env.get("GOOGLE_PRIVATE_KEY");
-  if (!email || !pk) throw new Error("Missing Google service account secrets");
+  console.log("[upload-to-drive] checking Google Drive secrets", {
+    hasServiceAccountEmail: Boolean(email),
+    hasPrivateKey: Boolean(pk),
+  });
+  if (!email) throw new Error("Google Drive upload failed: GOOGLE_SERVICE_ACCOUNT_EMAIL is missing");
+  if (!pk) throw new Error("Google Drive upload failed: GOOGLE_PRIVATE_KEY is missing");
   // Handle escaped newlines in env vars
   pk = pk.replace(/\\n/g, "\n");
+  console.log("[upload-to-drive] normalized private key", {
+    hasBeginMarker: pk.includes("-----BEGIN PRIVATE KEY-----"),
+    hasNewlines: pk.includes("\n"),
+  });
 
   const header = { alg: "RS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
@@ -83,20 +92,33 @@ async function getAccessToken(): Promise<string> {
   const claimB64 = base64UrlEncode(JSON.stringify(claim));
   const signingInput = `${headerB64}.${claimB64}`;
 
-  const keyData = pemToBinary(pk);
-  const cryptoKey = await crypto.subtle.importKey(
-    "pkcs8",
-    keyData,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    cryptoKey,
-    new TextEncoder().encode(signingInput),
-  );
+  let cryptoKey: CryptoKey;
+  try {
+    const keyData = pemToBinary(pk);
+    cryptoKey = await crypto.subtle.importKey(
+      "pkcs8",
+      keyData,
+      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+  } catch (error) {
+    console.error("[upload-to-drive] private key import failed", error);
+    throw new Error("Google Drive upload failed: GOOGLE_PRIVATE_KEY could not be parsed as a service-account private key");
+  }
+  let sig: ArrayBuffer;
+  try {
+    sig = await crypto.subtle.sign(
+      "RSASSA-PKCS1-v1_5",
+      cryptoKey,
+      new TextEncoder().encode(signingInput),
+    );
+  } catch (error) {
+    console.error("[upload-to-drive] RS256 JWT signing failed", error);
+    throw new Error("Google Drive upload failed: JWT signing with RS256 failed");
+  }
   const jwt = `${signingInput}.${base64UrlEncode(new Uint8Array(sig))}`;
+  console.log("[upload-to-drive] RS256 JWT signed, exchanging token");
 
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -108,9 +130,12 @@ async function getAccessToken(): Promise<string> {
   });
   if (!res.ok) {
     const t = await res.text();
-    throw new Error(`Token exchange failed: ${res.status} ${t}`);
+    console.error("[upload-to-drive] OAuth2 token exchange failed", { status: res.status, body: t });
+    throw new Error(`Google Drive upload failed: OAuth2 token exchange failed (${res.status}) ${t}`);
   }
   const json = await res.json();
+  if (!json.access_token) throw new Error("Google Drive upload failed: OAuth2 token exchange returned no access token");
+  console.log("[upload-to-drive] OAuth2 token exchange succeeded");
   return json.access_token as string;
 }
 
