@@ -459,12 +459,17 @@ function CompletedCard({
   userId: string | null;
   onDelete: () => void;
 }) {
-  const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
+  const alreadyUploaded = record.uploadStatus === "confirmed";
+  const existingDriveUrl = record.driveFolderUrl ?? null;
+  const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">(
+    alreadyUploaded ? "success" : "idle",
+  );
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [driveUrl, setDriveUrl] = useState<string | null>(null);
+  const [driveUrl, setDriveUrl] = useState<string | null>(existingDriveUrl);
+  const [confirmReupload, setConfirmReupload] = useState(false);
 
-  const handleUpload = async () => {
+  const runUpload = async (mode: "initial" | "reupload") => {
     if (!userId) {
       setStatus("error");
       setError("Not signed in");
@@ -472,14 +477,13 @@ function CompletedCard({
     }
     setStatus("uploading");
     setError(null);
-    setDriveUrl(null);
     try {
       const walk = await fetchById(record.id);
       if (!walk) throw new Error("Walkthrough not found");
-      const res = await uploadWithRetry(walk, userId, (p) => setProgress(p));
+      const res = await uploadWithRetry(walk, userId, (p) => setProgress(p), 3, { mode });
       if (res.success) {
         setStatus("success");
-        setDriveUrl(res.driveFolderUrl ?? null);
+        setDriveUrl(res.driveFolderUrl ?? existingDriveUrl);
       } else {
         setStatus("error");
         setError(res.error ?? "Upload failed");
@@ -488,6 +492,12 @@ function CompletedCard({
       setStatus("error");
       setError(e instanceof Error ? e.message : String(e));
     }
+  };
+
+  const handleUpload = () => runUpload("initial");
+  const handleReupload = () => {
+    setConfirmReupload(false);
+    void runUpload("reupload");
   };
 
   const pct =
