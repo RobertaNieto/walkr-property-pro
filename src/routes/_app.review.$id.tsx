@@ -347,6 +347,21 @@ function ReviewScreen() {
     if (typeof window !== "undefined") window.print();
   };
 
+  const handleUpload = async () => {
+    if (!walk || !user) return;
+    setUploadStatus("uploading");
+    setUploadError(null);
+    setDriveUrl(null);
+    const res = await uploadWithRetry(walk, user.id, (p) => setUploadProgress(p));
+    if (res.success) {
+      setUploadStatus("success");
+      setDriveUrl(res.driveFolderUrl ?? null);
+    } else {
+      setUploadStatus("error");
+      setUploadError(res.error ?? "Upload failed");
+    }
+  };
+
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background">
       {/* Top utility bar — hidden in print */}
