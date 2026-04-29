@@ -1,0 +1,1 @@
+ALTER TABLE public.walkthroughs ADD COLUMN IF NOT EXISTS zip_code text NOT NULL DEFAULT '';
