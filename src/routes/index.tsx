@@ -31,7 +31,9 @@ export const Route = createFileRoute("/")({
 
 function formatAddress(w: Walkthrough): string {
   const street = [w.address.houseNumber, w.address.streetName].filter(Boolean).join(" ").trim();
-  const full = [street, w.address.city].filter(Boolean).join(", ");
+  const stateZip = [w.address.state, w.address.zipCode].filter(Boolean).join(" ").trim();
+  const cityStateZip = [w.address.city, stateZip].filter((s) => s && s.length > 0).join(", ");
+  const full = [street, cityStateZip].filter(Boolean).join(", ");
   return full || "Untitled walkthrough";
 }
 

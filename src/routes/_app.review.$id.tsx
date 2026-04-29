@@ -297,7 +297,8 @@ function ReviewScreen() {
 
   const addr = walk.address;
   const streetLine = [addr.houseNumber, addr.streetName].filter(Boolean).join(" ").trim() || "Property walkthrough";
-  const cityLine = [addr.city, addr.state].filter(Boolean).join(", ");
+  const stateZip = [addr.state, (addr as { zipCode?: string }).zipCode].filter(Boolean).join(" ").trim();
+  const cityLine = [addr.city, stateZip].filter((s) => s && s.length > 0).join(", ");
   const completedBy =
     (user?.user_metadata?.full_name as string | undefined) ??
     (user?.user_metadata?.name as string | undefined) ??
