@@ -83,6 +83,8 @@ export interface CompletedSummary {
   completedAt: number;
   totalPhotos: number;
   criticalFlags: { questionId: string; label: string; notes?: string }[];
+  uploadStatus?: "pending" | "uploading" | "confirmed" | "failed";
+  driveFolderUrl?: string | null;
 }
 
 // Backwards-compatible alias for the old name used across the app.
