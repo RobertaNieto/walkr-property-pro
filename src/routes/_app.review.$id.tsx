@@ -361,19 +361,25 @@ function ReviewScreen() {
     if (typeof window !== "undefined") window.print();
   };
 
-  const handleUpload = async () => {
+  const runUpload = async (mode: "initial" | "reupload") => {
     if (!walk || !user) return;
     setUploadStatus("uploading");
     setUploadError(null);
-    setDriveUrl(null);
-    const res = await uploadWithRetry(walk, user.id, (p) => setUploadProgress(p));
+    if (mode === "initial") setDriveUrl(null);
+    const res = await uploadWithRetry(walk, user.id, (p) => setUploadProgress(p), 3, { mode });
     if (res.success) {
       setUploadStatus("success");
-      setDriveUrl(res.driveFolderUrl ?? null);
+      setDriveUrl(res.driveFolderUrl ?? driveUrl);
     } else {
       setUploadStatus("error");
       setUploadError(res.error ?? "Upload failed");
     }
+  };
+
+  const handleUpload = () => runUpload("initial");
+  const handleReupload = () => {
+    setConfirmReupload(false);
+    void runUpload("reupload");
   };
 
   return (
