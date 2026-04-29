@@ -864,6 +864,23 @@ function ReviewScreen() {
           onNext={() => setLightboxIndex((i) => (i === null ? null : (i + 1) % photos.length))}
         />
       )}
+
+      <AlertDialog open={confirmReupload} onOpenChange={setConfirmReupload}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Re-upload to Drive?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will overwrite the existing folder contents for this property. Continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleReupload(); }}>
+              Re-upload
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
