@@ -35,6 +35,7 @@ export function PhotoCapture({
 }: PhotoCaptureProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const localCache = useRef<Record<string, string>>({});
+  const fileMeta = useRef<Record<string, { size: number; original: string }>>({});
   const [processing, setProcessing] = useState(false);
   const [orientationError, setOrientationError] = useState(false);
 
