@@ -813,7 +813,7 @@ function WalkthroughsTab() {
         supabase
           .from("walkthroughs")
           .select(
-            "id,user_id,house_number,street_name,city,state,created_at,completed_at,upload_status",
+            "id,user_id,house_number,street_name,city,state,zip_code,created_at,completed_at,upload_status",
           )
           .order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id,full_name,email"),
