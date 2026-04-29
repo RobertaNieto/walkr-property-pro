@@ -141,6 +141,7 @@ function ReviewScreen() {
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [driveUrl, setDriveUrl] = useState<string | null>(null);
+  const [confirmReupload, setConfirmReupload] = useState(false);
 
   // Section refs for scroll-to behavior
   const sectionsRef = useRef<HTMLDivElement | null>(null);
