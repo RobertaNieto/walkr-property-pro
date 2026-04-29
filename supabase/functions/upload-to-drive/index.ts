@@ -544,8 +544,9 @@ Deno.serve(async (req) => {
 
     // Create "Photos" and "Videos" subfolders inside the property folder
     const photosFolderId = await createDriveFolder(token, "Photos", subfolderId);
+    console.log("[upload-to-drive] Photos subfolder ready", { walkthroughId: walkId, photosFolderId });
     const videosFolderId = await createDriveFolder(token, "Videos", subfolderId);
-    void videosFolderId; // reserved for future video uploads
+    console.log("[upload-to-drive] Videos subfolder ready", { walkthroughId: walkId, videosFolderId });
 
     // Collect photo filenames from answers
     const photoNames = new Set<string>();
@@ -553,18 +554,18 @@ Deno.serve(async (req) => {
       (ans.photoNames ?? []).forEach((n) => n && photoNames.add(n));
       (ans.poorPhotoNames ?? []).forEach((n) => n && photoNames.add(n));
     }
-    console.log("[upload-to-drive] staged filenames from walkthrough", { walkthroughId: walkId, total: photoNames.size });
+    const allFiles = Array.from(photoNames);
+    console.log("[upload-to-drive] staged filenames from walkthrough", { walkthroughId: walkId, total: allFiles.length });
 
-    // Download each photo from the staging bucket and upload to Drive
-    let uploaded = 0;
-    for (const fname of photoNames) {
+    // Upload one staged file: download from Supabase Storage, push to Drive.
+    const uploadOne = async (fname: string): Promise<boolean> => {
       const path = `${userId}/${walkId}/${fname}`;
       const { data: blob, error: dlErr } = await admin.storage
         .from("walkthrough-photos")
         .download(path);
       if (dlErr || !blob) {
-        console.warn(`[upload-to-drive] missing photo ${path}`, dlErr);
-        continue;
+        console.warn("[upload-to-drive] missing photo in storage", { path, error: dlErr?.message });
+        return false;
       }
       const bytes = new Uint8Array(await blob.arrayBuffer());
       const lower = fname.toLowerCase();
@@ -576,9 +577,36 @@ Deno.serve(async (req) => {
             ? "video/mp4"
             : "image/jpeg";
       const targetFolderId = mime.startsWith("video/") ? videosFolderId : photosFolderId;
-      console.log("[upload-to-drive] uploading staged file to Drive", { walkthroughId: walkId, filename: fname, mime, bytes: bytes.length });
-      await uploadFileToDrive(token, fname, mime, bytes, targetFolderId);
-      uploaded++;
+      try {
+        await uploadFileToDrive(token, fname, mime, bytes, targetFolderId);
+        console.log("[upload-to-drive] file uploaded ✓", { filename: fname, mime, bytes: bytes.length });
+        return true;
+      } catch (err) {
+        console.error("[upload-to-drive] file upload ✗", { filename: fname, error: err instanceof Error ? err.message : String(err) });
+        throw err;
+      }
+    };
+
+    // Run uploads in parallel chunks so 75+ files finish under the 150s
+    // edge-function timeout. Concurrency 6 keeps us well under Drive's
+    // per-user write quota.
+    const CONCURRENCY = 6;
+    let uploaded = 0;
+    let failed = 0;
+    for (let i = 0; i < allFiles.length; i += CONCURRENCY) {
+      const chunk = allFiles.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(chunk.map(uploadOne));
+      for (const r of results) {
+        if (r.status === "fulfilled") {
+          if (r.value) uploaded++;
+        } else {
+          failed++;
+        }
+      }
+      console.log("[upload-to-drive] chunk done", { walkthroughId: walkId, progress: `${Math.min(i + CONCURRENCY, allFiles.length)}/${allFiles.length}`, uploaded, failed });
+    }
+    if (failed > 0) {
+      throw new Error(`Drive upload incomplete: ${failed} of ${allFiles.length} files failed`);
     }
 
     // Generate Drive shareable link
@@ -586,7 +614,10 @@ Deno.serve(async (req) => {
     console.log("[upload-to-drive] Drive folder share link ready", { walkthroughId: walkId, driveLink, uploaded });
 
     // Build & upload SUMMARY.pdf
+    console.log("[upload-to-drive] generating SUMMARY.pdf", { walkthroughId: walkId });
     const pdfBytes = await buildSummaryPdf(walk, agentName, driveLink);
+    console.log("[upload-to-drive] SUMMARY.pdf generated", { walkthroughId: walkId, bytes: pdfBytes.length });
+    console.log("[upload-to-drive] uploading SUMMARY.pdf to Drive", { walkthroughId: walkId, parentId: subfolderId });
     await uploadFileToDrive(
       token,
       "SUMMARY.pdf",
@@ -594,7 +625,7 @@ Deno.serve(async (req) => {
       pdfBytes,
       subfolderId,
     );
-    console.log("[upload-to-drive] SUMMARY.pdf uploaded", { walkthroughId: walkId });
+    console.log("[upload-to-drive] SUMMARY.pdf uploaded ✓", { walkthroughId: walkId });
 
     // Mark confirmed
     await admin
