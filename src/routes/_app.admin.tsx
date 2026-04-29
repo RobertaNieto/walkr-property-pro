@@ -57,6 +57,7 @@ interface WalkRow {
   street_name: string;
   city: string;
   state: string;
+  zip_code: string | null;
   created_at: string;
   completed_at: string | null;
   upload_status: string | null;
@@ -70,7 +71,8 @@ function formatStreet(w: WalkRow) {
   return [w.house_number, w.street_name].filter(Boolean).join(" ").trim();
 }
 function formatCityState(w: WalkRow) {
-  return [w.city, w.state].filter(Boolean).join(", ").trim();
+  const stateZip = [w.state, w.zip_code ?? ""].filter(Boolean).join(" ").trim();
+  return [w.city, stateZip].filter((s) => s && s.length > 0).join(", ").trim();
 }
 function hasAddress(w: WalkRow) {
   return Boolean(formatStreet(w) || formatCityState(w));
