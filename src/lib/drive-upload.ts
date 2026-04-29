@@ -154,10 +154,11 @@ export async function uploadWithRetry(
   userId: string,
   onProgress?: (p: UploadProgress) => void,
   maxAttempts = 3,
+  options?: { mode?: "initial" | "reupload" },
 ): Promise<UploadResult> {
   let lastErr = "";
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const res = await uploadWalkthroughToDrive(walk, userId, onProgress);
+    const res = await uploadWalkthroughToDrive(walk, userId, onProgress, options);
     if (res.success) return res;
     lastErr = res.error ?? "Unknown error";
     console.warn(`[upload] attempt ${attempt} failed: ${lastErr}`);
