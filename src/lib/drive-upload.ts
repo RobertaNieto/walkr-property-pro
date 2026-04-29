@@ -126,9 +126,9 @@ export async function uploadWalkthroughToDrive(
       total,
       message: "Uploading to Google Drive...",
     });
-    console.log("[drive-upload] invoking upload-to-drive", { walkthroughId: walk.id });
+    console.log("[drive-upload] invoking upload-to-drive", { walkthroughId: walk.id, mode: options?.mode ?? "initial" });
     const { data, error } = await supabase.functions.invoke("upload-to-drive", {
-      body: { walkthroughId: walk.id },
+      body: { walkthroughId: walk.id, mode: options?.mode ?? "initial" },
     });
     if (error) throw new Error(await getFunctionErrorMessage(error));
     if (!data?.success) throw new Error(data?.error ?? "Upload failed");
