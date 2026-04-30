@@ -877,12 +877,15 @@ async function buildSummaryPdf(
   newPage();
   drawText("Property Overview", { font: bold, size: 18, gap: 10 });
   const cfg = walk.config as Record<string, string | undefined>;
+  const ansForOverview = (walk.answers ?? {}) as Record<string, { bool?: boolean }>;
+  const poolYN = ansForOverview.s6_has_pool?.bool === true ? "Yes" : ansForOverview.s6_has_pool?.bool === false ? "No" : "—";
+  const spaYN = ansForOverview.s6_has_spa?.bool === true ? "Yes" : ansForOverview.s6_has_spa?.bool === false ? "No" : "—";
   const overview = [
     ["Bedrooms", cfg.bedrooms ?? "—"],
     ["Bathrooms", cfg.bathrooms ?? "—"],
     ["Garage", cfg.garage ?? "—"],
-    ["Pool", cfg.pool ?? "—"],
-    ["Spa", cfg.spa ?? "—"],
+    ["Pool", poolYN],
+    ["Spa", spaYN],
     ["Fireplace", cfg.fireplace ?? "—"],
     ["Laundry", cfg.laundry ?? "—"],
   ];
