@@ -196,10 +196,6 @@ function QuestionScreen() {
   const progress = (answeredCount / totalQ) * 100;
 
   const goNext = () => {
-    if (!valid) {
-      setAttempted(true);
-      return;
-    }
     const freshCtx: SkipContext = {
       config: ctx.config,
       answers: {
