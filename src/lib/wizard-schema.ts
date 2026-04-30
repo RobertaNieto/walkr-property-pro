@@ -571,7 +571,7 @@ const S9: SectionDef = {
   name: "Kitchen",
   resolve: () => [
     {
-      ...photoQ("s9_mls", 9, "Kitchen", "MLS-style wide photo", "KITCHEN_MLS"),
+      ...photoQ("s9_mls", 9, "Kitchen", "KITCHEN MLS-style wide photo", "KITCHEN_MLS"),
       helper: "Wide angle, mimic professional real estate photography",
     },
     photoQ("s9_cab_closed", 9, "Kitchen", "Cabinets closed photo", "KITCHEN_CABINETS_CLOSED"),
