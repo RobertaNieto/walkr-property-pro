@@ -33,6 +33,8 @@ function ConfigScreen() {
     config.bedrooms &&
     config.bathrooms &&
     config.garage &&
+    config.pool &&
+    config.spa &&
     config.fireplace &&
     config.laundry;
 
@@ -88,6 +90,20 @@ function ConfigScreen() {
             value={config.garage}
             onChange={(v) => set("garage", v)}
             columns={4}
+          />
+          <ChoiceGrid
+            label="Pool?"
+            options={["Yes", "No"] as const}
+            value={config.pool}
+            onChange={(v) => set("pool", v)}
+            columns={2}
+          />
+          <ChoiceGrid
+            label="Spa?"
+            options={["Yes", "No"] as const}
+            value={config.spa}
+            onChange={(v) => set("spa", v)}
+            columns={2}
           />
           <ChoiceGrid
             label="Fireplace?"
