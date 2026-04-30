@@ -1379,6 +1379,7 @@ const POOR_PHOTO_NAME_OVERRIDES: Record<string, string> = {
   s8_baseboards: "LIVING_BASEBOARDS_POOR",
   s8_paint: "LIVING_PAINT_POOR",
   s9_stove: "KITCHEN_STOVE_POOR",
+  s9_oven: "KITCHEN_OVEN_POOR",
   s9_fridge: "KITCHEN_FRIDGE_POOR",
   s9_dishwasher: "KITCHEN_DISHWASHER_POOR",
   s9_microwave_rating: "KITCHEN_MICROWAVE_POOR",
