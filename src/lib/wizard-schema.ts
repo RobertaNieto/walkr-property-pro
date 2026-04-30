@@ -1326,7 +1326,7 @@ const POOR_PHOTO_NAME_OVERRIDES: Record<string, string> = {
   s2_landscape: "LANDSCAPE_POOR",
   s3_fence: "FENCE_POOR",
   s5_condition: "ROOF_POOR",
-  s6_pool_clean: "POOL_CLEAN_POOR",
+  s6_pool_condition: "POOL_POOR",
   s6_spa_condition: "SPA_POOR",
   s8_floor_type: "LIVING_FLOOR_POOR",
   s8_window_condition: "LIVING_WINDOWS_POOR",
