@@ -393,6 +393,11 @@ function QuestionScreen() {
           value={draft}
           onChange={setDraft}
           attempted={attempted}
+          suppressRating={
+            (q.field === "rating" || q.withRating === true) &&
+            companionDefs.filter((c) => c.field === "rating").length >=
+              (q.field === "rating" ? 2 : 2)
+          }
         />
 
         {q.followUp && q.followUp.when(pickValue(q, draft)) && (
