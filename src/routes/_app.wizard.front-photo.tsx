@@ -57,7 +57,7 @@ function FrontPhotoScreen() {
       totalQuestions={2}
       progress={(2 / 18) * 100}
       lastSavedAt={savedAt}
-      canContinue={valid}
+      canContinue={true}
       onNext={handleNext}
       onAttemptNext={() => setAttempted(true)}
     >
