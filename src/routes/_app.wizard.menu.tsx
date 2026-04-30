@@ -159,9 +159,6 @@ function SectionMenuScreen() {
   const totalSections = rows.length;
   const overallPct = totalSections > 0 ? (completedCount / totalSections) * 100 : 0;
   const anyComplete = completedCount > 0;
-  const incompleteCount = rows.filter((r) => r.status !== "complete" && !r.isChecklist).length;
-  const allComplete = incompleteCount === 0;
-  const [reviewWarnOpen, setReviewWarnOpen] = useState(false);
 
   if (!w) {
     return (
@@ -328,34 +325,13 @@ function SectionMenuScreen() {
             Start from Beginning →
           </button>
           {anyComplete && (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  if (allComplete) {
-                    navigate({ to: "/wizard/checklist" });
-                  } else {
-                    setReviewWarnOpen(true);
-                  }
-                }}
-                title={allComplete ? undefined : "Complete all sections to submit"}
-                className={cn(
-                  "inline-flex h-12 w-full items-center justify-center rounded-2xl border-2 text-sm font-semibold transition-all active:scale-[0.99]",
-                  allComplete
-                    ? "border-border bg-card text-foreground hover:border-accent/40"
-                    : "border-border bg-muted text-muted-foreground hover:border-warning/50",
-                )}
-              >
-                {allComplete
-                  ? "Review & Submit"
-                  : `Review & Submit (${incompleteCount} incomplete)`}
-              </button>
-              {!allComplete && (
-                <p className="text-center text-[11px] font-medium text-muted-foreground">
-                  Complete all sections to submit
-                </p>
-              )}
-            </>
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/wizard/checklist" })}
+              className="inline-flex h-12 w-full items-center justify-center rounded-2xl border-2 border-border bg-card text-sm font-semibold text-foreground transition-all hover:border-accent/40 active:scale-[0.99]"
+            >
+              Review & Submit
+            </button>
           )}
         </div>
       </footer>
@@ -377,31 +353,6 @@ function SectionMenuScreen() {
               }}
             >
               Leave
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={reviewWarnOpen} onOpenChange={setReviewWarnOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {incompleteCount} {incompleteCount === 1 ? "section" : "sections"} incomplete
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              You can review your walkthrough now, but you won't be able to upload to Google Drive
-              until every required section is complete.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep working</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setReviewWarnOpen(false);
-                void navigate({ to: "/wizard/checklist" });
-              }}
-            >
-              Review anyway
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
