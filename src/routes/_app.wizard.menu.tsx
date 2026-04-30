@@ -159,6 +159,9 @@ function SectionMenuScreen() {
   const totalSections = rows.length;
   const overallPct = totalSections > 0 ? (completedCount / totalSections) * 100 : 0;
   const anyComplete = completedCount > 0;
+  const incompleteCount = rows.filter((r) => r.status !== "complete" && !r.isChecklist).length;
+  const allComplete = incompleteCount === 0;
+  const [reviewWarnOpen, setReviewWarnOpen] = useState(false);
 
   if (!w) {
     return (
