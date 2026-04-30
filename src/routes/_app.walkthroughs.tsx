@@ -102,6 +102,7 @@ function WalkthroughsScreen() {
           criticalFlags: [] as { questionId: string; notes?: string }[],
           uploadStatus: w.uploadStatus,
           driveFolderUrl: w.driveFolderUrl,
+          _walk: w as Walkthrough,
         })),
         ...localOnly,
       ] as typeof local;
