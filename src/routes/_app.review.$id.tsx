@@ -612,8 +612,8 @@ function ReviewScreen() {
             <OverviewItem label="Bedrooms" value={formatPropertyValue(cfg.bedrooms)} />
             <OverviewItem label="Bathrooms" value={formatPropertyValue(cfg.bathrooms)} />
             <OverviewItem label="Garage" value={formatPropertyValue(cfg.garage)} />
-            <OverviewItem label="Pool" value={formatPropertyValue(cfg.pool)} />
-            <OverviewItem label="Spa" value={formatPropertyValue(cfg.spa)} />
+            <OverviewItem label="Pool" value={formatPropertyValue(walk?.answers?.s6_has_pool?.bool === true ? "Yes" : walk?.answers?.s6_has_pool?.bool === false ? "No" : undefined)} />
+            <OverviewItem label="Spa" value={formatPropertyValue(walk?.answers?.s6_has_spa?.bool === true ? "Yes" : walk?.answers?.s6_has_spa?.bool === false ? "No" : undefined)} />
             <OverviewItem label="Fireplace" value={formatPropertyValue(cfg.fireplace)} />
             <OverviewItem label="Laundry" value={formatPropertyValue(cfg.laundry)} />
             <OverviewItem label="Foundation" value={formatPropertyValue(foundation)} />
