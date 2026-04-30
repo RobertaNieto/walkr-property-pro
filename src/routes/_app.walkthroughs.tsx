@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, CheckCircle2, CloudUpload, Eye, Image as ImageIcon, Loader2, PlayCircle, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
 import { fetchById } from "@/lib/walkthrough";
+import { buildQuestionList, hasUserAnswer, SECTIONS, type SkipContext } from "@/lib/wizard-schema";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -101,6 +102,7 @@ function WalkthroughsScreen() {
           criticalFlags: [] as { questionId: string; notes?: string }[],
           uploadStatus: w.uploadStatus,
           driveFolderUrl: w.driveFolderUrl,
+          _walk: w as Walkthrough,
         })),
         ...localOnly,
       ] as typeof local;
@@ -455,7 +457,7 @@ function CompletedCard({
   userId,
   onDelete,
 }: {
-  record: CompletedRecord;
+  record: CompletedRecord & { _walk?: Walkthrough };
   userId: string | null;
   onDelete: () => void;
 }) {
@@ -468,6 +470,46 @@ function CompletedCard({
   const [error, setError] = useState<string | null>(null);
   const [driveUrl, setDriveUrl] = useState<string | null>(existingDriveUrl);
   const [confirmReupload, setConfirmReupload] = useState(false);
+
+  // Determine whether the walkthrough has any content and whether all required
+  // sections are complete. If we don't have the underlying walkthrough loaded
+  // (local-only summary), fall back to photo count from the summary.
+  const { hasAnyContent, allRequiredComplete, incompleteCount } = useMemo(() => {
+    const w = record._walk;
+    if (!w) {
+      const photos = record.totalPhotos ?? 0;
+      return {
+        hasAnyContent: photos > 0,
+        allRequiredComplete: photos > 0,
+        incompleteCount: 0,
+      };
+    }
+    const ctx: SkipContext = {
+      config: w.config ?? {},
+      answers: (w.answers ?? {}) as SkipContext["answers"],
+    };
+    const allQs = buildQuestionList(ctx);
+    let totalPhotos = 0;
+    for (const ans of Object.values(w.answers ?? {})) {
+      totalPhotos += ans.photos?.length ?? 0;
+    }
+    let incompleteSecs = 0;
+    let completeSecs = 0;
+    for (const s of SECTIONS) {
+      const required = allQs.filter((q) => q.sectionIndex === s.index && q.required);
+      if (required.length === 0) continue;
+      const allAnswered = required.every((q) =>
+        hasUserAnswer(q, w.answers?.[q.id] as SkipContext["answers"][string] | undefined),
+      );
+      if (allAnswered) completeSecs++;
+      else incompleteSecs++;
+    }
+    return {
+      hasAnyContent: totalPhotos > 0 || completeSecs > 0,
+      allRequiredComplete: incompleteSecs === 0,
+      incompleteCount: incompleteSecs,
+    };
+  }, [record]);
 
   const runUpload = async (mode: "initial" | "reupload") => {
     if (!userId) {
@@ -598,12 +640,19 @@ function CompletedCard({
               <AlertTriangle className="h-4 w-4" />
               Upload Failed — Retry
             </button>
-          ) : (
+          ) : hasAnyContent ? (
             <button
               type="button"
               onClick={handleUpload}
-              disabled={status === "uploading"}
-              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-sm font-semibold text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
+              disabled={status === "uploading" || !allRequiredComplete}
+              title={
+                allRequiredComplete
+                  ? undefined
+                  : `Complete all required sections before uploading${
+                      incompleteCount > 0 ? ` (${incompleteCount} remaining)` : ""
+                    }`
+              }
+              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-sm font-semibold text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
             >
               {status === "uploading" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -612,7 +661,7 @@ function CompletedCard({
               )}
               Upload to Drive
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 

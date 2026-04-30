@@ -310,6 +310,32 @@ function ReviewScreen() {
 
   const canUpload = incompleteSections.length === 0;
 
+  // Total photo count and number of sections with at least one user-provided
+  // answer. If both are zero we hide the Upload button entirely (nothing to
+  // upload) instead of just disabling it.
+  const totalPhotoCount = useMemo(() => {
+    if (!walk?.answers) return 0;
+    let n = 0;
+    for (const ans of Object.values(walk.answers)) {
+      n += (ans as WizardAnswer).photos?.length ?? 0;
+    }
+    return n;
+  }, [walk]);
+  const completedSectionCount = useMemo(() => {
+    if (!walk) return 0;
+    let n = 0;
+    for (const { questions } of grouped) {
+      const required = questions.filter((q) => q.required);
+      if (required.length === 0) continue;
+      const allAnswered = required.every((q) =>
+        hasUserAnswer(q, walk.answers?.[q.id] as SkipContext["answers"][string] | undefined),
+      );
+      if (allAnswered) n++;
+    }
+    return n;
+  }, [walk, grouped]);
+  const hasAnyContent = totalPhotoCount > 0 || completedSectionCount > 0;
+
 
   // Lightbox keyboard nav
   useEffect(() => {
@@ -858,15 +884,15 @@ function ReviewScreen() {
               )}
             </button>
           )}
-          {uploadStatus === "idle" && (
+          {uploadStatus === "idle" && hasAnyContent && (
             <button
               type="button"
               onClick={handleUpload}
               disabled={!canUpload}
-              title={canUpload ? undefined : "Complete all required sections to submit"}
+              title={canUpload ? undefined : "Complete all required sections before uploading"}
               className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:hover:bg-muted"
             >
-              {canUpload ? "Upload to Google Drive" : "Complete all sections to submit"}
+              {canUpload ? "Upload to Google Drive" : "Complete all required sections before uploading"}
               <CloudUpload className="h-4 w-4" />
             </button>
           )}
