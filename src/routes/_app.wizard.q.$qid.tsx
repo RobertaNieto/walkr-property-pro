@@ -342,7 +342,7 @@ function QuestionScreen() {
       totalQuestions={totalInSection}
       progress={progress}
       lastSavedAt={savedAt}
-      canContinue={valid}
+      canContinue={true}
       onNext={goNext}
       onAttemptNext={() => setAttempted(true)}
       onBack={goBack}
