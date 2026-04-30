@@ -740,6 +740,7 @@ function FieldRenderer({
     }
 
     case "rating":
+      if (suppressRating) return null;
       return (
         <>
           <RatingButtons
