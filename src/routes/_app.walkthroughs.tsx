@@ -640,12 +640,19 @@ function CompletedCard({
               <AlertTriangle className="h-4 w-4" />
               Upload Failed — Retry
             </button>
-          ) : (
+          ) : hasAnyContent ? (
             <button
               type="button"
               onClick={handleUpload}
-              disabled={status === "uploading"}
-              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-sm font-semibold text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
+              disabled={status === "uploading" || !allRequiredComplete}
+              title={
+                allRequiredComplete
+                  ? undefined
+                  : `Complete all required sections before uploading${
+                      incompleteCount > 0 ? ` (${incompleteCount} remaining)` : ""
+                    }`
+              }
+              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-sm font-semibold text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
             >
               {status === "uploading" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -654,7 +661,7 @@ function CompletedCard({
               )}
               Upload to Drive
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 
