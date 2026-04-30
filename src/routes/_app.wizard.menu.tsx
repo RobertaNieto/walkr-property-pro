@@ -325,34 +325,13 @@ function SectionMenuScreen() {
             Start from Beginning →
           </button>
           {anyComplete && (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  if (allComplete) {
-                    navigate({ to: "/wizard/checklist" });
-                  } else {
-                    setReviewWarnOpen(true);
-                  }
-                }}
-                title={allComplete ? undefined : "Complete all sections to submit"}
-                className={cn(
-                  "inline-flex h-12 w-full items-center justify-center rounded-2xl border-2 text-sm font-semibold transition-all active:scale-[0.99]",
-                  allComplete
-                    ? "border-border bg-card text-foreground hover:border-accent/40"
-                    : "border-border bg-muted text-muted-foreground hover:border-warning/50",
-                )}
-              >
-                {allComplete
-                  ? "Review & Submit"
-                  : `Review & Submit (${incompleteCount} incomplete)`}
-              </button>
-              {!allComplete && (
-                <p className="text-center text-[11px] font-medium text-muted-foreground">
-                  Complete all sections to submit
-                </p>
-              )}
-            </>
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/wizard/checklist" })}
+              className="inline-flex h-12 w-full items-center justify-center rounded-2xl border-2 border-border bg-card text-sm font-semibold text-foreground transition-all hover:border-accent/40 active:scale-[0.99]"
+            >
+              Review & Submit
+            </button>
           )}
         </div>
       </footer>
