@@ -645,7 +645,6 @@ const S9: SectionDef = {
       label: "Refrigerator condition",
       field: "rating",
       required: true,
-      withPhoto: { name: "KITCHEN_FRIDGE", min: 1 },
       visible: (ctx) => ctx.answers["s9_fridge_present"]?.bool === true,
     },
     {
@@ -663,7 +662,6 @@ const S9: SectionDef = {
       label: "Dishwasher condition",
       field: "rating",
       required: true,
-      withPhoto: { name: "KITCHEN_DISHWASHER", min: 1 },
       visible: (ctx) => ctx.answers["s9_dishwasher_present"]?.bool === true,
     },
     {
@@ -681,7 +679,6 @@ const S9: SectionDef = {
       label: "Stove condition",
       field: "rating",
       required: true,
-      withPhoto: { name: "KITCHEN_STOVE", min: 1 },
       visible: (ctx) => ctx.answers["s9_stove_present"]?.bool === true,
     },
     {
@@ -699,7 +696,6 @@ const S9: SectionDef = {
       label: "Oven condition",
       field: "rating",
       required: true,
-      withPhoto: { name: "KITCHEN_OVEN", min: 1 },
       visible: (ctx) => ctx.answers["s9_oven_present"]?.bool === true,
     },
     {
@@ -1497,6 +1493,10 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
       "s9_counters_cond",
       "s9_sink_cond",
       "s9_floor_cond",
+      "s9_fridge",
+      "s9_dishwasher",
+      "s9_stove",
+      "s9_oven",
       "s9_lights",
       "s9_baseboards",
     ],
