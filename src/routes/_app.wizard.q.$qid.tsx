@@ -689,7 +689,7 @@ function FieldRenderer({
             onChange={(v) => onChange((d) => ({ ...d, choice: v }))}
             columns={Math.min(q.options?.length ?? 2, 4)}
           />
-          {q.withRating && (
+          {q.withRating && !suppressRating && (
             <div>
               <p className="mb-2 mt-4 text-sm font-semibold text-foreground">
                 Condition rating <span className="text-critical">*</span>
