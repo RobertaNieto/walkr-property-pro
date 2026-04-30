@@ -340,66 +340,95 @@ const S6: SectionDef = {
   index: 6,
   name: "Pool & Spa",
   resolve: (ctx) => {
-    const hasPool = ctx.config.pool === "Yes";
-    const hasSpa = ctx.config.spa === "Yes";
-    if (!hasPool && !hasSpa) return [];
+    const hasPool = ctx.answers?.s6_has_pool?.bool === true;
+    const hasSpa = ctx.answers?.s6_has_spa?.bool === true;
     const out: QuestionDef[] = [];
+
+    // Q1 — Pool yes/no, with conditional condition + photo
+    out.push({
+      id: "s6_has_pool",
+      sectionIndex: 6,
+      sectionName: "Pool & Spa",
+      label: "Does the property have a pool?",
+      field: "yesno",
+      required: true,
+    });
     if (hasPool) {
       out.push(
-        photoQ("s6_pool_1", 6, "Pool & Spa", "Pool photo — angle 1", "POOL_1"),
-        photoQ("s6_pool_2", 6, "Pool & Spa", "Pool photo — angle 2", "POOL_2"),
-        photoQ("s6_pool_equipment", 6, "Pool & Spa", "Pool heater and pump equipment photo", "POOL_EQUIPMENT"),
         {
-          id: "s6_pool_location",
+          id: "s6_pool_cond",
           sectionIndex: 6,
           sectionName: "Pool & Spa",
-          label: "Pool location",
-          field: "choice",
-          options: ["Private backyard", "Community HOA"],
-          required: true,
-        },
-        {
-          id: "s6_pool_clean",
-          sectionIndex: 6,
-          sectionName: "Pool & Spa",
-          label: "Pool cleanliness",
+          label: "Pool condition",
           field: "rating",
           required: true,
+          visible: (c) => c.answers?.s6_has_pool?.bool === true,
         },
         {
-          id: "s6_pool_water",
+          id: "s6_pool_photo",
           sectionIndex: 6,
           sectionName: "Pool & Spa",
-          label: "Water level",
-          field: "choice",
-          options: ["Full", "Low", "Empty"],
+          label: "Add Pool Photo",
+          field: "photo",
           required: true,
+          minPhotos: 1,
+          maxPhotos: 1,
+          photoName: "POOL",
+          visible: (c) => c.answers?.s6_has_pool?.bool === true,
         },
       );
     }
+
+    // Q2 — Spa yes/no, with conditional condition + photo
+    out.push({
+      id: "s6_has_spa",
+      sectionIndex: 6,
+      sectionName: "Pool & Spa",
+      label: "Does the property have a spa?",
+      field: "yesno",
+      required: true,
+    });
     if (hasSpa) {
       out.push(
-        photoQ("s6_spa_1", 6, "Pool & Spa", "Spa photo — angle 1", "SPA_1"),
-        photoQ("s6_spa_2", 6, "Pool & Spa", "Spa photo — angle 2", "SPA_2"),
         {
-          id: "s6_spa_location",
-          sectionIndex: 6,
-          sectionName: "Pool & Spa",
-          label: "Spa location",
-          field: "choice",
-          options: ["Private", "Community"],
-          required: true,
-        },
-        {
-          id: "s6_spa_condition",
+          id: "s6_spa_cond",
           sectionIndex: 6,
           sectionName: "Pool & Spa",
           label: "Spa condition",
           field: "rating",
           required: true,
+          visible: (c) => c.answers?.s6_has_spa?.bool === true,
+        },
+        {
+          id: "s6_spa_photo",
+          sectionIndex: 6,
+          sectionName: "Pool & Spa",
+          label: "Add Spa Photo",
+          field: "photo",
+          required: true,
+          minPhotos: 1,
+          maxPhotos: 1,
+          photoName: "SPA",
+          visible: (c) => c.answers?.s6_has_spa?.bool === true,
         },
       );
     }
+
+    // Q3 — shared location (only when at least one is Yes)
+    if (hasPool || hasSpa) {
+      out.push({
+        id: "s6_location",
+        sectionIndex: 6,
+        sectionName: "Pool & Spa",
+        label: "Pool/Spa location",
+        field: "choice",
+        options: ["Community", "Private"],
+        required: true,
+        visible: (c) =>
+          c.answers?.s6_has_pool?.bool === true || c.answers?.s6_has_spa?.bool === true,
+      });
+    }
+
     return out;
   },
 };
