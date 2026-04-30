@@ -587,11 +587,13 @@ function FieldRenderer({
   value,
   onChange,
   attempted,
+  suppressRating = false,
 }: {
   q: QuestionDef;
   value: WizardAnswer;
   onChange: (v: WizardAnswer | ((prev: WizardAnswer) => WizardAnswer)) => void;
   attempted: boolean;
+  suppressRating?: boolean;
 }) {
   const errored = attempted && !isAnsweredLocal(q, value);
 
