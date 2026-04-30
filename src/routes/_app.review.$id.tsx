@@ -49,6 +49,7 @@ import {
   buildQuestionList,
   collectCriticalFlags,
   FINAL_CHECKLIST_ITEMS,
+  hasUserAnswer,
   isQuestionAnswered,
   SECTIONS,
   type QuestionDef,
