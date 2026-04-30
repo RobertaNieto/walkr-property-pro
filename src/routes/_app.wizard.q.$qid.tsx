@@ -451,6 +451,43 @@ function QuestionScreen() {
                 <div className="space-y-3">
                   <p className="text-base font-semibold text-foreground">Room Conditions</p>
                   <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                    {includePrimaryInGrid && (() => {
+                      const errored = attempted && draft.rating === undefined;
+                      const primaryLabel =
+                        q.field === "rating" ? q.label : `${q.label} — Condition rating`;
+                      return (
+                        <div key={`__primary_${q.id}`}>
+                          <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                            <p
+                              className={cn(
+                                "flex-1 text-[12px] font-medium leading-tight",
+                                errored ? "text-critical" : "text-foreground",
+                              )}
+                            >
+                              {primaryLabel}{" "}
+                              <span className="text-critical">*</span>
+                            </p>
+                            <CompactRatingRow
+                              value={draft.rating}
+                              onChange={(r) =>
+                                setDraft((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
+                              }
+                            />
+                          </div>
+                          {draft.rating === 3 && q.poorPhotoName && (
+                            <div className="px-3 pb-3">
+                              <PoorPhotoSection
+                                q={q}
+                                value={draft}
+                                onChange={setDraft}
+                                attempted={attempted}
+                              />
+                            </div>
+                          )}
+                          {gridComps.length > 0 && <div className="h-px bg-border" />}
+                        </div>
+                      );
+                    })()}
                     {gridComps.map((c, i) => {
                       const cVal = compDrafts[c.id] ?? {};
                       const setCVal = setCValFor(c.id);
