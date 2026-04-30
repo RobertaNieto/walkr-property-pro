@@ -277,6 +277,40 @@ function ReviewScreen() {
     [walk?.config],
   );
 
+  // Sections where at least one required question lacks a user-provided
+  // answer. Skipped/excluded sections (pool/garage/fireplace when not
+  // applicable) are naturally absent from `grouped` because buildQuestionList
+  // already filters them out per config.
+  const incompleteSections = useMemo(() => {
+    if (!walk) return [] as { index: number; name: string; missingCount: number; firstQuestionId?: string }[];
+    const completedAt = walk.completedAt ?? null;
+    const out: { index: number; name: string; missingCount: number; firstQuestionId?: string }[] = [];
+    for (const { section, questions } of grouped) {
+      // Required questions only — optional ones can be skipped.
+      const required = questions.filter((q) => q.required);
+      const missing = required.filter((q) => {
+        const addedAt = (q as unknown as { addedAt?: number }).addedAt;
+        if (addedAt && completedAt && addedAt > completedAt) return false;
+        return !hasUserAnswer(q, walk.answers?.[q.id] as SkipContext["answers"][string] | undefined);
+      });
+      if (missing.length === 0) continue;
+      const firstUnanswered =
+        missing.find((q) => !q.renderedByCompanion) ??
+        questions.find((q) => q.id === questions.find((x) => x.companions?.includes(missing[0].id))?.id) ??
+        missing[0];
+      out.push({
+        index: section.index,
+        name: section.name,
+        missingCount: missing.length,
+        firstQuestionId: firstUnanswered?.id,
+      });
+    }
+    return out;
+  }, [grouped, walk]);
+
+  const canUpload = incompleteSections.length === 0;
+
+
   // Lightbox keyboard nav
   useEffect(() => {
     if (lightboxIndex === null) return;
