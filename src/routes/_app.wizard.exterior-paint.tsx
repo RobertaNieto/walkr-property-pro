@@ -52,7 +52,7 @@ function ExteriorPaintScreen() {
       totalQuestions={2}
       progress={(3 / 18) * 100}
       lastSavedAt={savedAt}
-      canContinue={valid}
+      canContinue={true}
       onNext={handleNext}
       onAttemptNext={() => setAttempted(true)}
     >
