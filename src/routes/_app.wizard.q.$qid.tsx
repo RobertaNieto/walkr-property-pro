@@ -251,8 +251,6 @@ function QuestionScreen() {
       if (items.length === 0) {
         if (s.index === 4 && (!ctx.config.garage || ctx.config.garage === "None")) {
           skipReason = "Skipped — No garage selected";
-        } else if (s.index === 6 && ctx.config.pool !== "Yes") {
-          skipReason = "Skipped — No pool selected";
         } else {
           skipReason = "Skipped";
         }
