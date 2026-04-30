@@ -884,15 +884,15 @@ function ReviewScreen() {
               )}
             </button>
           )}
-          {uploadStatus === "idle" && (
+          {uploadStatus === "idle" && hasAnyContent && (
             <button
               type="button"
               onClick={handleUpload}
               disabled={!canUpload}
-              title={canUpload ? undefined : "Complete all required sections to submit"}
+              title={canUpload ? undefined : "Complete all required sections before uploading"}
               className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:hover:bg-muted"
             >
-              {canUpload ? "Upload to Google Drive" : "Complete all sections to submit"}
+              {canUpload ? "Upload to Google Drive" : "Complete all required sections before uploading"}
               <CloudUpload className="h-4 w-4" />
             </button>
           )}
