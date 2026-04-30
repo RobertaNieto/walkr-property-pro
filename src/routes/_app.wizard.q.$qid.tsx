@@ -610,7 +610,7 @@ function FieldRenderer({
               errored && q.required ? "field-error" : "border-input",
             )}
           />
-          {q.withRating && (
+          {q.withRating && !suppressRating && (
             <div>
               <p className="mb-2 mt-4 text-sm font-semibold text-foreground">
                 Condition rating <span className="text-critical">*</span>
