@@ -357,31 +357,6 @@ function SectionMenuScreen() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <AlertDialog open={reviewWarnOpen} onOpenChange={setReviewWarnOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {incompleteCount} {incompleteCount === 1 ? "section" : "sections"} incomplete
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              You can review your walkthrough now, but you won't be able to upload to Google Drive
-              until every required section is complete.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep working</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setReviewWarnOpen(false);
-                void navigate({ to: "/wizard/checklist" });
-              }}
-            >
-              Review anyway
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
