@@ -49,6 +49,7 @@ import {
   buildQuestionList,
   collectCriticalFlags,
   FINAL_CHECKLIST_ITEMS,
+  hasUserAnswer,
   isQuestionAnswered,
   SECTIONS,
   type QuestionDef,
@@ -276,6 +277,40 @@ function ReviewScreen() {
     [walk?.config],
   );
 
+  // Sections where at least one required question lacks a user-provided
+  // answer. Skipped/excluded sections (pool/garage/fireplace when not
+  // applicable) are naturally absent from `grouped` because buildQuestionList
+  // already filters them out per config.
+  const incompleteSections = useMemo(() => {
+    if (!walk) return [] as { index: number; name: string; missingCount: number; firstQuestionId?: string }[];
+    const completedAt = walk.completedAt ?? null;
+    const out: { index: number; name: string; missingCount: number; firstQuestionId?: string }[] = [];
+    for (const { section, questions } of grouped) {
+      // Required questions only — optional ones can be skipped.
+      const required = questions.filter((q) => q.required);
+      const missing = required.filter((q) => {
+        const addedAt = (q as unknown as { addedAt?: number }).addedAt;
+        if (addedAt && completedAt && addedAt > completedAt) return false;
+        return !hasUserAnswer(q, walk.answers?.[q.id] as SkipContext["answers"][string] | undefined);
+      });
+      if (missing.length === 0) continue;
+      const firstUnanswered =
+        missing.find((q) => !q.renderedByCompanion) ??
+        questions.find((q) => q.id === questions.find((x) => x.companions?.includes(missing[0].id))?.id) ??
+        missing[0];
+      out.push({
+        index: section.index,
+        name: section.name,
+        missingCount: missing.length,
+        firstQuestionId: firstUnanswered?.id,
+      });
+    }
+    return out;
+  }, [grouped, walk]);
+
+  const canUpload = incompleteSections.length === 0;
+
+
   // Lightbox keyboard nav
   useEffect(() => {
     if (lightboxIndex === null) return;
@@ -440,7 +475,7 @@ function ReviewScreen() {
 
       {/* Body */}
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 print:max-w-none">
-        {/* Missing required items */}
+        {/* Incomplete sections gate */}
         {(() => {
           const completedAt = walk.completedAt ?? null;
           const ageMs = completedAt ? Date.now() - completedAt : 0;
@@ -457,17 +492,7 @@ function ReviewScreen() {
             );
           }
 
-          const missing = allQuestions.filter((qq) => {
-            if (!qq.required) return false;
-            // Filter out questions added after this walkthrough was completed.
-            const addedAt = (qq as unknown as { addedAt?: number }).addedAt;
-            if (addedAt && completedAt && addedAt > completedAt) return false;
-            return !isQuestionAnswered(
-              qq,
-              walk.answers?.[qq.id] as SkipContext["answers"][string] | undefined,
-            );
-          });
-          if (missing.length === 0) {
+          if (incompleteSections.length === 0) {
             return (
               <section className="mb-6 rounded-2xl border-2 border-success bg-success/10 p-4 sm:p-5 print:hidden">
                 <div className="flex items-center gap-2 text-success">
@@ -475,81 +500,83 @@ function ReviewScreen() {
                   <h2 className="text-base font-bold">Ready to upload</h2>
                 </div>
                 <p className="mt-1 text-sm text-foreground">
-                  All required items have been completed.
+                  All required sections are complete.
                 </p>
               </section>
             );
           }
-          const MAX_DISPLAY = 20;
-          const displayed = missing.slice(0, MAX_DISPLAY);
-          const overflow = missing.length - displayed.length;
+
+          const goToSection = (sec: { firstQuestionId?: string }) => {
+            if (!sec.firstQuestionId) return;
+            try {
+              if (typeof window !== "undefined") {
+                try {
+                  localStorage.setItem(
+                    `propertywalk:cache:${walk.id}`,
+                    JSON.stringify(walk),
+                  );
+                } catch (e) {
+                  console.warn("[review] cache write failed", e);
+                }
+                try {
+                  localStorage.setItem("propertywalk:active-id", walk.id);
+                } catch (e) {
+                  console.warn("[review] active-id write failed", e);
+                }
+              }
+              window.location.href =
+                `/wizard/q/${sec.firstQuestionId}` +
+                `?from=review&reviewId=${encodeURIComponent(walk.id)}`;
+            } catch (err) {
+              console.error("[review] Go to section failed:", err);
+              alert("Could not navigate to section. Please try again.");
+            }
+          };
+
           return (
             <section className="mb-6 rounded-2xl border-2 border-warning bg-warning/10 p-4 sm:p-5 print:hidden">
-              <div className="flex items-center gap-2 text-warning-foreground">
+              <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-warning" />
                 <h2 className="text-base font-bold text-foreground">
-                  {missing.length} Missing {missing.length === 1 ? "Item" : "Items"}
+                  {incompleteSections.length}{" "}
+                  {incompleteSections.length === 1 ? "section" : "sections"} incomplete — complete
+                  all sections to submit
                 </h2>
               </div>
               <ul className="mt-3 space-y-2">
-                {displayed.map((mq) => (
+                {incompleteSections.map((sec) => (
                   <li
-                    key={mq.id}
-                    className="flex flex-col gap-2 rounded-xl border border-warning/30 bg-card p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+                    key={sec.index}
+                    className="flex flex-col gap-2 rounded-xl border border-critical/30 bg-card p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div className="min-w-0">
-                      <p className="font-semibold text-foreground">{mq.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Section {mq.sectionIndex} — {mq.sectionName}
-                      </p>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span
+                        aria-hidden
+                        className="grid h-6 w-6 flex-shrink-0 place-content-center rounded-full bg-critical/15 text-xs font-bold text-critical"
+                      >
+                        ✗
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-critical">
+                          Section {sec.index} — {sec.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {sec.missingCount} required{" "}
+                          {sec.missingCount === 1 ? "item" : "items"} remaining
+                        </p>
+                      </div>
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        try {
-                          if (typeof window !== "undefined") {
-                            try {
-                              localStorage.setItem(
-                                `propertywalk:cache:${walk.id}`,
-                                JSON.stringify(walk),
-                              );
-                            } catch (e) {
-                              console.warn("[review] cache write failed", e);
-                            }
-                            try {
-                              localStorage.setItem("propertywalk:active-id", walk.id);
-                            } catch (e) {
-                              console.warn("[review] active-id write failed", e);
-                            }
-                          }
-
-                          const targetId = mq.renderedByCompanion
-                            ? allQuestions.find((x) => x.companions?.includes(mq.id))?.id ?? mq.id
-                            : mq.id;
-
-                          // Use direct URL navigation — more reliable than
-                          // TanStack Router navigate with typed search params
-                          // on iOS Safari.
-                          window.location.href =
-                            `/wizard/q/${targetId}` +
-                            `?from=review&reviewId=${encodeURIComponent(walk.id)}`;
-                        } catch (err) {
-                          console.error("[review] Go to question failed:", err);
-                          alert("Could not navigate to question. Please try again.");
-                        }
-                      }}
-                      className="inline-flex h-10 items-center justify-center rounded-xl bg-accent px-3 text-xs font-semibold text-accent-foreground hover:bg-accent/90"
+                      disabled={!sec.firstQuestionId}
+                      onClick={() => goToSection(sec)}
+                      className="inline-flex h-10 items-center justify-center rounded-xl bg-accent px-3 text-xs font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
                     >
-                      Go to question →
+                      Go to section →
                     </button>
                   </li>
                 ))}
               </ul>
-              {overflow > 0 && (
-                <p className="mt-3 text-xs text-muted-foreground">
-                  and {overflow} more...
-                </p>
-              )}
             </section>
           );
         })()}
@@ -835,9 +862,11 @@ function ReviewScreen() {
             <button
               type="button"
               onClick={handleUpload}
-              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              disabled={!canUpload}
+              title={canUpload ? undefined : "Complete all required sections to submit"}
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:hover:bg-muted"
             >
-              Upload to Google Drive
+              {canUpload ? "Upload to Google Drive" : "Complete all sections to submit"}
               <CloudUpload className="h-4 w-4" />
             </button>
           )}
