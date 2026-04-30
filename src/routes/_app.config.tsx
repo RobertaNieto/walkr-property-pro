@@ -33,8 +33,6 @@ function ConfigScreen() {
     config.bedrooms &&
     config.bathrooms &&
     config.garage &&
-    config.pool &&
-    config.spa &&
     config.fireplace &&
     config.laundry;
 
