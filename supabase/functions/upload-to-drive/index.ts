@@ -652,19 +652,17 @@ function enumerateQuestionIds(
   // S5
   out.push("s5_overall", "s5_type", "s5_condition");
 
-  // S6 — Pool & Spa
-  if (config.pool === "Yes") {
-    out.push(
-      "s6_pool_1",
-      "s6_pool_2",
-      "s6_pool_equipment",
-      "s6_pool_location",
-      "s6_pool_clean",
-      "s6_pool_water",
-    );
+  // S6 — Pool & Spa (driven by section answers, not pre-walk config)
+  out.push("s6_has_pool");
+  if (answers["s6_has_pool"]?.bool === true) {
+    out.push("s6_pool_cond", "s6_pool_photo");
   }
-  if (config.spa === "Yes") {
-    out.push("s6_spa_1", "s6_spa_2", "s6_spa_location", "s6_spa_condition");
+  out.push("s6_has_spa");
+  if (answers["s6_has_spa"]?.bool === true) {
+    out.push("s6_spa_cond", "s6_spa_photo");
+  }
+  if (answers["s6_has_pool"]?.bool === true || answers["s6_has_spa"]?.bool === true) {
+    out.push("s6_location");
   }
 
   // S7
