@@ -58,7 +58,7 @@ function LockboxScreen() {
       totalQuestions={TOTAL_QUESTIONS_IN_SECTION}
       progress={(1 / 18) * 100}
       lastSavedAt={savedAt}
-      canContinue={valid}
+      canContinue={true}
       onNext={handleNext}
       onAttemptNext={() => setAttempted(true)}
     >
