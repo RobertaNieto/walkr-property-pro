@@ -457,7 +457,7 @@ function CompletedCard({
   userId,
   onDelete,
 }: {
-  record: CompletedRecord;
+  record: CompletedRecord & { _walk?: Walkthrough };
   userId: string | null;
   onDelete: () => void;
 }) {
@@ -470,6 +470,46 @@ function CompletedCard({
   const [error, setError] = useState<string | null>(null);
   const [driveUrl, setDriveUrl] = useState<string | null>(existingDriveUrl);
   const [confirmReupload, setConfirmReupload] = useState(false);
+
+  // Determine whether the walkthrough has any content and whether all required
+  // sections are complete. If we don't have the underlying walkthrough loaded
+  // (local-only summary), fall back to photo count from the summary.
+  const { hasAnyContent, allRequiredComplete, incompleteCount } = useMemo(() => {
+    const w = record._walk;
+    if (!w) {
+      const photos = record.totalPhotos ?? 0;
+      return {
+        hasAnyContent: photos > 0,
+        allRequiredComplete: photos > 0,
+        incompleteCount: 0,
+      };
+    }
+    const ctx: SkipContext = {
+      config: w.config ?? {},
+      answers: (w.answers ?? {}) as SkipContext["answers"],
+    };
+    const allQs = buildQuestionList(ctx);
+    let totalPhotos = 0;
+    for (const ans of Object.values(w.answers ?? {})) {
+      totalPhotos += ans.photos?.length ?? 0;
+    }
+    let incompleteSecs = 0;
+    let completeSecs = 0;
+    for (const s of SECTIONS) {
+      const required = allQs.filter((q) => q.sectionIndex === s.index && q.required);
+      if (required.length === 0) continue;
+      const allAnswered = required.every((q) =>
+        hasUserAnswer(q, w.answers?.[q.id] as SkipContext["answers"][string] | undefined),
+      );
+      if (allAnswered) completeSecs++;
+      else incompleteSecs++;
+    }
+    return {
+      hasAnyContent: totalPhotos > 0 || completeSecs > 0,
+      allRequiredComplete: incompleteSecs === 0,
+      incompleteCount: incompleteSecs,
+    };
+  }, [record]);
 
   const runUpload = async (mode: "initial" | "reupload") => {
     if (!userId) {
