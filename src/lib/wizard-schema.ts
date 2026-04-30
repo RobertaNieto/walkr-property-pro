@@ -580,7 +580,7 @@ const S9: SectionDef = {
       id: "s9_cab_overall",
       sectionIndex: 9,
       sectionName: "Kitchen",
-      label: "Cabinets overall condition",
+      label: "KITCHEN overall condition",
       field: "rating",
       required: true,
     },
