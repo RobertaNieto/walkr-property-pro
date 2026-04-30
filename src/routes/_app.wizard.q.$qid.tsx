@@ -388,17 +388,21 @@ function QuestionScreen() {
       </div>
 
       <div className="mt-6 space-y-6">
-        <FieldRenderer
-          q={q}
-          value={draft}
-          onChange={setDraft}
-          attempted={attempted}
-          suppressRating={
-            (q.field === "rating" || q.withRating === true) &&
-            companionDefs.filter((c) => c.field === "rating").length >=
-              (q.field === "rating" ? 2 : 2)
-          }
-        />
+        {(() => {
+          const _ratingComps = companionDefs.filter((c) => c.field === "rating");
+          const _primaryHasRating =
+            q.field === "rating" || (q.withRating === true && (q.field === "text" || q.field === "choice"));
+          const _suppressRating = _primaryHasRating && _ratingComps.length >= 2;
+          return (
+            <FieldRenderer
+              q={q}
+              value={draft}
+              onChange={setDraft}
+              attempted={attempted}
+              suppressRating={_suppressRating}
+            />
+          );
+        })()}
 
         {q.followUp && q.followUp.when(pickValue(q, draft)) && (
           <FollowUpRenderer
