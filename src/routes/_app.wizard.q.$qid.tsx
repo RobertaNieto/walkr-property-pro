@@ -388,12 +388,21 @@ function QuestionScreen() {
       </div>
 
       <div className="mt-6 space-y-6">
-        <FieldRenderer
-          q={q}
-          value={draft}
-          onChange={setDraft}
-          attempted={attempted}
-        />
+        {(() => {
+          const _ratingComps = companionDefs.filter((c) => c.field === "rating");
+          const _primaryHasRating =
+            q.field === "rating" || (q.withRating === true && (q.field === "text" || q.field === "choice"));
+          const _suppressRating = _primaryHasRating && _ratingComps.length >= 2;
+          return (
+            <FieldRenderer
+              q={q}
+              value={draft}
+              onChange={setDraft}
+              attempted={attempted}
+              suppressRating={_suppressRating}
+            />
+          );
+        })()}
 
         {q.followUp && q.followUp.when(pickValue(q, draft)) && (
           <FollowUpRenderer
@@ -419,10 +428,13 @@ function QuestionScreen() {
 
         {(() => {
           const ratingComps = companionDefs.filter((c) => c.field === "rating");
-          const useGrid = ratingComps.length >= 3;
+          const primaryHasRating =
+            q.field === "rating" || (q.withRating === true && (q.field === "text" || q.field === "choice"));
+          const useGrid = ratingComps.length >= 3 || (primaryHasRating && ratingComps.length >= 2);
           const gridIds = new Set(useGrid ? ratingComps.map((c) => c.id) : []);
           const gridComps = useGrid ? ratingComps : [];
           const otherComps = companionDefs.filter((c) => !gridIds.has(c.id));
+          const includePrimaryInGrid = useGrid && primaryHasRating;
 
           const setCValFor =
             (cid: string) =>
@@ -443,6 +455,43 @@ function QuestionScreen() {
                 <div className="space-y-3">
                   <p className="text-base font-semibold text-foreground">Room Conditions</p>
                   <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                    {includePrimaryInGrid && (() => {
+                      const errored = attempted && draft.rating === undefined;
+                      const primaryLabel =
+                        q.field === "rating" ? q.label : `${q.label} — Condition rating`;
+                      return (
+                        <div key={`__primary_${q.id}`}>
+                          <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                            <p
+                              className={cn(
+                                "flex-1 text-[12px] font-medium leading-tight",
+                                errored ? "text-critical" : "text-foreground",
+                              )}
+                            >
+                              {primaryLabel}{" "}
+                              <span className="text-critical">*</span>
+                            </p>
+                            <CompactRatingRow
+                              value={draft.rating}
+                              onChange={(r) =>
+                                setDraft((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
+                              }
+                            />
+                          </div>
+                          {draft.rating === 3 && q.poorPhotoName && (
+                            <div className="px-3 pb-3">
+                              <PoorPhotoSection
+                                q={q}
+                                value={draft}
+                                onChange={setDraft}
+                                attempted={attempted}
+                              />
+                            </div>
+                          )}
+                          {gridComps.length > 0 && <div className="h-px bg-border" />}
+                        </div>
+                      );
+                    })()}
                     {gridComps.map((c, i) => {
                       const cVal = compDrafts[c.id] ?? {};
                       const setCVal = setCValFor(c.id);
@@ -579,11 +628,13 @@ function FieldRenderer({
   value,
   onChange,
   attempted,
+  suppressRating = false,
 }: {
   q: QuestionDef;
   value: WizardAnswer;
   onChange: (v: WizardAnswer | ((prev: WizardAnswer) => WizardAnswer)) => void;
   attempted: boolean;
+  suppressRating?: boolean;
 }) {
   const errored = attempted && !isAnsweredLocal(q, value);
 
@@ -600,7 +651,7 @@ function FieldRenderer({
               errored && q.required ? "field-error" : "border-input",
             )}
           />
-          {q.withRating && (
+          {q.withRating && !suppressRating && (
             <div>
               <p className="mb-2 mt-4 text-sm font-semibold text-foreground">
                 Condition rating <span className="text-critical">*</span>
@@ -679,7 +730,7 @@ function FieldRenderer({
             onChange={(v) => onChange((d) => ({ ...d, choice: v }))}
             columns={Math.min(q.options?.length ?? 2, 4)}
           />
-          {q.withRating && (
+          {q.withRating && !suppressRating && (
             <div>
               <p className="mb-2 mt-4 text-sm font-semibold text-foreground">
                 Condition rating <span className="text-critical">*</span>
@@ -730,6 +781,7 @@ function FieldRenderer({
     }
 
     case "rating":
+      if (suppressRating) return null;
       return (
         <>
           <RatingButtons
