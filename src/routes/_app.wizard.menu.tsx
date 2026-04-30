@@ -106,38 +106,49 @@ function SectionMenuScreen() {
   const navList = useMemo(() => list.filter((x) => !x.renderedByCompanion), [list]);
 
   const rows: SectionRow[] = useMemo(() => {
-    const byIndex = new Map<number, QuestionDef[]>();
+    // Group nav-visible items per section (used for the section card list +
+    // navigation targets).
+    const navByIndex = new Map<number, QuestionDef[]>();
     for (const item of navList) {
-      const arr = byIndex.get(item.sectionIndex) ?? [];
+      const arr = navByIndex.get(item.sectionIndex) ?? [];
       arr.push(item);
-      byIndex.set(item.sectionIndex, arr);
+      navByIndex.set(item.sectionIndex, arr);
+    }
+    // Group ALL items per section (including companions) so progress
+    // detection counts ANY user input — even on companion fields like rating
+    // sub-questions consolidated under a primary photo question.
+    const allByIndex = new Map<number, QuestionDef[]>();
+    for (const item of list) {
+      const arr = allByIndex.get(item.sectionIndex) ?? [];
+      arr.push(item);
+      allByIndex.set(item.sectionIndex, arr);
     }
     const out: SectionRow[] = [];
     for (const s of SECTIONS) {
-      const items = byIndex.get(s.index) ?? [];
-      if (items.length === 0) continue; // skipped due to config
-      // "answered" counts only questions the user has actually filled in —
-      // optional questions with no input must NOT inflate progress on a fresh
-      // walkthrough.
-      const answered = items.filter((x) => hasUserAnswer(x, ctx.answers[x.id])).length;
-      // Section is "complete" only when every question passes validation AND
-      // the user has actually provided input for every required question.
-      const allValid = items.every((x) => isQuestionAnswered(x, ctx.answers[x.id]));
-      const requiredItems = items.filter((x) => (x as any).required || (x as any).field === "rating");
+      const navItems = navByIndex.get(s.index) ?? [];
+      const allItems = allByIndex.get(s.index) ?? [];
+      if (navItems.length === 0) continue; // skipped due to config
+      // "in progress" = ANY question in the section (including companions)
+      // has user input. Standardized across all 18 sections.
+      const answeredAny = allItems.some((x) => hasUserAnswer(x, ctx.answers[x.id]));
+      // Section is "complete" only when every nav-visible question passes
+      // validation AND every required question (incl. companions) has input.
+      const allValid = allItems.every((x) => isQuestionAnswered(x, ctx.answers[x.id]));
+      const requiredItems = allItems.filter((x) => (x as any).required || (x as any).field === "rating");
       const allRequiredAnswered = requiredItems.every((x) => hasUserAnswer(x, ctx.answers[x.id]));
       const firstUnanswered =
-        items.find((x) => !hasUserAnswer(x, ctx.answers[x.id]) && ((x as any).required || (x as any).field === "rating"))
-        ?? items.find((x) => !isQuestionAnswered(x, ctx.answers[x.id]));
-      const firstQuestionId = (firstUnanswered ?? items[0])?.id;
+        navItems.find((x) => !hasUserAnswer(x, ctx.answers[x.id]) && ((x as any).required || (x as any).field === "rating"))
+        ?? navItems.find((x) => !isQuestionAnswered(x, ctx.answers[x.id]));
+      const firstQuestionId = (firstUnanswered ?? navItems[0])?.id;
       let status: SectionRow["status"] = "todo";
-      if (allValid && allRequiredAnswered && answered > 0) status = "complete";
-      else if (answered > 0) status = "in_progress";
+      if (allValid && allRequiredAnswered && answeredAny) status = "complete";
+      else if (answeredAny) status = "in_progress";
       out.push({
         index: s.index,
         name: s.name,
         icon: SECTION_ICONS[s.index] ?? ClipboardList,
-        total: items.length,
-        answered,
+        total: navItems.length,
+        answered: allItems.filter((x) => hasUserAnswer(x, ctx.answers[x.id])).length,
         status,
         firstQuestionId,
       });
