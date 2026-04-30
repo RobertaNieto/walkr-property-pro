@@ -419,10 +419,13 @@ function QuestionScreen() {
 
         {(() => {
           const ratingComps = companionDefs.filter((c) => c.field === "rating");
-          const useGrid = ratingComps.length >= 3;
+          const primaryHasRating =
+            q.field === "rating" || (q.withRating === true && (q.field === "text" || q.field === "choice"));
+          const useGrid = ratingComps.length >= 3 || (primaryHasRating && ratingComps.length >= 2);
           const gridIds = new Set(useGrid ? ratingComps.map((c) => c.id) : []);
           const gridComps = useGrid ? ratingComps : [];
           const otherComps = companionDefs.filter((c) => !gridIds.has(c.id));
+          const includePrimaryInGrid = useGrid && primaryHasRating;
 
           const setCValFor =
             (cid: string) =>
