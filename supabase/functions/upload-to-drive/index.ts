@@ -3,8 +3,33 @@
 // Storage, then uploads everything (photos + SUMMARY.pdf) to a Google Drive
 // subfolder using a service account.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
+import { Image } from "https://deno.land/x/imagescript@1.2.17/mod.ts";
+
+const THUMB_W = 80;
+const THUMB_H = 60;
+const THUMB_MAX_BYTES = 15 * 1024;
+const THUMBS_PER_ROW = 4;
+const THUMB_GAP = 8;
+const MAX_TOTAL_THUMBS = 60;
+
+async function makeThumbnail(bytes: Uint8Array): Promise<Uint8Array | null> {
+  try {
+    const img = await Image.decode(bytes);
+    img.resize(THUMB_W, THUMB_H);
+    let quality = 30;
+    let out = await img.encodeJPEG(quality);
+    while (out.length > THUMB_MAX_BYTES && quality > 10) {
+      quality -= 5;
+      out = await img.encodeJPEG(quality);
+    }
+    return out;
+  } catch (err) {
+    console.warn("[upload-to-drive] thumbnail failed", { error: err instanceof Error ? err.message : String(err) });
+    return null;
+  }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
