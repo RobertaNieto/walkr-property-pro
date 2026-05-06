@@ -1317,7 +1317,7 @@ Deno.serve(async (req) => {
 
     // Build & upload SUMMARY.pdf
     console.log("[upload-to-drive] generating SUMMARY.pdf", { walkthroughId: walkId });
-    const pdfBytes = await buildSummaryPdf(walk, agentName, driveLink);
+    const pdfBytes = await buildSummaryPdf(walk, agentName, driveLink, admin);
     console.log("[upload-to-drive] SUMMARY.pdf generated", { walkthroughId: walkId, bytes: pdfBytes.length });
     console.log("[upload-to-drive] uploading SUMMARY.pdf to Drive", { walkthroughId: walkId, parentId: subfolderId });
     await uploadFileToDrive(
