@@ -814,6 +814,7 @@ async function buildSummaryPdf(
   walk: Walkthrough,
   agentName: string,
   driveLink: string,
+  admin: SupabaseClient,
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   const font = await pdf.embedFont(StandardFonts.Helvetica);
