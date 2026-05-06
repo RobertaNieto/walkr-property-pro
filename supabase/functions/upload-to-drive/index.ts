@@ -991,6 +991,46 @@ async function buildSummaryPdf(
     return parts.length ? parts.join("  •  ") : "N/A";
   };
 
+  // Collect photo names per section (images only), capped at MAX_TOTAL_THUMBS total.
+  const isImage = (n: string) => /\.(jpe?g|png|webp|gif)$/i.test(n);
+  const sectionPhotoNames = new Map<string, string[]>();
+  let thumbBudget = MAX_TOTAL_THUMBS;
+  for (const sectionName of sortedSections) {
+    if (thumbBudget <= 0) break;
+    const items = grouped.get(sectionName)!;
+    const names: string[] = [];
+    for (const { ans } of items) {
+      for (const n of [...(ans?.photoNames ?? []), ...(ans?.poorPhotoNames ?? [])]) {
+        if (n && isImage(n) && !names.includes(n)) names.push(n);
+      }
+    }
+    const take = names.slice(0, thumbBudget);
+    if (take.length) {
+      sectionPhotoNames.set(sectionName, take);
+      thumbBudget -= take.length;
+    }
+  }
+
+  // Fetch + thumbnail all selected photos in parallel, then embed JPEGs in PDF.
+  const allThumbNames = Array.from(new Set(Array.from(sectionPhotoNames.values()).flat()));
+  const embeddedThumbs = new Map<string, { img: Awaited<ReturnType<typeof pdf.embedJpg>> }>();
+  await Promise.all(
+    allThumbNames.map(async (fname) => {
+      try {
+        const path = `${walk.user_id}/${walk.id}/${fname}`;
+        const { data: blob, error } = await admin.storage.from("walkthrough-photos").download(path);
+        if (error || !blob) return;
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        const thumb = await makeThumbnail(bytes);
+        if (!thumb) return;
+        const img = await pdf.embedJpg(thumb);
+        embeddedThumbs.set(fname, { img });
+      } catch (err) {
+        console.warn("[upload-to-drive] thumb embed skipped", { fname, error: err instanceof Error ? err.message : String(err) });
+      }
+    }),
+  );
+
   for (const sectionName of sortedSections) {
     const items = grouped.get(sectionName)!;
     ensure(40);
@@ -1023,6 +1063,39 @@ async function buildSummaryPdf(
       }
       y -= 6;
     }
+
+    // Inline thumbnails for this section
+    const sectionThumbs = (sectionPhotoNames.get(sectionName) ?? [])
+      .map((n) => ({ name: n, embed: embeddedThumbs.get(n) }))
+      .filter((t) => t.embed);
+    if (sectionThumbs.length) {
+      const labelSize = 7;
+      const rowH = THUMB_H + labelSize + 8;
+      for (let i = 0; i < sectionThumbs.length; i += THUMBS_PER_ROW) {
+        ensure(rowH + 4);
+        const rowItems = sectionThumbs.slice(i, i + THUMBS_PER_ROW);
+        const rowTopY = y;
+        rowItems.forEach((t, idx) => {
+          const x = margin + idx * (THUMB_W + THUMB_GAP);
+          page.drawImage(t.embed!.img, { x, y: rowTopY - THUMB_H, width: THUMB_W, height: THUMB_H });
+          // filename below thumbnail (truncate to fit width)
+          let name = t.name;
+          while (font.widthOfTextAtSize(name, labelSize) > THUMB_W && name.length > 4) {
+            name = name.slice(0, -2);
+          }
+          if (name !== t.name) name = name.slice(0, -1) + "…";
+          page.drawText(name, {
+            x,
+            y: rowTopY - THUMB_H - labelSize - 2,
+            size: labelSize,
+            font,
+            color: rgb(0.45, 0.45, 0.45),
+          });
+        });
+        y -= rowH;
+      }
+    }
+
     y -= 8;
   }
 
