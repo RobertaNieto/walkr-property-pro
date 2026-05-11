@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/accordion";
 import { useAuth } from "@/lib/auth";
 import { uploadPhotosWithRetry, uploadVideosWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import type { MissingPhotoLocation } from "@/lib/missing-photo";
+import { UploadErrorBanner } from "@/components/UploadErrorBanner";
 import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
@@ -142,6 +144,7 @@ function ReviewScreen() {
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "photos_done" | "success" | "error">("idle");
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [missingPhoto, setMissingPhoto] = useState<MissingPhotoLocation | null>(null);
   const [driveUrl, setDriveUrl] = useState<string | null>(null);
   const [confirmReupload, setConfirmReupload] = useState(false);
   const [pendingVideoCount, setPendingVideoCount] = useState(0);
@@ -537,6 +540,7 @@ function ReviewScreen() {
     if (!walk || !user) return;
     setUploadStatus("uploading");
     setUploadError(null);
+    setMissingPhoto(null);
     if (mode === "initial") setDriveUrl(null);
     const adminUpload = isAdmin && !!walk.userId && walk.userId !== user.id;
     const opts = {
@@ -547,6 +551,7 @@ function ReviewScreen() {
     if (!res.success) {
       setUploadStatus("error");
       setUploadError(res.error ?? "Upload failed");
+      setMissingPhoto(res.missingPhoto ?? null);
       return;
     }
     setDriveUrl(res.driveFolderUrl ?? driveUrl);
@@ -563,6 +568,7 @@ function ReviewScreen() {
     if (!walk || !user) return;
     setUploadStatus("uploading");
     setUploadError(null);
+    setMissingPhoto(null);
     const adminUpload = isAdmin && !!walk.userId && walk.userId !== user.id;
     const opts = {
       mode: (walk.uploadStatus === "confirmed" ? "reupload" : "initial") as "initial" | "reupload",
@@ -576,6 +582,7 @@ function ReviewScreen() {
     } else {
       setUploadStatus("error");
       setUploadError(res.error ?? "Video upload failed");
+      setMissingPhoto(res.missingPhoto ?? null);
     }
   };
 
@@ -1077,19 +1084,22 @@ function ReviewScreen() {
             </div>
           )}
           {uploadStatus === "error" && (
-            <button
-              type="button"
-              onClick={handleUpload}
-              className="inline-flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-2xl bg-destructive text-sm font-semibold text-destructive-foreground"
-            >
-              <span className="inline-flex items-center gap-2">
+            <div className="space-y-2">
+              {uploadError && (
+                <UploadErrorBanner
+                  message={uploadError}
+                  missingPhoto={missingPhoto ?? undefined}
+                />
+              )}
+              <button
+                type="button"
+                onClick={handleUpload}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-destructive text-sm font-semibold text-destructive-foreground"
+              >
                 <AlertTriangle className="h-4 w-4" />
                 Upload Failed — Retry
-              </span>
-              {uploadError && (
-                <span className="text-[11px] font-normal opacity-90">{uploadError}</span>
-              )}
-            </button>
+              </button>
+            </div>
           )}
           {uploadStatus === "idle" && hasAnyContent && (
             <button

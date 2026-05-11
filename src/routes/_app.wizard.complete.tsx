@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, CloudUpload, Eye, ExternalLink, Film, Loader2, RefreshCw, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, CloudUpload, Eye, ExternalLink, Film, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
@@ -15,6 +15,8 @@ import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { completeWalkthrough, fetchById, formatPropertyAddress, isAdminEditing, submitWalkthrough, type Walkthrough } from "@/lib/walkthrough";
 import { uploadPhotosWithRetry, uploadVideosWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import type { MissingPhotoLocation } from "@/lib/missing-photo";
+import { UploadErrorBanner } from "@/components/UploadErrorBanner";
 import { useAuth } from "@/lib/auth";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 
@@ -27,7 +29,7 @@ type UploadState =
   | { kind: "uploading"; progress: UploadProgress }
   | { kind: "photos_done"; url: string; pendingVideos: number }
   | { kind: "success"; url: string }
-  | { kind: "error"; message: string };
+  | { kind: "error"; message: string; missingPhoto?: MissingPhotoLocation };
 
 function CompleteScreen() {
   const navigate = useNavigate();
@@ -88,7 +90,7 @@ function CompleteScreen() {
       setUpload({ kind: "uploading", progress: p });
     });
     if (!res.success || !res.driveFolderUrl) {
-      setUpload({ kind: "error", message: res.error ?? "Upload failed" });
+      setUpload({ kind: "error", message: res.error ?? "Upload failed", missingPhoto: res.missingPhoto });
       return;
     }
     const pending = res.videosPending?.length ?? 0;
@@ -112,7 +114,7 @@ function CompleteScreen() {
     if (res.success && (res.driveFolderUrl ?? currentUrl)) {
       setUpload({ kind: "success", url: res.driveFolderUrl ?? currentUrl! });
     } else {
-      setUpload({ kind: "error", message: res.error ?? "Video upload failed" });
+      setUpload({ kind: "error", message: res.error ?? "Video upload failed", missingPhoto: res.missingPhoto });
     }
   };
 
@@ -264,10 +266,7 @@ function UploadButton({
   if (state.kind === "error") {
     return (
       <div className="flex flex-col gap-2">
-        <div className="flex items-start gap-2 rounded-xl bg-critical/10 p-3 text-left text-xs text-critical">
-          <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{state.message}</span>
-        </div>
+        <UploadErrorBanner message={state.message} missingPhoto={state.missingPhoto} />
         <button
           onClick={onUpload}
           disabled={!online}

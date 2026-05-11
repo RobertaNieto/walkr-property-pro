@@ -9,6 +9,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { preloadPhoto } from "@/lib/photo-store";
+import { findQuestionForFilename, type MissingPhotoLocation } from "@/lib/missing-photo";
 import type { Walkthrough } from "@/lib/walkthrough";
 
 const BUCKET = "walkthrough-photos";
@@ -29,12 +30,21 @@ export interface UploadResult {
   /** Final walkthrough upload_status reported by the edge function. */
   status?: "photos_complete" | "confirmed";
   error?: string;
+  /** Set when the upload failed because a photo is missing from local storage. */
+  missingPhoto?: MissingPhotoLocation;
 }
 
 interface UploadOptions {
   mode?: "initial" | "reupload";
   targetUserId?: string;
   isAdmin?: boolean;
+}
+
+class MissingLocalPhotoError extends Error {
+  constructor(public filename: string) {
+    super(`MISSING_LOCAL_PHOTO:${filename}`);
+    this.name = "MissingLocalPhotoError";
+  }
 }
 
 const isVideoName = (n: string) => /\.(mp4|mov)$/i.test(n);
@@ -109,7 +119,7 @@ async function stageFile(
 ): Promise<void> {
   const dataUrl = await preloadPhoto(fname);
   if (!dataUrl) {
-    throw new Error(`Could not find ${fname} in local browser storage. Reattach the file, then retry.`);
+    throw new MissingLocalPhotoError(fname);
   }
   const blob = dataUrlToBlob(dataUrl, fname);
   const path = `${stagingUserId}/${walkId}/${fname}`;
@@ -117,6 +127,23 @@ async function stageFile(
     .from(BUCKET)
     .upload(path, blob, { upsert: true, contentType: blob.type });
   if (error) throw new Error(`Stage failed for ${fname}: ${error.message}`);
+}
+
+function buildMissingPhotoFailure(walk: Walkthrough, e: MissingLocalPhotoError): UploadResult {
+  const loc = findQuestionForFilename(walk, e.filename);
+  const sectionName = loc?.sectionName ?? "the relevant";
+  const message = `Photo ${e.filename} needs to be reattached. Go to the ${sectionName} section and re-add this photo from your camera roll, then retry upload.`;
+  return {
+    success: false,
+    error: message,
+    missingPhoto: loc ?? {
+      filename: e.filename,
+      questionId: "",
+      questionLabel: e.filename,
+      sectionIndex: 0,
+      sectionName: "",
+    },
+  };
 }
 
 // =================== PHASE 1: photos + SUMMARY.pdf ===================
@@ -169,6 +196,7 @@ export async function uploadPhotosPhase(
       status: data.status,
     };
   } catch (e) {
+    if (e instanceof MissingLocalPhotoError) return buildMissingPhotoFailure(walk, e);
     return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
@@ -238,6 +266,7 @@ export async function uploadVideosPhase(
     onProgress?.({ phase: "done", current: total, total, message: "Videos uploaded" });
     return { success: true, driveFolderUrl, status: "confirmed" };
   } catch (e) {
+    if (e instanceof MissingLocalPhotoError) return buildMissingPhotoFailure(walk, e);
     return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
@@ -248,15 +277,17 @@ async function withRetry(
   run: () => Promise<UploadResult>,
   maxAttempts: number,
 ): Promise<UploadResult> {
-  let lastErr = "";
+  let lastResult: UploadResult = { success: false, error: "Unknown error" };
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const res = await run();
     if (res.success) return res;
-    lastErr = res.error ?? "Unknown error";
-    console.warn(`[upload] attempt ${attempt} failed: ${lastErr}`);
+    lastResult = res;
+    console.warn(`[upload] attempt ${attempt} failed: ${res.error ?? "unknown"}`);
+    // No point retrying — the file isn't on this device.
+    if (res.missingPhoto) return res;
     if (attempt < maxAttempts) await new Promise((r) => setTimeout(r, 1000 * attempt));
   }
-  return { success: false, error: lastErr };
+  return lastResult;
 }
 
 export function uploadPhotosWithRetry(

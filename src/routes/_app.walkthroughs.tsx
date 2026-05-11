@@ -3,6 +3,8 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, CloudUpload, Eye, Film, Image a
 import { useEffect, useMemo, useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { uploadPhotosWithRetry, uploadVideosWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import type { MissingPhotoLocation } from "@/lib/missing-photo";
+import { UploadErrorBanner } from "@/components/UploadErrorBanner";
 import { fetchById } from "@/lib/walkthrough";
 import { buildQuestionList, hasUserAnswer, SECTIONS, type SkipContext } from "@/lib/wizard-schema";
 import { toast } from "sonner";
@@ -469,6 +471,7 @@ function CompletedCard({
   );
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [missingPhoto, setMissingPhoto] = useState<MissingPhotoLocation | null>(null);
   const [driveUrl, setDriveUrl] = useState<string | null>(existingDriveUrl);
   const [confirmReupload, setConfirmReupload] = useState(false);
 
@@ -527,6 +530,7 @@ function CompletedCard({
     }
     setStatus("uploading");
     setError(null);
+    setMissingPhoto(null);
     try {
       const walk = await fetchById(record.id);
       if (!walk) throw new Error("Walkthrough not found");
@@ -534,6 +538,7 @@ function CompletedCard({
       if (!res.success) {
         setStatus("error");
         setError(res.error ?? "Upload failed");
+        setMissingPhoto(res.missingPhoto ?? null);
         return;
       }
       setDriveUrl(res.driveFolderUrl ?? existingDriveUrl);
@@ -549,6 +554,7 @@ function CompletedCard({
     if (!userId) return;
     setStatus("uploading");
     setError(null);
+    setMissingPhoto(null);
     try {
       const walk = await fetchById(record.id);
       if (!walk) throw new Error("Walkthrough not found");
@@ -559,6 +565,7 @@ function CompletedCard({
       } else {
         setStatus("error");
         setError(res.error ?? "Video upload failed");
+        setMissingPhoto(res.missingPhoto ?? null);
       }
     } catch (e) {
       setStatus("error");
@@ -694,15 +701,23 @@ function CompletedCard({
               )}
             </div>
           ) : status === "error" ? (
-            <button
-              type="button"
-              onClick={handleUpload}
-              title={error ?? undefined}
-              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-critical text-sm font-semibold text-critical-foreground transition-colors hover:bg-critical/90"
-            >
-              <AlertTriangle className="h-4 w-4" />
-              Upload Failed — Retry
-            </button>
+            <div className="flex w-full flex-1 flex-col gap-1.5">
+              {(error || missingPhoto) && (
+                <UploadErrorBanner
+                  message={error ?? "Upload failed"}
+                  missingPhoto={missingPhoto ?? undefined}
+                />
+              )}
+              <button
+                type="button"
+                onClick={handleUpload}
+                title={error ?? undefined}
+                className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-critical text-sm font-semibold text-critical-foreground transition-colors hover:bg-critical/90"
+              >
+                <AlertTriangle className="h-4 w-4" />
+                Upload Failed — Retry
+              </button>
+            </div>
           ) : hasAnyContent ? (
             <button
               type="button"

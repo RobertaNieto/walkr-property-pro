@@ -11,6 +11,7 @@ import {
   saveStoragePhoto,
   type StorageContext,
 } from "@/lib/photo-store";
+import { backupToDevice } from "@/lib/photo-backup";
 
 interface PhotoCaptureProps {
   photos: string[];
@@ -64,6 +65,7 @@ export function PhotoCapture({
     if (files.length === 0) return;
     setProcessing(true);
     setOrientationError(false);
+    const captured: { filename: string; dataUrl: string }[] = [];
     try {
       const startIdx = photos.length;
       const newPhotos: string[] = [];
@@ -106,9 +108,17 @@ export function PhotoCapture({
         fileMeta.current[name] = { size: file.size, original: file.name };
         newPhotos.push(name);
         newNames.push(name);
+        captured.push({ filename: name, dataUrl: compressed });
       }
       if (newPhotos.length > 0) {
         onChange([...photos, ...newPhotos], [...(filenames ?? photos), ...newNames]);
+      }
+      // Best-effort save to the agent's device camera roll / downloads so a
+      // browser cache wipe before upload doesn't lose the photo. Skipped in
+      // admin storage mode — admins must not get the agent's photos saved
+      // to their own device.
+      if (!useStorage && captured.length > 0) {
+        void backupToDevice(captured);
       }
     } finally {
       setProcessing(false);

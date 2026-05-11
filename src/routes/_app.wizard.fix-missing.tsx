@@ -27,6 +27,8 @@ import {
   type SkipContext,
 } from "@/lib/wizard-schema";
 import { uploadPhotosWithRetry, uploadVideosWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import type { MissingPhotoLocation } from "@/lib/missing-photo";
+import { UploadErrorBanner } from "@/components/UploadErrorBanner";
 
 export const Route = createFileRoute("/_app/wizard/fix-missing")({
   component: FixMissingScreen,
@@ -42,7 +44,7 @@ type UploadState =
   | { kind: "uploading"; progress: UploadProgress }
   | { kind: "photos_done"; url: string; pendingVideos: number }
   | { kind: "success"; url: string }
-  | { kind: "error"; message: string };
+  | { kind: "error"; message: string; missingPhoto?: MissingPhotoLocation };
 
 function FixMissingScreen() {
   const navigate = useNavigate();
@@ -123,7 +125,7 @@ function FixMissingScreen() {
       { mode: "reupload", targetUserId: adminEdit.agentId, isAdmin: true },
     );
     if (!res.success || !res.driveFolderUrl) {
-      setUpload({ kind: "error", message: res.error ?? "Upload failed" });
+      setUpload({ kind: "error", message: res.error ?? "Upload failed", missingPhoto: res.missingPhoto });
       return;
     }
     const pending = res.videosPending?.length ?? 0;
@@ -151,7 +153,7 @@ function FixMissingScreen() {
     if (res.success && (res.driveFolderUrl ?? currentUrl)) {
       setUpload({ kind: "success", url: res.driveFolderUrl ?? currentUrl! });
     } else {
-      setUpload({ kind: "error", message: res.error ?? "Video upload failed" });
+      setUpload({ kind: "error", message: res.error ?? "Video upload failed", missingPhoto: res.missingPhoto });
     }
   };
 
@@ -326,10 +328,7 @@ function FixMissingScreen() {
           )}
 
           {upload.kind === "error" && (
-            <div className="flex items-start gap-2 rounded-xl bg-critical/10 p-3 text-left text-xs text-critical">
-              <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>{upload.message}</span>
-            </div>
+            <UploadErrorBanner message={upload.message} missingPhoto={upload.missingPhoto} />
           )}
 
           {upload.kind !== "photos_done" && upload.kind !== "success" && (
