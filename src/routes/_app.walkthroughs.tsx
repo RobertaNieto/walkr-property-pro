@@ -674,6 +674,27 @@ function CompletedCard({
                 Re-upload to Drive
               </button>
             </div>
+          ) : status === "photos_done" ? (
+            <div className="flex flex-1 flex-col gap-1.5">
+              <button
+                type="button"
+                onClick={() => void runVideoUpload()}
+                className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <Film className="h-4 w-4" />
+                Upload Videos{pendingVideos > 0 ? ` (${pendingVideos})` : ""}
+              </button>
+              {driveUrl && (
+                <a
+                  href={driveUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                >
+                  View in Drive →
+                </a>
+              )}
+            </div>
           ) : status === "error" ? (
             <button
               type="button"
