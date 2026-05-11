@@ -1084,19 +1084,22 @@ function ReviewScreen() {
             </div>
           )}
           {uploadStatus === "error" && (
-            <button
-              type="button"
-              onClick={handleUpload}
-              className="inline-flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-2xl bg-destructive text-sm font-semibold text-destructive-foreground"
-            >
-              <span className="inline-flex items-center gap-2">
+            <div className="space-y-2">
+              {uploadError && (
+                <UploadErrorBanner
+                  message={uploadError}
+                  missingPhoto={missingPhoto ?? undefined}
+                />
+              )}
+              <button
+                type="button"
+                onClick={handleUpload}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-destructive text-sm font-semibold text-destructive-foreground"
+              >
                 <AlertTriangle className="h-4 w-4" />
                 Upload Failed — Retry
-              </span>
-              {uploadError && (
-                <span className="text-[11px] font-normal opacity-90">{uploadError}</span>
-              )}
-            </button>
+              </button>
+            </div>
           )}
           {uploadStatus === "idle" && hasAnyContent && (
             <button
