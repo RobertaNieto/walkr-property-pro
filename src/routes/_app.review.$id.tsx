@@ -842,6 +842,7 @@ function ReviewScreen() {
                           key={q.id}
                           q={q}
                           a={walk.answers?.[q.id] as WizardAnswer | undefined}
+                          resolveSrc={resolveSrcFor}
                           onPhotoOpen={(filename) => {
                             const idx = photos.findIndex((p) => p.filename === filename);
                             if (idx >= 0) setLightboxIndex(idx);
