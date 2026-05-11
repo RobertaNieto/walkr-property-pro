@@ -210,14 +210,18 @@ export function WizardLayout({
       <AlertDialog open={homeConfirmOpen} onOpenChange={setHomeConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave walkthrough?</AlertDialogTitle>
+            <AlertDialogTitle>{adminEdit ? "Exit admin edit?" : "Leave walkthrough?"}</AlertDialogTitle>
             <AlertDialogDescription>
-              Your progress is saved automatically.
+              {adminEdit
+                ? "Your edits are already saved. You'll return to the admin panel."
+                : "Your progress is saved automatically."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Stay</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmLeave}>Leave</AlertDialogAction>
+            <AlertDialogAction onClick={() => void handleConfirmLeave()}>
+              {adminEdit ? "Exit" : "Leave"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
