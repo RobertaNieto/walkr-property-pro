@@ -9,6 +9,17 @@ import { SectionNav, type SectionMeta, type SectionStatus } from "@/components/S
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
 import { fetchById, getActiveId, getAdminEditing, isAdminEditing, loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer, type Walkthrough } from "@/lib/walkthrough";
+import type { StorageContext } from "@/lib/photo-store";
+
+// When an admin is editing/fixing another agent's walkthrough, all PhotoCapture
+// I/O must go directly to that agent's Supabase Storage path — never to the
+// admin's local IndexedDB. This helper returns the StorageContext to thread
+// through the renderer tree, or undefined for the agent's own session.
+function getAdminStorageContext(): StorageContext | undefined {
+  const a = getAdminEditing();
+  if (!a) return undefined;
+  return { agentId: a.agentId, walkthroughId: a.walkthroughId };
+}
 // loadActive is used in the initial state hydration (via useMemo above).
 import {
   buildQuestionList,
