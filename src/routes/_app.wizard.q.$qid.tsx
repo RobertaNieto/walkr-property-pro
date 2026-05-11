@@ -860,6 +860,7 @@ function FieldRenderer({
             filenames={value.photoNames ?? []}
             baseName={q.photoName ?? q.id.toUpperCase()}
             isVideo={isVideo}
+            storageContext={getAdminStorageContext()}
             onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
             error={errored}
           />
