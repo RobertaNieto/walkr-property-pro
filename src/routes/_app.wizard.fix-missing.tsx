@@ -125,7 +125,7 @@ function FixMissingScreen() {
       { mode: "reupload", targetUserId: adminEdit.agentId, isAdmin: true },
     );
     if (!res.success || !res.driveFolderUrl) {
-      setUpload({ kind: "error", message: res.error ?? "Upload failed" });
+      setUpload({ kind: "error", message: res.error ?? "Upload failed", missingPhoto: res.missingPhoto });
       return;
     }
     const pending = res.videosPending?.length ?? 0;
