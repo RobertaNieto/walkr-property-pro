@@ -328,10 +328,7 @@ function FixMissingScreen() {
           )}
 
           {upload.kind === "error" && (
-            <div className="flex items-start gap-2 rounded-xl bg-critical/10 p-3 text-left text-xs text-critical">
-              <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>{upload.message}</span>
-            </div>
+            <UploadErrorBanner message={upload.message} missingPhoto={upload.missingPhoto} />
           )}
 
           {upload.kind !== "photos_done" && upload.kind !== "success" && (
