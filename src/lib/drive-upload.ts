@@ -28,10 +28,17 @@ export interface UploadResult {
   /** Filenames of videos that still need a Phase 2 upload (Phase 1 only). */
   videosPending?: string[];
   /** Final walkthrough upload_status reported by the edge function. */
-  status?: "photos_complete" | "confirmed";
+  status?: "photos_complete" | "confirmed" | "partial";
   error?: string;
   /** Set when the upload failed because a photo is missing from local storage. */
   missingPhoto?: MissingPhotoLocation;
+  /** True when only some photos were uploaded before the time budget ran out. */
+  partial?: boolean;
+  /** Counts for partial uploads, e.g. "12 of 130 photos uploaded". */
+  photosUploaded?: number;
+  photosTotal?: number;
+  /** Friendly partial-upload message from the edge function. */
+  partialMessage?: string;
 }
 
 interface UploadOptions {
