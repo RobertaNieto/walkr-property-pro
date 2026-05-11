@@ -1029,9 +1029,9 @@ function ReviewScreen() {
           )}
           {uploadStatus === "photos_done" && driveUrl && (
             <div className="space-y-2">
-              <div className="flex items-center justify-center gap-2 rounded-2xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
+              <div className="flex items-center justify-center gap-2 rounded-2xl bg-success px-3 py-2 text-sm font-semibold text-success-foreground">
                 <CheckCircle2 className="h-4 w-4" />
-                Photos &amp; Report in Drive
+                ✓ Photos &amp; Report Uploaded
               </div>
               <a
                 href={driveUrl}
@@ -1047,7 +1047,7 @@ function ReviewScreen() {
                 className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <Film className="h-4 w-4" />
-                Upload Videos ({pendingVideoCount})
+                Upload Videos to Drive ({pendingVideoCount})
               </button>
             </div>
           )}
@@ -1055,7 +1055,7 @@ function ReviewScreen() {
             <div className="space-y-2">
               <div className="flex items-center justify-center gap-2 rounded-2xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
                 <CheckCircle2 className="h-4 w-4" />
-                Fully uploaded to Drive
+                Fully Uploaded ✓
               </div>
               <a
                 href={driveUrl}
