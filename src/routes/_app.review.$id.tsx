@@ -127,7 +127,7 @@ function enrichPhotos(w: Walkthrough): Walkthrough {
 function ReviewScreen() {
   const { id } = useParams({ from: "/_app/review/$id" });
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [walk, setWalk] = useState<Walkthrough | null>(null);
   const [loading, setLoading] = useState(true);
