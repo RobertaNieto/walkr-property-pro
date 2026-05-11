@@ -277,15 +277,17 @@ async function withRetry(
   run: () => Promise<UploadResult>,
   maxAttempts: number,
 ): Promise<UploadResult> {
-  let lastErr = "";
+  let lastResult: UploadResult = { success: false, error: "Unknown error" };
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const res = await run();
     if (res.success) return res;
-    lastErr = res.error ?? "Unknown error";
-    console.warn(`[upload] attempt ${attempt} failed: ${lastErr}`);
+    lastResult = res;
+    console.warn(`[upload] attempt ${attempt} failed: ${res.error ?? "unknown"}`);
+    // No point retrying — the file isn't on this device.
+    if (res.missingPhoto) return res;
     if (attempt < maxAttempts) await new Promise((r) => setTimeout(r, 1000 * attempt));
   }
-  return { success: false, error: lastErr };
+  return lastResult;
 }
 
 export function uploadPhotosWithRetry(
