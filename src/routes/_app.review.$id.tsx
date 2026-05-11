@@ -643,6 +643,27 @@ function ReviewScreen() {
 
       {/* Body */}
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 print:max-w-none">
+        {isOtherAgent &&
+          walk.uploadStatus !== "confirmed" &&
+          walk.uploadStatus !== "photos_complete" &&
+          remoteUrls &&
+          remoteUrls.size > 0 &&
+          Array.from(remoteUrls.values()).every((v) => v === null) && (
+            <section className="mb-6 rounded-2xl border-2 border-warning bg-warning/10 p-4 sm:p-5 print:hidden">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-5 w-5 text-warning" />
+                <div>
+                  <h2 className="text-base font-bold text-foreground">
+                    Photos not yet available
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Agent has not uploaded this walkthrough to Drive yet. Photo
+                    placeholders show where each image will appear once uploaded.
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
         {/* Incomplete sections gate */}
         {(() => {
           const completedAt = walk.completedAt ?? null;
