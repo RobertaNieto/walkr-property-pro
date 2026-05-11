@@ -64,7 +64,7 @@ export interface Walkthrough {
   answers: WizardAnswers;
   lastRoute?: string;
   completedAt?: number | null;
-  uploadStatus?: "pending" | "uploading" | "confirmed" | "failed";
+  uploadStatus?: "pending" | "uploading" | "photos_complete" | "confirmed" | "failed";
   driveFolderUrl?: string | null;
   uploadedAt?: number | null;
 }
