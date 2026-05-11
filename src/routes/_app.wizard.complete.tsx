@@ -90,7 +90,7 @@ function CompleteScreen() {
       setUpload({ kind: "uploading", progress: p });
     });
     if (!res.success || !res.driveFolderUrl) {
-      setUpload({ kind: "error", message: res.error ?? "Upload failed" });
+      setUpload({ kind: "error", message: res.error ?? "Upload failed", missingPhoto: res.missingPhoto });
       return;
     }
     const pending = res.videosPending?.length ?? 0;
