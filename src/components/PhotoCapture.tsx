@@ -11,6 +11,7 @@ import {
   saveStoragePhoto,
   type StorageContext,
 } from "@/lib/photo-store";
+import { backupToDevice } from "@/lib/photo-backup";
 
 interface PhotoCaptureProps {
   photos: string[];
