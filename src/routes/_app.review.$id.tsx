@@ -439,16 +439,43 @@ function ReviewScreen() {
     setUploadError(null);
     if (mode === "initial") setDriveUrl(null);
     const adminUpload = isAdmin && !!walk.userId && walk.userId !== user.id;
-    const res = await uploadWithRetry(walk, user.id, (p) => setUploadProgress(p), 3, {
+    const opts = {
       mode,
       ...(adminUpload ? { isAdmin: true, targetUserId: walk.userId } : {}),
-    });
+    };
+    const res = await uploadPhotosWithRetry(walk, user.id, (p) => setUploadProgress(p), 3, opts);
+    if (!res.success) {
+      setUploadStatus("error");
+      setUploadError(res.error ?? "Upload failed");
+      return;
+    }
+    setDriveUrl(res.driveFolderUrl ?? driveUrl);
+    const pending = res.videosPending?.length ?? 0;
+    setPendingVideoCount(pending);
+    if (pending === 0) {
+      setUploadStatus("success");
+    } else {
+      setUploadStatus("photos_done");
+    }
+  };
+
+  const runVideoUpload = async () => {
+    if (!walk || !user) return;
+    setUploadStatus("uploading");
+    setUploadError(null);
+    const adminUpload = isAdmin && !!walk.userId && walk.userId !== user.id;
+    const opts = {
+      mode: (walk.uploadStatus === "confirmed" ? "reupload" : "initial") as "initial" | "reupload",
+      ...(adminUpload ? { isAdmin: true, targetUserId: walk.userId } : {}),
+    };
+    const res = await uploadVideosWithRetry(walk, user.id, (p) => setUploadProgress(p), 3, opts);
     if (res.success) {
       setUploadStatus("success");
       setDriveUrl(res.driveFolderUrl ?? driveUrl);
+      setPendingVideoCount(0);
     } else {
       setUploadStatus("error");
-      setUploadError(res.error ?? "Upload failed");
+      setUploadError(res.error ?? "Video upload failed");
     }
   };
 
