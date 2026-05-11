@@ -109,23 +109,60 @@ function FixMissingScreen() {
     navigate({ to: "/admin" });
   };
 
-  const handleUpload = async () => {
+  const pendingVideoCount = useMemo(() => {
+    if (!w) return 0;
+    let n = 0;
+    for (const ans of Object.values(w.answers ?? {})) {
+      for (const fn of [...(ans.photoNames ?? []), ...(ans.poorPhotoNames ?? [])]) {
+        if (fn && /\.(mp4|mov)$/i.test(fn)) n++;
+      }
+    }
+    return n;
+  }, [w]);
+
+  const handleUploadPhotos = async () => {
     if (!user || !w || upload.kind === "uploading") return;
     setUpload({
       kind: "uploading",
       progress: { phase: "staging", current: 0, total: 0, message: "Starting…" },
     });
-    const res = await uploadWithRetry(
+    const res = await uploadPhotosWithRetry(
       w,
       user.id,
       (p) => setUpload({ kind: "uploading", progress: p }),
       3,
       { mode: "reupload", targetUserId: adminEdit.agentId, isAdmin: true },
     );
-    if (res.success && res.driveFolderUrl) {
+    if (!res.success || !res.driveFolderUrl) {
+      setUpload({ kind: "error", message: res.error ?? "Upload failed" });
+      return;
+    }
+    const pending = res.videosPending?.length ?? 0;
+    if (pending === 0) {
       setUpload({ kind: "success", url: res.driveFolderUrl });
     } else {
-      setUpload({ kind: "error", message: res.error ?? "Upload failed" });
+      setUpload({ kind: "photos_done", url: res.driveFolderUrl, pendingVideos: pending });
+    }
+  };
+
+  const handleUploadVideos = async () => {
+    if (!user || !w || upload.kind === "uploading") return;
+    const currentUrl = upload.kind === "photos_done" ? upload.url : null;
+    setUpload({
+      kind: "uploading",
+      progress: { phase: "staging", current: 0, total: 0, message: "Starting video upload…" },
+    });
+    const res = await uploadVideosWithRetry(
+      w,
+      user.id,
+      (p) => setUpload({ kind: "uploading", progress: p }),
+      3,
+      { mode: "reupload", targetUserId: adminEdit.agentId, isAdmin: true },
+    );
+    if (res.success && (res.driveFolderUrl ?? currentUrl)) {
+      setUpload({ kind: "success", url: res.driveFolderUrl ?? currentUrl! });
+    } else {
+      setUpload({ kind: "error", message: res.error ?? "Video upload failed" });
     }
   };
 
