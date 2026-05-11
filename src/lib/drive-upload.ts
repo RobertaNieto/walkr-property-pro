@@ -1,7 +1,11 @@
 // Client-side Google Drive upload helper.
-// Stages photos from IndexedDB into Supabase Storage, then invokes the
-// `upload-to-drive` edge function which uploads everything to Drive +
-// generates SUMMARY.pdf.
+// Two-phase flow:
+//   Phase 1 ("photos"): stage every image to Supabase Storage, then ask the
+//     edge function to push them all to Drive Photos/ + generate SUMMARY.pdf.
+//   Phase 2 ("videos"): one edge-function call per video, sequentially, so
+//     each request stays well under the per-call timeout.
+// The walkthrough flips to upload_status = "confirmed" only after both
+// phases complete (or after Phase 1 if there are no videos).
 
 import { supabase } from "@/integrations/supabase/client";
 import { preloadPhoto } from "@/lib/photo-store";
@@ -11,7 +15,7 @@ const BUCKET = "walkthrough-photos";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export interface UploadProgress {
-  phase: "staging" | "drive" | "done";
+  phase: "staging" | "drive" | "videos" | "done";
   current: number;
   total: number;
   message: string;
@@ -20,8 +24,20 @@ export interface UploadProgress {
 export interface UploadResult {
   success: boolean;
   driveFolderUrl?: string;
+  /** Filenames of videos that still need a Phase 2 upload (Phase 1 only). */
+  videosPending?: string[];
+  /** Final walkthrough upload_status reported by the edge function. */
+  status?: "photos_complete" | "confirmed";
   error?: string;
 }
+
+interface UploadOptions {
+  mode?: "initial" | "reupload";
+  targetUserId?: string;
+  isAdmin?: boolean;
+}
+
+const isVideoName = (n: string) => /\.(mp4|mov)$/i.test(n);
 
 function dataUrlToBlob(dataUrl: string, filename: string): Blob {
   const comma = dataUrl.indexOf(",");
@@ -69,121 +85,228 @@ async function getFunctionErrorMessage(error: unknown): Promise<string> {
   return fallback;
 }
 
-export async function uploadWalkthroughToDrive(
+async function validateOwnership(walk: Walkthrough, userId: string, options?: UploadOptions): Promise<void> {
+  if (!userId) throw new Error("You must be signed in before uploading to Drive");
+  if (!walk?.id || !UUID_RE.test(walk.id)) {
+    throw new Error("Invalid walkthroughId: the selected walkthrough could not be uploaded");
+  }
+  const { data: existingWalk, error: walkErr } = await supabase
+    .from("walkthroughs")
+    .select("id,user_id")
+    .eq("id", walk.id)
+    .maybeSingle();
+  if (walkErr) throw new Error(`Could not validate walkthroughId: ${walkErr.message}`);
+  if (!existingWalk) throw new Error(`Walkthrough ${walk.id} was not found in the database`);
+  if (existingWalk.user_id !== userId && !options?.isAdmin) {
+    throw new Error("This walkthrough belongs to a different signed-in user");
+  }
+}
+
+async function stageFile(
+  fname: string,
+  walkId: string,
+  stagingUserId: string,
+): Promise<void> {
+  const dataUrl = await preloadPhoto(fname);
+  if (!dataUrl) {
+    throw new Error(`Could not find ${fname} in local browser storage. Reattach the file, then retry.`);
+  }
+  const blob = dataUrlToBlob(dataUrl, fname);
+  const path = `${stagingUserId}/${walkId}/${fname}`;
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, blob, { upsert: true, contentType: blob.type });
+  if (error) throw new Error(`Stage failed for ${fname}: ${error.message}`);
+}
+
+// =================== PHASE 1: photos + SUMMARY.pdf ===================
+
+export async function uploadPhotosPhase(
   walk: Walkthrough,
   userId: string,
   onProgress?: (p: UploadProgress) => void,
-  options?: { mode?: "initial" | "reupload"; targetUserId?: string; isAdmin?: boolean },
+  options?: UploadOptions,
 ): Promise<UploadResult> {
   try {
-    if (!userId) throw new Error("You must be signed in before uploading to Drive");
-    if (!walk?.id || !UUID_RE.test(walk.id)) {
-      throw new Error("Invalid walkthroughId: the selected walkthrough could not be uploaded");
-    }
-
-    // When an admin re-uploads on behalf of an agent, files are staged under
-    // the agent's user folder so the edge function (which uses walk.user_id)
-    // can find them.
+    await validateOwnership(walk, userId, options);
     const stagingUserId = options?.targetUserId ?? userId;
 
-    console.log("[drive-upload] starting", { walkthroughId: walk.id, userId, stagingUserId });
+    const allNames = collectMediaNames(walk);
+    const photoNames = allNames.filter((n) => !isVideoName(n));
+    const total = photoNames.length;
+    console.log("[drive-upload] phase=photos starting", { walkthroughId: walk.id, total });
 
-    const { data: existingWalk, error: walkErr } = await supabase
-      .from("walkthroughs")
-      .select("id,user_id")
-      .eq("id", walk.id)
-      .maybeSingle();
-    if (walkErr) throw new Error(`Could not validate walkthroughId: ${walkErr.message}`);
-    if (!existingWalk) throw new Error(`Walkthrough ${walk.id} was not found in the database`);
-    if (existingWalk.user_id !== userId && !options?.isAdmin) {
-      throw new Error("This walkthrough belongs to a different signed-in user");
-    }
-
-    const names = collectMediaNames(walk);
-    const total = names.length;
-    console.log("[drive-upload] media discovered", { walkthroughId: walk.id, total, names });
-
-    // Phase 1: stage every local file from IndexedDB to Supabase Storage.
-    // For admin re-uploads, all photos already exist in Supabase Storage
-    // (uploaded by the agent), so we skip local staging entirely.
+    // Stage photos to Supabase Storage (skipped for admin re-uploads — files
+    // already live in Storage from the agent's session).
     if (options?.isAdmin) {
-      console.log("[drive-upload] admin re-upload — skipping local staging, using Storage directly");
-      onProgress?.({
-        phase: "staging",
-        current: total,
-        total,
-        message: "Reading photos from cloud storage...",
-      });
+      onProgress?.({ phase: "staging", current: total, total, message: "Reading photos from cloud storage..." });
     } else {
-      for (let i = 0; i < names.length; i++) {
-        const fname = names[i];
-        onProgress?.({
-          phase: "staging",
-          current: i,
-          total,
-          message: `Preparing photos... ${i + 1} of ${total}`,
-        });
-        const dataUrl = await preloadPhoto(fname);
-        if (!dataUrl) {
-          throw new Error(`Could not find ${fname} in local browser storage. Reattach the file, then retry.`);
-        }
-        console.log("[drive-upload] IndexedDB file loaded", { walkthroughId: walk.id, filename: fname });
-        const blob = dataUrlToBlob(dataUrl, fname);
-        const path = `${stagingUserId}/${walk.id}/${fname}`;
-        const { error } = await supabase.storage
-          .from(BUCKET)
-          .upload(path, blob, { upsert: true, contentType: blob.type });
-        if (error) throw new Error(`Stage failed for ${fname}: ${error.message}`);
-        console.log("[drive-upload] storage staged", { walkthroughId: walk.id, path, contentType: blob.type, bytes: blob.size });
+      for (let i = 0; i < photoNames.length; i++) {
+        const fname = photoNames[i];
+        onProgress?.({ phase: "staging", current: i, total, message: `Preparing photos... ${i + 1} of ${total}` });
+        await stageFile(fname, walk.id, stagingUserId);
       }
     }
 
-    // Phase 2: invoke edge function to push to Drive
-    onProgress?.({
-      phase: "drive",
-      current: total,
-      total,
-      message: "Uploading to Google Drive...",
-    });
-    console.log("[drive-upload] invoking upload-to-drive", { walkthroughId: walk.id, mode: options?.mode ?? "initial" });
+    onProgress?.({ phase: "drive", current: total, total, message: "Uploading photos & report to Google Drive..." });
     const { data, error } = await supabase.functions.invoke("upload-to-drive", {
-      body: { walkthroughId: walk.id, mode: options?.mode ?? "initial" },
+      body: { walkthroughId: walk.id, mode: options?.mode ?? "initial", phase: "photos" },
     });
     if (error) throw new Error(await getFunctionErrorMessage(error));
     if (!data?.success) throw new Error(data?.error ?? "Upload failed");
-    console.log("[drive-upload] upload-to-drive succeeded", { walkthroughId: walk.id, driveFolderUrl: data.driveFolderUrl });
 
+    const videosPending = (data.videos as string[] | undefined) ?? [];
     onProgress?.({
       phase: "done",
       current: total,
       total,
-      message: "Upload complete",
+      message: videosPending.length > 0 ? "Photos & report uploaded" : "Upload complete",
     });
-    return { success: true, driveFolderUrl: data.driveFolderUrl };
-  } catch (e) {
     return {
-      success: false,
-      error: e instanceof Error ? e.message : String(e),
+      success: true,
+      driveFolderUrl: data.driveFolderUrl,
+      videosPending,
+      status: data.status,
     };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
+
+// =================== PHASE 2: videos (one at a time) ===================
+
+export async function uploadVideosPhase(
+  walk: Walkthrough,
+  userId: string,
+  onProgress?: (p: UploadProgress) => void,
+  options?: UploadOptions,
+): Promise<UploadResult> {
+  try {
+    await validateOwnership(walk, userId, options);
+    const stagingUserId = options?.targetUserId ?? userId;
+
+    const videos = collectMediaNames(walk).filter(isVideoName);
+    const total = videos.length;
+    console.log("[drive-upload] phase=videos starting", { walkthroughId: walk.id, total });
+
+    if (total === 0) {
+      onProgress?.({ phase: "done", current: 0, total: 0, message: "No videos to upload" });
+      return { success: true, status: "confirmed" };
+    }
+
+    let driveFolderUrl: string | undefined;
+    for (let i = 0; i < videos.length; i++) {
+      const fname = videos[i];
+      const isFirst = i === 0;
+      const isLast = i === videos.length - 1;
+
+      // Stage the single video first (admins skip — already in Storage).
+      if (!options?.isAdmin) {
+        onProgress?.({
+          phase: "staging",
+          current: i,
+          total,
+          message: `Preparing ${fname}... ${i + 1} of ${total}`,
+        });
+        await stageFile(fname, walk.id, stagingUserId);
+      }
+
+      onProgress?.({
+        phase: "videos",
+        current: i,
+        total,
+        message: `Uploading ${fname}... ${i + 1} of ${total}`,
+      });
+      const { data, error } = await supabase.functions.invoke("upload-to-drive", {
+        body: {
+          walkthroughId: walk.id,
+          mode: options?.mode ?? "initial",
+          phase: "videos",
+          videoFilename: fname,
+          // First video of a re-upload run purges the Videos folder so we
+          // don't end up with old + new videos side by side.
+          purgeFirst: isFirst && options?.mode === "reupload",
+          // Only the last video flips upload_status to "confirmed".
+          markComplete: isLast,
+        },
+      });
+      if (error) throw new Error(await getFunctionErrorMessage(error));
+      if (!data?.success) throw new Error(data?.error ?? "Video upload failed");
+      driveFolderUrl = data.driveFolderUrl ?? driveFolderUrl;
+    }
+
+    onProgress?.({ phase: "done", current: total, total, message: "Videos uploaded" });
+    return { success: true, driveFolderUrl, status: "confirmed" };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+// =================== Retry wrappers ===================
+
+async function withRetry(
+  run: () => Promise<UploadResult>,
+  maxAttempts: number,
+): Promise<UploadResult> {
+  let lastErr = "";
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const res = await run();
+    if (res.success) return res;
+    lastErr = res.error ?? "Unknown error";
+    console.warn(`[upload] attempt ${attempt} failed: ${lastErr}`);
+    if (attempt < maxAttempts) await new Promise((r) => setTimeout(r, 1000 * attempt));
+  }
+  return { success: false, error: lastErr };
+}
+
+export function uploadPhotosWithRetry(
+  walk: Walkthrough,
+  userId: string,
+  onProgress?: (p: UploadProgress) => void,
+  maxAttempts = 3,
+  options?: UploadOptions,
+): Promise<UploadResult> {
+  return withRetry(() => uploadPhotosPhase(walk, userId, onProgress, options), maxAttempts);
+}
+
+export function uploadVideosWithRetry(
+  walk: Walkthrough,
+  userId: string,
+  onProgress?: (p: UploadProgress) => void,
+  maxAttempts = 3,
+  options?: UploadOptions,
+): Promise<UploadResult> {
+  return withRetry(() => uploadVideosPhase(walk, userId, onProgress, options), maxAttempts);
+}
+
+// =================== Backwards-compatible combined flow ===================
+// Runs Phase 1 then Phase 2 sequentially, returning the final result.
+// Existing callers that just want "do the whole upload" keep working.
 
 export async function uploadWithRetry(
   walk: Walkthrough,
   userId: string,
   onProgress?: (p: UploadProgress) => void,
   maxAttempts = 3,
-  options?: { mode?: "initial" | "reupload"; targetUserId?: string; isAdmin?: boolean },
+  options?: UploadOptions,
 ): Promise<UploadResult> {
-  let lastErr = "";
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const res = await uploadWalkthroughToDrive(walk, userId, onProgress, options);
-    if (res.success) return res;
-    lastErr = res.error ?? "Unknown error";
-    console.warn(`[upload] attempt ${attempt} failed: ${lastErr}`);
-    if (attempt < maxAttempts) {
-      await new Promise((r) => setTimeout(r, 1000 * attempt));
-    }
-  }
-  return { success: false, error: lastErr };
+  const phase1 = await uploadPhotosWithRetry(walk, userId, onProgress, maxAttempts, options);
+  if (!phase1.success) return phase1;
+  if ((phase1.videosPending?.length ?? 0) === 0) return phase1;
+  const phase2 = await uploadVideosWithRetry(walk, userId, onProgress, maxAttempts, options);
+  if (!phase2.success) return { ...phase2, driveFolderUrl: phase1.driveFolderUrl };
+  return {
+    success: true,
+    driveFolderUrl: phase2.driveFolderUrl ?? phase1.driveFolderUrl,
+    status: "confirmed",
+  };
+}
+
+export async function uploadWalkthroughToDrive(
+  walk: Walkthrough,
+  userId: string,
+  onProgress?: (p: UploadProgress) => void,
+  options?: UploadOptions,
+): Promise<UploadResult> {
+  return uploadWithRetry(walk, userId, onProgress, 1, options);
 }
