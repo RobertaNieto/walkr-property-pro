@@ -127,7 +127,7 @@ function enrichPhotos(w: Walkthrough): Walkthrough {
 function ReviewScreen() {
   const { id } = useParams({ from: "/_app/review/$id" });
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [walk, setWalk] = useState<Walkthrough | null>(null);
   const [loading, setLoading] = useState(true);
@@ -427,7 +427,11 @@ function ReviewScreen() {
     setUploadStatus("uploading");
     setUploadError(null);
     if (mode === "initial") setDriveUrl(null);
-    const res = await uploadWithRetry(walk, user.id, (p) => setUploadProgress(p), 3, { mode });
+    const adminUpload = isAdmin && !!walk.userId && walk.userId !== user.id;
+    const res = await uploadWithRetry(walk, user.id, (p) => setUploadProgress(p), 3, {
+      mode,
+      ...(adminUpload ? { isAdmin: true, targetUserId: walk.userId } : {}),
+    });
     if (res.success) {
       setUploadStatus("success");
       setDriveUrl(res.driveFolderUrl ?? driveUrl);
