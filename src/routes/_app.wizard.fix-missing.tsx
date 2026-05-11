@@ -44,7 +44,7 @@ type UploadState =
   | { kind: "uploading"; progress: UploadProgress }
   | { kind: "photos_done"; url: string; pendingVideos: number }
   | { kind: "success"; url: string }
-  | { kind: "error"; message: string };
+  | { kind: "error"; message: string; missingPhoto?: MissingPhotoLocation };
 
 function FixMissingScreen() {
   const navigate = useNavigate();
