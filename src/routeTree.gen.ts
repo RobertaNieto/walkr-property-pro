@@ -22,6 +22,7 @@ import { Route as AppAddressRouteImport } from './routes/_app.address'
 import { Route as AppWizardMenuRouteImport } from './routes/_app.wizard.menu'
 import { Route as AppWizardLockboxRouteImport } from './routes/_app.wizard.lockbox'
 import { Route as AppWizardFrontPhotoRouteImport } from './routes/_app.wizard.front-photo'
+import { Route as AppWizardFixMissingRouteImport } from './routes/_app.wizard.fix-missing'
 import { Route as AppWizardExteriorPaintRouteImport } from './routes/_app.wizard.exterior-paint'
 import { Route as AppWizardCompleteRouteImport } from './routes/_app.wizard.complete'
 import { Route as AppWizardChecklistRouteImport } from './routes/_app.wizard.checklist'
@@ -92,6 +93,11 @@ const AppWizardFrontPhotoRoute = AppWizardFrontPhotoRouteImport.update({
   path: '/wizard/front-photo',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWizardFixMissingRoute = AppWizardFixMissingRouteImport.update({
+  id: '/wizard/fix-missing',
+  path: '/wizard/fix-missing',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppWizardExteriorPaintRoute = AppWizardExteriorPaintRouteImport.update({
   id: '/wizard/exterior-paint',
   path: '/wizard/exterior-paint',
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/wizard/checklist': typeof AppWizardChecklistRoute
   '/wizard/complete': typeof AppWizardCompleteRoute
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
+  '/wizard/fix-missing': typeof AppWizardFixMissingRoute
   '/wizard/front-photo': typeof AppWizardFrontPhotoRoute
   '/wizard/lockbox': typeof AppWizardLockboxRoute
   '/wizard/menu': typeof AppWizardMenuRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/wizard/checklist': typeof AppWizardChecklistRoute
   '/wizard/complete': typeof AppWizardCompleteRoute
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
+  '/wizard/fix-missing': typeof AppWizardFixMissingRoute
   '/wizard/front-photo': typeof AppWizardFrontPhotoRoute
   '/wizard/lockbox': typeof AppWizardLockboxRoute
   '/wizard/menu': typeof AppWizardMenuRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/_app/wizard/checklist': typeof AppWizardChecklistRoute
   '/_app/wizard/complete': typeof AppWizardCompleteRoute
   '/_app/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
+  '/_app/wizard/fix-missing': typeof AppWizardFixMissingRoute
   '/_app/wizard/front-photo': typeof AppWizardFrontPhotoRoute
   '/_app/wizard/lockbox': typeof AppWizardLockboxRoute
   '/_app/wizard/menu': typeof AppWizardMenuRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
     | '/wizard/checklist'
     | '/wizard/complete'
     | '/wizard/exterior-paint'
+    | '/wizard/fix-missing'
     | '/wizard/front-photo'
     | '/wizard/lockbox'
     | '/wizard/menu'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/wizard/checklist'
     | '/wizard/complete'
     | '/wizard/exterior-paint'
+    | '/wizard/fix-missing'
     | '/wizard/front-photo'
     | '/wizard/lockbox'
     | '/wizard/menu'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/_app/wizard/checklist'
     | '/_app/wizard/complete'
     | '/_app/wizard/exterior-paint'
+    | '/_app/wizard/fix-missing'
     | '/_app/wizard/front-photo'
     | '/_app/wizard/lockbox'
     | '/_app/wizard/menu'
@@ -339,6 +351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWizardFrontPhotoRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/wizard/fix-missing': {
+      id: '/_app/wizard/fix-missing'
+      path: '/wizard/fix-missing'
+      fullPath: '/wizard/fix-missing'
+      preLoaderRoute: typeof AppWizardFixMissingRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/wizard/exterior-paint': {
       id: '/_app/wizard/exterior-paint'
       path: '/wizard/exterior-paint'
@@ -387,6 +406,7 @@ interface AppRouteChildren {
   AppWizardChecklistRoute: typeof AppWizardChecklistRoute
   AppWizardCompleteRoute: typeof AppWizardCompleteRoute
   AppWizardExteriorPaintRoute: typeof AppWizardExteriorPaintRoute
+  AppWizardFixMissingRoute: typeof AppWizardFixMissingRoute
   AppWizardFrontPhotoRoute: typeof AppWizardFrontPhotoRoute
   AppWizardLockboxRoute: typeof AppWizardLockboxRoute
   AppWizardMenuRoute: typeof AppWizardMenuRoute
@@ -403,6 +423,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppWizardChecklistRoute: AppWizardChecklistRoute,
   AppWizardCompleteRoute: AppWizardCompleteRoute,
   AppWizardExteriorPaintRoute: AppWizardExteriorPaintRoute,
+  AppWizardFixMissingRoute: AppWizardFixMissingRoute,
   AppWizardFrontPhotoRoute: AppWizardFrontPhotoRoute,
   AppWizardLockboxRoute: AppWizardLockboxRoute,
   AppWizardMenuRoute: AppWizardMenuRoute,
