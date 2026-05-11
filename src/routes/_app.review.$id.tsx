@@ -1184,14 +1184,21 @@ function answerHasValue(a: WizardAnswer | undefined): boolean {
   );
 }
 
+type SrcResolver = (
+  entry: string | undefined,
+  filename: string,
+) => { src: string } | { missing: true } | undefined;
+
 function AnswerRow({
   q,
   a,
   onPhotoOpen,
+  resolveSrc,
 }: {
   q: QuestionDef;
   a: WizardAnswer | undefined;
   onPhotoOpen: (filename: string) => void;
+  resolveSrc: SrcResolver;
 }) {
   const hasAnswer = answerHasValue(a);
   return (
@@ -1221,14 +1228,22 @@ function AnswerRow({
         {a?.photos && a.photos.length > 0 && (
           <div className="mt-2 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             {a.photos.map((entry, i) => {
-              const src = resolvePhotoSrc(entry);
               const filename = a.photoNames?.[i] ?? entry;
-              if (!src) return null;
+              const resolved = resolveSrc(entry, filename);
+              if (!resolved) return null; // still loading
+              const missing = "missing" in resolved;
+              const src = missing ? null : resolved.src;
               if (q.field === "video") {
                 return (
                   <div key={i} className="flex w-28 flex-shrink-0 flex-col gap-1">
                     <div className="aspect-square overflow-hidden rounded-lg bg-black">
-                      <video src={src} className="h-full w-full object-cover" controls />
+                      {src ? (
+                        <video src={src} className="h-full w-full object-cover" controls />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-muted text-[10px] text-muted-foreground">
+                          Not uploaded
+                        </div>
+                      )}
                     </div>
                     <p className="truncate text-[10px] text-muted-foreground" title={filename}>
                       {filename}
@@ -1244,7 +1259,16 @@ function AnswerRow({
                   className="flex w-24 flex-shrink-0 flex-col gap-1 text-left"
                 >
                   <div className="aspect-square overflow-hidden rounded-lg bg-secondary ring-1 ring-border transition-transform hover:scale-[1.03]">
-                    <img src={src} alt={filename} className="h-full w-full object-cover" />
+                    {src ? (
+                      <img src={src} alt={filename} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-0.5 bg-muted px-1 text-center">
+                        <ImageIcon className="h-4 w-4 text-muted-foreground/60" aria-hidden />
+                        <span className="text-[9px] font-medium leading-tight text-muted-foreground">
+                          Not uploaded
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <p className="truncate text-[10px] text-muted-foreground" title={filename}>
                     {filename}
