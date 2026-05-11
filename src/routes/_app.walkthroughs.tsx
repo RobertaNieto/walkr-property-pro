@@ -471,6 +471,7 @@ function CompletedCard({
   );
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [missingPhoto, setMissingPhoto] = useState<MissingPhotoLocation | null>(null);
   const [driveUrl, setDriveUrl] = useState<string | null>(existingDriveUrl);
   const [confirmReupload, setConfirmReupload] = useState(false);
 
