@@ -202,6 +202,12 @@ function ReviewScreen() {
   // this walkthrough, then bump photoTick to force thumbnails to re-render.
   useEffect(() => {
     if (!walk?.answers) return;
+    // For admin viewing someone else's walkthrough, skip the local IDB
+    // preload entirely — see the Storage-based effect below.
+    if (isOtherAgent) {
+      setPhotoTick((t) => t + 1);
+      return;
+    }
     const filenames: string[] = [];
     for (const ans of Object.values(walk.answers)) {
       const a = ans as WizardAnswer;
@@ -223,7 +229,90 @@ function ReviewScreen() {
     void Promise.all(filenames.map((f) => preloadPhoto(f))).then(() =>
       setPhotoTick((t) => t + 1),
     );
-  }, [walk]);
+  }, [walk, isOtherAgent]);
+
+  // Admin-cross-agent: list files actually present in Supabase Storage for
+  // this walkthrough id, then sign URLs for them. Filenames not found get
+  // explicitly mapped to null so the UI can render a placeholder.
+  useEffect(() => {
+    if (!isOtherAgent || !walk?.userId) return;
+    let cancelled = false;
+    const run = async () => {
+      const wanted = new Set<string>();
+      for (const ans of Object.values(walk.answers ?? {})) {
+        const a = ans as WizardAnswer;
+        for (const p of [...(a.photos ?? []), ...(a.poorPhotos ?? [])]) {
+          if (
+            p &&
+            !p.startsWith("data:") &&
+            !p.startsWith("blob:") &&
+            !p.startsWith("http")
+          ) {
+            wanted.add(p);
+          }
+        }
+      }
+      const map = new Map<string, string | null>();
+      if (wanted.size === 0) {
+        if (!cancelled) {
+          setRemoteUrls(map);
+          setPhotoTick((t) => t + 1);
+        }
+        return;
+      }
+      const prefix = `${walk.userId}/${walk.id}`;
+      const { data: listed } = await supabase.storage
+        .from("walkthrough-photos")
+        .list(prefix, { limit: 1000 });
+      const present = new Set((listed ?? []).map((f) => f.name));
+      const existingPaths: string[] = [];
+      for (const fn of wanted) {
+        if (present.has(fn)) existingPaths.push(`${prefix}/${fn}`);
+        else map.set(fn, null);
+      }
+      if (existingPaths.length > 0) {
+        const { data: signed } = await supabase.storage
+          .from("walkthrough-photos")
+          .createSignedUrls(existingPaths, 3600);
+        for (const item of signed ?? []) {
+          const fn = item.path?.split("/").pop();
+          if (fn) map.set(fn, item.signedUrl ?? null);
+        }
+      }
+      if (!cancelled) {
+        setRemoteUrls(map);
+        setPhotoTick((t) => t + 1);
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOtherAgent, walk?.id, walk?.userId, walk?.answers]);
+
+  // Single resolver: returns { src } when displayable, { missing: true }
+  // when admin-cross-agent and Storage has no copy, or undefined while loading.
+  const resolveSrcFor = (entry: string | undefined, filename: string):
+    | { src: string }
+    | { missing: true }
+    | undefined => {
+    if (!entry) return undefined;
+    if (
+      entry.startsWith("data:") ||
+      entry.startsWith("blob:") ||
+      entry.startsWith("http")
+    ) {
+      return { src: entry };
+    }
+    if (isOtherAgent) {
+      if (!remoteUrls) return undefined; // still loading
+      const v = remoteUrls.get(filename);
+      if (v == null) return { missing: true };
+      return { src: v };
+    }
+    const local = resolvePhotoSrc(entry);
+    return local ? { src: local } : { missing: true };
+  };
 
   const ctx: SkipContext | null = useMemo(
     () =>
