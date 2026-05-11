@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -7,6 +7,7 @@ import {
   Mail,
   Pencil,
   Search,
+  ShieldAlert,
   ShieldCheck,
   ShieldOff,
   UserPlus,
@@ -29,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserAvatar } from "@/components/UserAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { resumeWalkthrough, setAdminEditing, formatPropertyAddress } from "@/lib/walkthrough";
 
 export const Route = createFileRoute("/_app/admin")({
   component: AdminScreen,
