@@ -8,7 +8,7 @@ import { RatingButtons } from "@/components/RatingButtons";
 import { SectionNav, type SectionMeta, type SectionStatus } from "@/components/SectionNav";
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
-import { fetchById, getActiveId, loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer, type Walkthrough } from "@/lib/walkthrough";
+import { fetchById, getActiveId, isAdminEditing, loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer, type Walkthrough } from "@/lib/walkthrough";
 // loadActive is used in the initial state hydration (via useMemo above).
 import {
   buildQuestionList,
@@ -795,7 +795,7 @@ function FieldRenderer({
                 Photo <span className="text-critical">*</span>
               </p>
               <LandscapeHint />
-              <PhotoCapture
+              <PhotoCapture readOnly={isAdminEditing()}
                 photos={value.photos ?? []}
                 filenames={value.photoNames ?? []}
                 baseName={q.withPhoto.name}
@@ -814,7 +814,7 @@ function FieldRenderer({
       return (
         <>
           {!isVideo && <LandscapeHint />}
-          <PhotoCapture
+          <PhotoCapture readOnly={isAdminEditing()}
             photos={value.photos ?? []}
             filenames={value.photoNames ?? []}
             baseName={q.photoName ?? q.id.toUpperCase()}
@@ -871,7 +871,7 @@ function PoorPhotoSection({
         ⚠️ Photo required for Poor rating
       </p>
       <LandscapeHint />
-      <PhotoCapture
+      <PhotoCapture readOnly={isAdminEditing()}
         photos={value.poorPhotos ?? []}
         filenames={value.poorPhotoNames ?? []}
         baseName={q.poorPhotoName}
@@ -911,7 +911,7 @@ function FollowUpRenderer({
       {fu.field === "photo" && (
         <>
           <LandscapeHint />
-          <PhotoCapture
+          <PhotoCapture readOnly={isAdminEditing()}
             photos={value.photos ?? []}
             filenames={value.photoNames ?? []}
             baseName={fu.photoName ?? "FOLLOWUP"}

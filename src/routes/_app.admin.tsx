@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -7,6 +7,7 @@ import {
   Mail,
   Pencil,
   Search,
+  ShieldAlert,
   ShieldCheck,
   ShieldOff,
   UserPlus,
@@ -29,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserAvatar } from "@/components/UserAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { resumeWalkthrough, setAdminEditing, formatPropertyAddress } from "@/lib/walkthrough";
 
 export const Route = createFileRoute("/_app/admin")({
   component: AdminScreen,
@@ -798,18 +800,22 @@ function InviteAgentDialog({
 
 // ---------- Walkthroughs Tab ----------
 function WalkthroughsTab() {
+  const navigate = useNavigate();
+  const { user, role } = useAuth();
   const [rows, setRows] = useState<WalkRow[]>([]);
   const [agents, setAgents] = useState<
     Map<string, { name: string; email: string | null; avatar_url: string | null }>
   >(new Map());
+  const [adminEdits, setAdminEdits] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [query, setQuery] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
       setLoading(true);
-      const [{ data: walks, error }, { data: roles }, { data: profs }] = await Promise.all([
+      const [{ data: walks, error }, { data: roles }, { data: profs }, { data: edits }] = await Promise.all([
         supabase
           .from("walkthroughs")
           .select(
@@ -818,6 +824,7 @@ function WalkthroughsTab() {
           .order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id,full_name,email"),
         supabase.from("profiles").select("id,avatar_url"),
+        supabase.from("admin_edits").select("walkthrough_id,edited_at").order("edited_at", { ascending: false }),
       ]);
       if (error) {
         toast.error(error.message);
@@ -835,11 +842,47 @@ function WalkthroughsTab() {
           avatar_url: avatarMap.get(r.user_id) ?? null,
         });
       });
+      const editMap = new Map<string, string>();
+      (edits ?? []).forEach((e: { walkthrough_id: string; edited_at: string }) => {
+        if (!editMap.has(e.walkthrough_id)) editMap.set(e.walkthrough_id, e.edited_at);
+      });
+      setAdminEdits(editMap);
       setAgents(m);
       setRows((walks ?? []) as WalkRow[]);
       setLoading(false);
     })();
   }, []);
+
+  const handleEditWalkthrough = async (w: WalkRow) => {
+    if (!user) return;
+    const agent = agents.get(w.user_id);
+    setEditingId(w.id);
+    try {
+      const loaded = await resumeWalkthrough(w.id);
+      if (!loaded) {
+        toast.error("Could not load walkthrough");
+        setEditingId(null);
+        return;
+      }
+      const address = formatPropertyAddress(loaded.address) || `${formatStreet(w)} ${formatCityState(w)}`.trim();
+      setAdminEditing({
+        walkthroughId: w.id,
+        agentName: agent?.name ?? "agent",
+        agentId: w.user_id,
+        address,
+      });
+      const adminName = role?.full_name || role?.email || "admin";
+      await supabase.from("admin_edits").insert({
+        walkthrough_id: w.id,
+        edited_by: user.id,
+        note: `Admin edit by ${adminName}`,
+      });
+      navigate({ to: "/wizard/menu" });
+    } catch (e) {
+      toast.error((e as Error).message);
+      setEditingId(null);
+    }
+  };
 
   const filteredSorted = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -949,19 +992,40 @@ function WalkthroughsTab() {
                   <span className="truncate text-sm font-medium text-foreground">
                     {agent?.name ?? w.user_id.slice(0, 8)}
                   </span>
+                  {adminEdits.get(w.id) && (
+                    <Pill tone="amber" className="ml-auto">
+                      <ShieldAlert className="h-3 w-3" />
+                      Admin edited {fmtDate(adminEdits.get(w.id)!)}
+                    </Pill>
+                  )}
                 </div>
 
-                <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
                   <span className="text-xs text-muted-foreground">
                     Started {fmtDate(w.created_at)}
                   </span>
-                  <Link
-                    to="/review/$id"
-                    params={{ id: w.id }}
-                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                  >
-                    View Report
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleEditWalkthrough(w)}
+                      disabled={editingId === w.id}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-transparent px-3 text-xs font-semibold text-foreground hover:bg-secondary disabled:opacity-60"
+                    >
+                      {editingId === w.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Pencil className="h-3.5 w-3.5" />
+                      )}
+                      Edit Walkthrough
+                    </button>
+                    <Link
+                      to="/review/$id"
+                      params={{ id: w.id }}
+                      className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                    >
+                      View Report
+                    </Link>
+                  </div>
                 </div>
               </article>
             );

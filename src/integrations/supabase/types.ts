@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_edits: {
+        Row: {
+          edited_at: string
+          edited_by: string
+          id: string
+          note: string | null
+          walkthrough_id: string
+        }
+        Insert: {
+          edited_at?: string
+          edited_by: string
+          id?: string
+          note?: string | null
+          walkthrough_id: string
+        }
+        Update: {
+          edited_at?: string
+          edited_by?: string
+          id?: string
+          note?: string | null
+          walkthrough_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_edits_walkthrough_id_fkey"
+            columns: ["walkthrough_id"]
+            isOneToOne: false
+            referencedRelation: "walkthroughs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -35,7 +35,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { getSectionColor } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
-import { formatPropertyAddress, loadActive, updateWalkthrough, type Walkthrough } from "@/lib/walkthrough";
+import { exitAdminEdit, formatPropertyAddress, isAdminEditing, loadActive, updateWalkthrough, type Walkthrough } from "@/lib/walkthrough";
 import {
   buildQuestionList,
   hasUserAnswer,
@@ -85,6 +85,7 @@ function SectionMenuScreen() {
   const [tick, setTick] = useState(0);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const w: Walkthrough | null = useMemo(() => loadActive(), [tick]);
+  const adminEditing = useMemo(() => isAdminEditing(), [tick]);
 
   useEffect(() => {
     if (w) updateWalkthrough({ lastRoute: "/wizard/menu" });
@@ -328,21 +329,35 @@ function SectionMenuScreen() {
       {/* Footer actions */}
       <footer className="sticky bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto w-full max-w-2xl space-y-2 px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-3">
-          <button
-            type="button"
-            onClick={startFromBeginning}
-            className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-accent text-base font-semibold text-accent-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-accent/90 active:scale-[0.99]"
-          >
-            Start from Beginning →
-          </button>
-          {anyComplete && (
+          {adminEditing ? (
             <button
               type="button"
-              onClick={() => navigate({ to: "/wizard/checklist" })}
-              className="inline-flex h-12 w-full items-center justify-center rounded-2xl border-2 border-border bg-card text-sm font-semibold text-foreground transition-all hover:border-accent/40 active:scale-[0.99]"
+              onClick={() => {
+                void exitAdminEdit().then(() => navigate({ to: "/admin" }));
+              }}
+              className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-primary/90 active:scale-[0.99]"
             >
-              Review & Submit
+              Exit Admin Edit
             </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={startFromBeginning}
+                className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-accent text-base font-semibold text-accent-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-accent/90 active:scale-[0.99]"
+              >
+                Start from Beginning →
+              </button>
+              {anyComplete && (
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/wizard/checklist" })}
+                  className="inline-flex h-12 w-full items-center justify-center rounded-2xl border-2 border-border bg-card text-sm font-semibold text-foreground transition-all hover:border-accent/40 active:scale-[0.99]"
+                >
+                  Review & Submit
+                </button>
+              )}
+            </>
           )}
         </div>
       </footer>

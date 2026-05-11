@@ -4,7 +4,7 @@ import { NotesField } from "@/components/NotesField";
 import { PhotoCapture } from "@/components/PhotoCapture";
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
-import { loadActive, setAnswer, updateWalkthrough } from "@/lib/walkthrough";
+import { isAdminEditing, loadActive, setAnswer, updateWalkthrough } from "@/lib/walkthrough";
 
 const QID = "lockbox_code";
 const SECTION = 1;
@@ -90,6 +90,7 @@ function LockboxScreen() {
             Lockbox location photo <span className="text-critical">*</span>
           </p>
           <PhotoCapture
+            readOnly={isAdminEditing()}
             photos={photos}
             onChange={setPhotos}
             error={attempted && !photoOk}

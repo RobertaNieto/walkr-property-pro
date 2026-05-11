@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Home as HomeIcon, MapPin, Save } from "lucide-react";
-import { ReactNode, useMemo, useState } from "react";
+import { Home as HomeIcon, MapPin, Save, ShieldAlert } from "lucide-react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,7 +12,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { formatPropertyAddress, formatTimestamp, loadActive } from "@/lib/walkthrough";
+import {
+  exitAdminEdit,
+  formatPropertyAddress,
+  formatTimestamp,
+  getAdminEditing,
+  loadActive,
+  type AdminEditMeta,
+} from "@/lib/walkthrough";
 
 const SECTION_COLORS: Record<number, string> = {
   1: "#1B3A6B",
@@ -72,6 +79,11 @@ export function WizardLayout({
   const navigate = useNavigate();
   const propertyAddress = useMemo(() => formatPropertyAddress(loadActive()?.address), []);
   const [homeConfirmOpen, setHomeConfirmOpen] = useState(false);
+  const [adminEdit, setAdminEdit] = useState<AdminEditMeta | null>(null);
+
+  useEffect(() => {
+    setAdminEdit(getAdminEditing());
+  }, []);
 
   const handleBack = () => {
     if (onBack) {
@@ -81,13 +93,29 @@ export function WizardLayout({
     }
   };
 
-  const handleConfirmLeave = () => {
+  const handleConfirmLeave = async () => {
     setHomeConfirmOpen(false);
+    if (adminEdit) {
+      await exitAdminEdit();
+      void navigate({ to: "/admin" });
+      return;
+    }
     void navigate({ to: "/" });
   };
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background">
+      {adminEdit && (
+        <div className="sticky top-0 z-30 border-b border-amber-500/40 bg-amber-500/15 px-4 py-2 text-amber-900 dark:text-amber-200">
+          <div className="mx-auto flex w-full max-w-2xl items-start gap-2">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            <p className="text-[12px] font-semibold leading-snug">
+              You are editing {adminEdit.agentName}'s walkthrough
+              {adminEdit.address ? ` for ${adminEdit.address}` : ""}. Changes save immediately.
+            </p>
+          </div>
+        </div>
+      )}
       {/* Sticky top */}
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto w-full max-w-2xl px-4 pb-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
@@ -182,14 +210,18 @@ export function WizardLayout({
       <AlertDialog open={homeConfirmOpen} onOpenChange={setHomeConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave walkthrough?</AlertDialogTitle>
+            <AlertDialogTitle>{adminEdit ? "Exit admin edit?" : "Leave walkthrough?"}</AlertDialogTitle>
             <AlertDialogDescription>
-              Your progress is saved automatically.
+              {adminEdit
+                ? "Your edits are already saved. You'll return to the admin panel."
+                : "Your progress is saved automatically."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Stay</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmLeave}>Leave</AlertDialogAction>
+            <AlertDialogAction onClick={() => void handleConfirmLeave()}>
+              {adminEdit ? "Exit" : "Leave"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

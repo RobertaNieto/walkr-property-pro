@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Navigate, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Check, Loader2, MapPin } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -7,6 +7,7 @@ import {
   COMPLETING_KEY,
   completeWalkthrough,
   formatPropertyAddress,
+  isAdminEditing,
   loadActive,
   setAnswer,
   type WizardAnswer,
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/_app/wizard/checklist")({
 
 function ChecklistScreen() {
   const router = useRouter();
+  const adminEditing = useMemo(() => isAdminEditing(), []);
   const w = useMemo(() => loadActive(), []);
   const [items, setItems] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -87,6 +89,10 @@ function ChecklistScreen() {
       setSubmitting(false);
     }
   };
+
+  if (adminEditing) {
+    return <Navigate to="/wizard/menu" replace />;
+  }
 
   if (completing) {
     return (
