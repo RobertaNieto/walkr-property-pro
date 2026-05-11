@@ -1005,10 +1005,19 @@ function WalkthroughsTab() {
                   <span className="text-xs text-muted-foreground">
                     Started {fmtDate(w.created_at)}
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => void handleEditWalkthrough(w)}
+                      onClick={() => void handleEditWalkthrough(w, "fix")}
+                      disabled={editingId === w.id}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 text-xs font-semibold text-amber-700 hover:bg-amber-500/20 disabled:opacity-60 dark:text-amber-400"
+                    >
+                      <ShieldAlert className="h-3.5 w-3.5" />
+                      Fix Missing Items
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleEditWalkthrough(w, "edit")}
                       disabled={editingId === w.id}
                       className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-transparent px-3 text-xs font-semibold text-foreground hover:bg-secondary disabled:opacity-60"
                     >
