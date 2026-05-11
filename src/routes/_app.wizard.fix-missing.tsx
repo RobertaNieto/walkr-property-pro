@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   CloudUpload,
   ExternalLink,
+  Film,
   Loader2,
   XCircle,
 } from "lucide-react";
@@ -25,7 +26,7 @@ import {
   type QuestionDef,
   type SkipContext,
 } from "@/lib/wizard-schema";
-import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import { uploadPhotosWithRetry, uploadVideosWithRetry, type UploadProgress } from "@/lib/drive-upload";
 
 export const Route = createFileRoute("/_app/wizard/fix-missing")({
   component: FixMissingScreen,
@@ -39,6 +40,7 @@ interface MissingItem {
 type UploadState =
   | { kind: "idle" }
   | { kind: "uploading"; progress: UploadProgress }
+  | { kind: "photos_done"; url: string; pendingVideos: number }
   | { kind: "success"; url: string }
   | { kind: "error"; message: string };
 
@@ -107,23 +109,49 @@ function FixMissingScreen() {
     navigate({ to: "/admin" });
   };
 
-  const handleUpload = async () => {
+  const handleUploadPhotos = async () => {
     if (!user || !w || upload.kind === "uploading") return;
     setUpload({
       kind: "uploading",
       progress: { phase: "staging", current: 0, total: 0, message: "Starting…" },
     });
-    const res = await uploadWithRetry(
+    const res = await uploadPhotosWithRetry(
       w,
       user.id,
       (p) => setUpload({ kind: "uploading", progress: p }),
       3,
       { mode: "reupload", targetUserId: adminEdit.agentId, isAdmin: true },
     );
-    if (res.success && res.driveFolderUrl) {
+    if (!res.success || !res.driveFolderUrl) {
+      setUpload({ kind: "error", message: res.error ?? "Upload failed" });
+      return;
+    }
+    const pending = res.videosPending?.length ?? 0;
+    if (pending === 0) {
       setUpload({ kind: "success", url: res.driveFolderUrl });
     } else {
-      setUpload({ kind: "error", message: res.error ?? "Upload failed" });
+      setUpload({ kind: "photos_done", url: res.driveFolderUrl, pendingVideos: pending });
+    }
+  };
+
+  const handleUploadVideos = async () => {
+    if (!user || !w || upload.kind === "uploading") return;
+    const currentUrl = upload.kind === "photos_done" ? upload.url : null;
+    setUpload({
+      kind: "uploading",
+      progress: { phase: "staging", current: 0, total: 0, message: "Starting video upload…" },
+    });
+    const res = await uploadVideosWithRetry(
+      w,
+      user.id,
+      (p) => setUpload({ kind: "uploading", progress: p }),
+      3,
+      { mode: "reupload", targetUserId: adminEdit.agentId, isAdmin: true },
+    );
+    if (res.success && (res.driveFolderUrl ?? currentUrl)) {
+      setUpload({ kind: "success", url: res.driveFolderUrl ?? currentUrl! });
+    } else {
+      setUpload({ kind: "error", message: res.error ?? "Video upload failed" });
     }
   };
 
@@ -261,17 +289,40 @@ function FixMissingScreen() {
             </div>
           )}
 
+          {upload.kind === "photos_done" && (
+            <>
+              <div className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-success px-4 text-sm font-semibold text-success-foreground">
+                <CheckCircle2 className="h-4 w-4" />
+                ✓ Photos &amp; Report Uploaded
+              </div>
+              <a
+                href={upload.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-secondary"
+              >
+                View in Drive →
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </>
+          )}
+
           {upload.kind === "success" && (
-            <a
-              href={upload.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-success px-4 text-sm font-semibold text-success-foreground hover:bg-success/90"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Re-uploaded — Open in Drive
-              <ExternalLink className="h-4 w-4" />
-            </a>
+            <>
+              <div className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-success px-4 text-sm font-semibold text-success-foreground">
+                <CheckCircle2 className="h-4 w-4" />
+                Fully Uploaded ✓
+              </div>
+              <a
+                href={upload.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-secondary"
+              >
+                View in Drive →
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </>
           )}
 
           {upload.kind === "error" && (
@@ -281,16 +332,32 @@ function FixMissingScreen() {
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={() => void handleUpload()}
-            disabled={!allClear || uploading}
-            className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-            title={!allClear ? "Resolve all missing items first" : undefined}
-          >
-            <CloudUpload className="h-5 w-5" />
-            {allClear ? "Upload to Drive" : `${totalMissing} item${totalMissing === 1 ? "" : "s"} remaining`}
-          </button>
+          {upload.kind !== "photos_done" && upload.kind !== "success" && (
+            <button
+              type="button"
+              onClick={() => void handleUploadPhotos()}
+              disabled={!allClear || uploading}
+              className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              title={!allClear ? "Resolve all missing items first" : undefined}
+            >
+              <CloudUpload className="h-5 w-5" />
+              {allClear
+                ? "Upload Photos & Report to Drive"
+                : `${totalMissing} item${totalMissing === 1 ? "" : "s"} remaining`}
+            </button>
+          )}
+
+          {upload.kind === "photos_done" && (
+            <button
+              type="button"
+              onClick={() => void handleUploadVideos()}
+              disabled={uploading}
+              className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Film className="h-5 w-5" />
+              Upload Videos to Drive ({upload.pendingVideos})
+            </button>
+          )}
 
           <button
             type="button"

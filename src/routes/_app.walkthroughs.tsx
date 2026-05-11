@@ -590,13 +590,13 @@ function CompletedCard({
             {status === "success" && (
               <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-semibold text-success ring-1 ring-success/30">
                 <CheckCircle2 className="h-2.5 w-2.5" />
-                Fully uploaded
+                Fully Uploaded ✓
               </span>
             )}
             {status === "photos_done" && (
-              <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-500/30 dark:text-amber-400">
+              <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary ring-1 ring-primary/30">
                 <ImageIcon className="h-2.5 w-2.5" />
-                Photos uploaded
+                Photos Uploaded
               </span>
             )}
             <p className="mt-1.5 truncate text-base font-bold text-foreground">
@@ -680,7 +680,7 @@ function CompletedCard({
                 className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <Film className="h-4 w-4" />
-                Upload Videos{pendingVideos > 0 ? ` (${pendingVideos})` : ""}
+                Upload Videos to Drive{pendingVideos > 0 ? ` (${pendingVideos})` : ""}
               </button>
               {driveUrl && (
                 <a
@@ -715,7 +715,7 @@ function CompletedCard({
                       incompleteCount > 0 ? ` (${incompleteCount} remaining)` : ""
                     }`
               }
-              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-sm font-semibold text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {status === "uploading" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
