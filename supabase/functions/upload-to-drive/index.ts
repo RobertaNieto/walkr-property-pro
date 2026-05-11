@@ -1179,9 +1179,21 @@ Deno.serve(async (req) => {
       .single();
     if (walkErr || !walkRow) throw new Error(`Upload failed: walkthrough ${walkId} was not found`);
     if (walkRow.user_id !== userId) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      // Allow admins to upload on behalf of an agent (Fix Missing Items flow).
+      const { data: roleRow } = await admin
+        .from("user_roles")
+        .select("role,status")
+        .eq("user_id", userId)
+        .maybeSingle();
+      const isAdmin = roleRow?.role === "admin" && roleRow?.status === "active";
+      if (!isAdmin) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      console.log("[upload-to-drive] admin re-upload on behalf of agent", {
+        adminId: userId, agentId: walkRow.user_id, walkthroughId: walkId,
       });
     }
     const walk = walkRow as Walkthrough;
