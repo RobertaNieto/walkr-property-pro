@@ -109,17 +109,6 @@ function FixMissingScreen() {
     navigate({ to: "/admin" });
   };
 
-  const pendingVideoCount = useMemo(() => {
-    if (!w) return 0;
-    let n = 0;
-    for (const ans of Object.values(w.answers ?? {})) {
-      for (const fn of [...(ans.photoNames ?? []), ...(ans.poorPhotoNames ?? [])]) {
-        if (fn && /\.(mp4|mov)$/i.test(fn)) n++;
-      }
-    }
-    return n;
-  }, [w]);
-
   const handleUploadPhotos = async () => {
     if (!user || !w || upload.kind === "uploading") return;
     setUpload({
