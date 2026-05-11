@@ -49,6 +49,7 @@ interface Walkthrough {
   config: Record<string, unknown>;
   answers: Record<string, AnswerRow>;
   completed_at: string | null;
+  drive_folder_url?: string | null;
 }
 
 interface AnswerRow {
