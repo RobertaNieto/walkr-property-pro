@@ -247,9 +247,6 @@ if (typeof window !== "undefined") {
   });
 }
 
-// In-memory mirror. Source of truth for the running session; localStorage is
-// only used for cross-reload survival.
-const memCache = new Map<string, Walkthrough>();
 
 // Strip embedded data: / blob: photo URLs before persisting. Photos belong in
 // IndexedDB (photo-store). Any data URL that slipped into answers (legacy
