@@ -27,6 +27,8 @@ import {
   type SkipContext,
 } from "@/lib/wizard-schema";
 import { uploadPhotosWithRetry, uploadVideosWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import type { MissingPhotoLocation } from "@/lib/missing-photo";
+import { UploadErrorBanner } from "@/components/UploadErrorBanner";
 
 export const Route = createFileRoute("/_app/wizard/fix-missing")({
   component: FixMissingScreen,
