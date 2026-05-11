@@ -196,6 +196,7 @@ export async function uploadPhotosPhase(
       status: data.status,
     };
   } catch (e) {
+    if (e instanceof MissingLocalPhotoError) return buildMissingPhotoFailure(walk, e);
     return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
