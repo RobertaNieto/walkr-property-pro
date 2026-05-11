@@ -69,10 +69,16 @@ export interface Walkthrough {
   uploadedAt?: number | null;
 }
 
-const ACTIVE_KEY = "propertywalk:active-id";
-const CACHE_PREFIX = "propertywalk:cache:";
-const COMPLETED_KEY = "propertywalk_completed";
-const ADMIN_EDIT_KEY = "propertywalk:admin-editing";
+// All keys are scoped per-user via scopedKey() so two accounts on the same
+// device cannot read or overwrite each other's local state.
+import { onUserScopeChange, scopedKey } from "./local-scope";
+
+const ACTIVE_KEY = () => scopedKey("propertywalk:active-id");
+const CACHE_PREFIX = () => `${scopedKey("propertywalk:cache")}:`;
+const COMPLETED_KEY = () => scopedKey("propertywalk_completed");
+const ADMIN_EDIT_KEY = () => scopedKey("propertywalk:admin-editing");
+// COMPLETING_KEY is intentionally unscoped — it is a transient flag used in
+// the same-user sign-out path and is cleared on next mount.
 export const COMPLETING_KEY = "propertywalk_completing";
 const MAX_COMPLETED = 50;
 
