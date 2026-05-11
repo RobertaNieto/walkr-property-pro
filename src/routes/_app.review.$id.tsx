@@ -357,9 +357,10 @@ function ReviewScreen() {
       }
       const list = a.photos ?? [];
       list.forEach((entry, i) => {
-        const src = resolvePhotoSrc(entry);
-        if (!src) return;
         const filename = a.photoNames?.[i] ?? `${q.photoName ?? q.id.toUpperCase()}.${q.field === "video" ? "mp4" : "jpg"}`;
+        const resolved = resolveSrcFor(entry, filename);
+        if (!resolved) return; // still loading — skip this render pass
+        const src = "missing" in resolved ? null : resolved.src;
         const item: PhotoEntry = {
           src,
           filename,
