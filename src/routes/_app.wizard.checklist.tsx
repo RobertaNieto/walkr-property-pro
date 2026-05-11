@@ -22,6 +22,9 @@ export const Route = createFileRoute("/_app/wizard/checklist")({
 
 function ChecklistScreen() {
   const router = useRouter();
+  if (isAdminEditing()) {
+    return <Navigate to="/wizard/menu" replace />;
+  }
   const w = useMemo(() => loadActive(), []);
   const [items, setItems] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
