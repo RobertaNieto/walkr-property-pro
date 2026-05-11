@@ -300,17 +300,40 @@ function FixMissingScreen() {
             </div>
           )}
 
+          {upload.kind === "photos_done" && (
+            <>
+              <div className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-success px-4 text-sm font-semibold text-success-foreground">
+                <CheckCircle2 className="h-4 w-4" />
+                ✓ Photos &amp; Report Uploaded
+              </div>
+              <a
+                href={upload.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-secondary"
+              >
+                View in Drive →
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </>
+          )}
+
           {upload.kind === "success" && (
-            <a
-              href={upload.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-success px-4 text-sm font-semibold text-success-foreground hover:bg-success/90"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Re-uploaded — Open in Drive
-              <ExternalLink className="h-4 w-4" />
-            </a>
+            <>
+              <div className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-success px-4 text-sm font-semibold text-success-foreground">
+                <CheckCircle2 className="h-4 w-4" />
+                Fully Uploaded ✓
+              </div>
+              <a
+                href={upload.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-secondary"
+              >
+                View in Drive →
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </>
           )}
 
           {upload.kind === "error" && (
@@ -320,16 +343,32 @@ function FixMissingScreen() {
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={() => void handleUpload()}
-            disabled={!allClear || uploading}
-            className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-            title={!allClear ? "Resolve all missing items first" : undefined}
-          >
-            <CloudUpload className="h-5 w-5" />
-            {allClear ? "Upload to Drive" : `${totalMissing} item${totalMissing === 1 ? "" : "s"} remaining`}
-          </button>
+          {upload.kind !== "photos_done" && upload.kind !== "success" && (
+            <button
+              type="button"
+              onClick={() => void handleUploadPhotos()}
+              disabled={!allClear || uploading}
+              className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              title={!allClear ? "Resolve all missing items first" : undefined}
+            >
+              <CloudUpload className="h-5 w-5" />
+              {allClear
+                ? "Upload Photos & Report to Drive"
+                : `${totalMissing} item${totalMissing === 1 ? "" : "s"} remaining`}
+            </button>
+          )}
+
+          {upload.kind === "photos_done" && (
+            <button
+              type="button"
+              onClick={() => void handleUploadVideos()}
+              disabled={uploading}
+              className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Film className="h-5 w-5" />
+              Upload Videos to Drive ({upload.pendingVideos})
+            </button>
+          )}
 
           <button
             type="button"
