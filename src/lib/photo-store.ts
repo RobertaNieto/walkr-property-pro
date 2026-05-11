@@ -90,24 +90,19 @@ export async function removePhoto(filename: string): Promise<void> {
 }
 
 // Preload a filename from IDB into memCache so future resolvePhotoSrc calls
-// return it synchronously.
+// return it synchronously. Reads from the per-user scoped DB first; if the
+// photo is missing there (e.g. captured before the per-user scoping change),
+// falls back to the legacy unscoped DB so existing agent walkthroughs keep
+// working.
 export async function preloadPhoto(filename: string): Promise<string | undefined> {
   if (memCache.has(filename)) return memCache.get(filename);
-  try {
-    const db = await openDB();
-    return new Promise((resolve) => {
-      const tx = db.transaction(STORE, "readonly");
-      const req = tx.objectStore(STORE).get(filename);
-      req.onsuccess = () => {
-        const val = req.result as string | undefined;
-        if (val) memCache.set(filename, val);
-        resolve(val);
-      };
-      req.onerror = () => resolve(undefined);
-    });
-  } catch {
-    return undefined;
+  let val = await readFromDB(dbName(), filename);
+  if (!val) {
+    // Legacy unscoped database — used before per-user scoping was introduced.
+    val = await readFromDB(DB_NAME_BASE, filename);
   }
+  if (val) memCache.set(filename, val);
+  return val;
 }
 
 // Synchronous resolver — checks memory cache first, then localStorage legacy.
