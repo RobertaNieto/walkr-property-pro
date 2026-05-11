@@ -1179,9 +1179,21 @@ Deno.serve(async (req) => {
       .single();
     if (walkErr || !walkRow) throw new Error(`Upload failed: walkthrough ${walkId} was not found`);
     if (walkRow.user_id !== userId) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      // Allow admins to upload on behalf of an agent (Fix Missing Items flow).
+      const { data: roleRow } = await admin
+        .from("user_roles")
+        .select("role,status")
+        .eq("user_id", userId)
+        .maybeSingle();
+      const isAdmin = roleRow?.role === "admin" && roleRow?.status === "active";
+      if (!isAdmin) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      console.log("[upload-to-drive] admin re-upload on behalf of agent", {
+        adminId: userId, agentId: walkRow.user_id, walkthroughId: walkId,
       });
     }
     const walk = walkRow as Walkthrough;
@@ -1261,7 +1273,9 @@ Deno.serve(async (req) => {
 
     // Upload one staged file: download from Supabase Storage, push to Drive.
     const uploadOne = async (fname: string): Promise<boolean> => {
-      const path = `${userId}/${walkId}/${fname}`;
+      // Files are always staged under the walkthrough owner's user folder,
+      // even when an admin triggers re-upload on behalf of an agent.
+      const path = `${walk.user_id}/${walkId}/${fname}`;
       const { data: blob, error: dlErr } = await admin.storage
         .from("walkthrough-photos")
         .download(path);

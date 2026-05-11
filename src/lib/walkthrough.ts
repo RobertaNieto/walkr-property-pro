@@ -84,6 +84,8 @@ export interface AdminEditMeta {
   agentName: string;
   agentId: string;
   address: string;
+  // "edit" = full wizard edit; "fix" = Fix Missing Items flow.
+  mode?: "edit" | "fix";
 }
 
 export function setAdminEditing(meta: AdminEditMeta | null) {

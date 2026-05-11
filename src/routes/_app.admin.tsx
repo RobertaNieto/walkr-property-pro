@@ -853,7 +853,7 @@ function WalkthroughsTab() {
     })();
   }, []);
 
-  const handleEditWalkthrough = async (w: WalkRow) => {
+  const handleEditWalkthrough = async (w: WalkRow, mode: "edit" | "fix" = "edit") => {
     if (!user) return;
     const agent = agents.get(w.user_id);
     setEditingId(w.id);
@@ -870,14 +870,15 @@ function WalkthroughsTab() {
         agentName: agent?.name ?? "agent",
         agentId: w.user_id,
         address,
+        mode,
       });
       const adminName = role?.full_name || role?.email || "admin";
       await supabase.from("admin_edits").insert({
         walkthrough_id: w.id,
         edited_by: user.id,
-        note: `Admin edit by ${adminName}`,
+        note: mode === "fix" ? `Fix Missing Items by ${adminName}` : `Admin edit by ${adminName}`,
       });
-      navigate({ to: "/wizard/menu" });
+      navigate({ to: mode === "fix" ? "/wizard/fix-missing" : "/wizard/menu" });
     } catch (e) {
       toast.error((e as Error).message);
       setEditingId(null);
@@ -1004,10 +1005,19 @@ function WalkthroughsTab() {
                   <span className="text-xs text-muted-foreground">
                     Started {fmtDate(w.created_at)}
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => void handleEditWalkthrough(w)}
+                      onClick={() => void handleEditWalkthrough(w, "fix")}
+                      disabled={editingId === w.id}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 text-xs font-semibold text-amber-700 hover:bg-amber-500/20 disabled:opacity-60 dark:text-amber-400"
+                    >
+                      <ShieldAlert className="h-3.5 w-3.5" />
+                      Fix Missing Items
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleEditWalkthrough(w, "edit")}
                       disabled={editingId === w.id}
                       className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-transparent px-3 text-xs font-semibold text-foreground hover:bg-secondary disabled:opacity-60"
                     >
