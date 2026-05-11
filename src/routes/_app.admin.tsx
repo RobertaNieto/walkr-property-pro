@@ -853,7 +853,7 @@ function WalkthroughsTab() {
     })();
   }, []);
 
-  const handleEditWalkthrough = async (w: WalkRow) => {
+  const handleEditWalkthrough = async (w: WalkRow, mode: "edit" | "fix" = "edit") => {
     if (!user) return;
     const agent = agents.get(w.user_id);
     setEditingId(w.id);
@@ -870,14 +870,15 @@ function WalkthroughsTab() {
         agentName: agent?.name ?? "agent",
         agentId: w.user_id,
         address,
+        mode,
       });
       const adminName = role?.full_name || role?.email || "admin";
       await supabase.from("admin_edits").insert({
         walkthrough_id: w.id,
         edited_by: user.id,
-        note: `Admin edit by ${adminName}`,
+        note: mode === "fix" ? `Fix Missing Items by ${adminName}` : `Admin edit by ${adminName}`,
       });
-      navigate({ to: "/wizard/menu" });
+      navigate({ to: mode === "fix" ? "/wizard/fix-missing" : "/wizard/menu" });
     } catch (e) {
       toast.error((e as Error).message);
       setEditingId(null);
