@@ -56,6 +56,7 @@ export type WizardAnswers = Record<string, WizardAnswer>;
 
 export interface Walkthrough {
   id: string;
+  userId?: string;
   createdAt: number;
   updatedAt: number;
   address: PropertyAddress;
