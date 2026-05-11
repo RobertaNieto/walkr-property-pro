@@ -15,6 +15,8 @@ import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { completeWalkthrough, fetchById, formatPropertyAddress, isAdminEditing, submitWalkthrough, type Walkthrough } from "@/lib/walkthrough";
 import { uploadPhotosWithRetry, uploadVideosWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import type { MissingPhotoLocation } from "@/lib/missing-photo";
+import { UploadErrorBanner } from "@/components/UploadErrorBanner";
 import { useAuth } from "@/lib/auth";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 
