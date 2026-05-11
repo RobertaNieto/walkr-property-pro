@@ -701,15 +701,23 @@ function CompletedCard({
               )}
             </div>
           ) : status === "error" ? (
-            <button
-              type="button"
-              onClick={handleUpload}
-              title={error ?? undefined}
-              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-critical text-sm font-semibold text-critical-foreground transition-colors hover:bg-critical/90"
-            >
-              <AlertTriangle className="h-4 w-4" />
-              Upload Failed — Retry
-            </button>
+            <div className="flex w-full flex-1 flex-col gap-1.5">
+              {(error || missingPhoto) && (
+                <UploadErrorBanner
+                  message={error ?? "Upload failed"}
+                  missingPhoto={missingPhoto ?? undefined}
+                />
+              )}
+              <button
+                type="button"
+                onClick={handleUpload}
+                title={error ?? undefined}
+                className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-critical text-sm font-semibold text-critical-foreground transition-colors hover:bg-critical/90"
+              >
+                <AlertTriangle className="h-4 w-4" />
+                Upload Failed — Retry
+              </button>
+            </div>
           ) : hasAnyContent ? (
             <button
               type="button"
