@@ -98,8 +98,8 @@ export interface AdminEditMeta {
 export function setAdminEditing(meta: AdminEditMeta | null) {
   if (typeof window === "undefined") return;
   try {
-    if (meta) localStorage.setItem(ADMIN_EDIT_KEY, JSON.stringify(meta));
-    else localStorage.removeItem(ADMIN_EDIT_KEY);
+    if (meta) localStorage.setItem(ADMIN_EDIT_KEY(), JSON.stringify(meta));
+    else localStorage.removeItem(ADMIN_EDIT_KEY());
   } catch {
     // ignore
   }
@@ -108,7 +108,7 @@ export function setAdminEditing(meta: AdminEditMeta | null) {
 export function getAdminEditing(): AdminEditMeta | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(ADMIN_EDIT_KEY);
+    const raw = localStorage.getItem(ADMIN_EDIT_KEY());
     if (!raw) return null;
     const m = JSON.parse(raw) as AdminEditMeta;
     const active = getActiveId();
@@ -180,7 +180,7 @@ function buildCompletedSummary(w: Walkthrough): CompletedSummary {
 function writeCompletedList(summaries: CompletedSummary[]) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(COMPLETED_KEY, JSON.stringify(summaries));
+    localStorage.setItem(COMPLETED_KEY(), JSON.stringify(summaries));
   } catch (e) {
     console.warn(
       "[walkthrough] localStorage quota exceeded — Supabase has the data",
@@ -193,7 +193,7 @@ function writeCompletedList(summaries: CompletedSummary[]) {
 export function listCompletedLocal(): CompletedSummary[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(COMPLETED_KEY);
+    const raw = localStorage.getItem(COMPLETED_KEY());
     if (!raw) return [];
     const arr = JSON.parse(raw) as CompletedSummary[];
     return Array.isArray(arr) ? arr : [];
@@ -293,13 +293,13 @@ function writeCache(w: Walkthrough) {
   try {
     const safe = stripEmbeddedPhotos(w);
     localStorage.setItem(cacheKey(w.id), JSON.stringify(safe));
-    localStorage.setItem(ACTIVE_KEY, w.id);
+    localStorage.setItem(ACTIVE_KEY(), w.id);
   } catch (e) {
     // Quota exceeded or storage unavailable — Supabase remains the source
     // of truth; in-memory mirror keeps the UI responsive for this session.
     console.warn("[walkthrough] writeCache failed (quota?)", e);
     try {
-      localStorage.setItem(ACTIVE_KEY, w.id);
+      localStorage.setItem(ACTIVE_KEY(), w.id);
     } catch {
       // ignore
     }
@@ -311,8 +311,8 @@ function clearCache(id: string) {
   if (typeof window === "undefined") return;
   try {
     localStorage.removeItem(cacheKey(id));
-    if (localStorage.getItem(ACTIVE_KEY) === id) {
-      localStorage.removeItem(ACTIVE_KEY);
+    if (localStorage.getItem(ACTIVE_KEY()) === id) {
+      localStorage.removeItem(ACTIVE_KEY());
     }
   } catch {
     // ignore
@@ -322,7 +322,7 @@ function clearCache(id: string) {
 export function getActiveId(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return localStorage.getItem(ACTIVE_KEY);
+    return localStorage.getItem(ACTIVE_KEY());
   } catch {
     return null;
   }
@@ -331,7 +331,7 @@ export function getActiveId(): string | null {
 export function setActiveId(id: string) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(ACTIVE_KEY, id);
+    localStorage.setItem(ACTIVE_KEY(), id);
   } catch (e) {
     console.warn("[walkthrough] setActiveId failed", e);
   }
