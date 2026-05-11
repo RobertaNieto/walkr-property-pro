@@ -266,6 +266,7 @@ export async function uploadVideosPhase(
     onProgress?.({ phase: "done", current: total, total, message: "Videos uploaded" });
     return { success: true, driveFolderUrl, status: "confirmed" };
   } catch (e) {
+    if (e instanceof MissingLocalPhotoError) return buildMissingPhotoFailure(walk, e);
     return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
