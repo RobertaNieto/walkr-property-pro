@@ -190,17 +190,26 @@ export async function uploadPhotosPhase(
     if (!data?.success) throw new Error(data?.error ?? "Upload failed");
 
     const videosPending = (data.videos as string[] | undefined) ?? [];
+    const isPartial = data.partial === true || data.status === "partial";
     onProgress?.({
       phase: "done",
       current: total,
       total,
-      message: videosPending.length > 0 ? "Photos & report uploaded" : "Upload complete",
+      message: isPartial
+        ? (data.message as string | undefined) ?? "Some photos uploaded"
+        : videosPending.length > 0
+          ? "Photos & report uploaded"
+          : "Upload complete",
     });
     return {
       success: true,
       driveFolderUrl: data.driveFolderUrl,
       videosPending,
       status: data.status,
+      partial: isPartial,
+      photosUploaded: data.photosUploaded,
+      photosTotal: data.photosTotal,
+      partialMessage: data.message,
     };
   } catch (e) {
     if (e instanceof MissingLocalPhotoError) return buildMissingPhotoFailure(walk, e);
