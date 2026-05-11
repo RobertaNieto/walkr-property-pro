@@ -680,7 +680,7 @@ function CompletedCard({
                 className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <Film className="h-4 w-4" />
-                Upload Videos{pendingVideos > 0 ? ` (${pendingVideos})` : ""}
+                Upload Videos to Drive{pendingVideos > 0 ? ` (${pendingVideos})` : ""}
               </button>
               {driveUrl && (
                 <a
