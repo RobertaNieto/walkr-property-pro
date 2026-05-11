@@ -73,7 +73,7 @@ export async function uploadWalkthroughToDrive(
   walk: Walkthrough,
   userId: string,
   onProgress?: (p: UploadProgress) => void,
-  options?: { mode?: "initial" | "reupload" },
+  options?: { mode?: "initial" | "reupload"; targetUserId?: string; isAdmin?: boolean },
 ): Promise<UploadResult> {
   try {
     if (!userId) throw new Error("You must be signed in before uploading to Drive");
@@ -81,7 +81,12 @@ export async function uploadWalkthroughToDrive(
       throw new Error("Invalid walkthroughId: the selected walkthrough could not be uploaded");
     }
 
-    console.log("[drive-upload] starting", { walkthroughId: walk.id, userId });
+    // When an admin re-uploads on behalf of an agent, files are staged under
+    // the agent's user folder so the edge function (which uses walk.user_id)
+    // can find them.
+    const stagingUserId = options?.targetUserId ?? userId;
+
+    console.log("[drive-upload] starting", { walkthroughId: walk.id, userId, stagingUserId });
 
     const { data: existingWalk, error: walkErr } = await supabase
       .from("walkthroughs")
@@ -90,7 +95,9 @@ export async function uploadWalkthroughToDrive(
       .maybeSingle();
     if (walkErr) throw new Error(`Could not validate walkthroughId: ${walkErr.message}`);
     if (!existingWalk) throw new Error(`Walkthrough ${walk.id} was not found in the database`);
-    if (existingWalk.user_id !== userId) throw new Error("This walkthrough belongs to a different signed-in user");
+    if (existingWalk.user_id !== userId && !options?.isAdmin) {
+      throw new Error("This walkthrough belongs to a different signed-in user");
+    }
 
     const names = collectMediaNames(walk);
     const total = names.length;
