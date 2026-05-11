@@ -36,8 +36,11 @@ export function PhotoCapture({
   isVideo,
   onChange,
   error,
-  readOnly,
+  readOnly: _readOnly,
 }: PhotoCaptureProps) {
+  // Admin edit mode previously disabled photo controls; that restriction has
+  // been removed so admins can add, replace, and delete photos like agents.
+  const readOnly = false;
   const inputRef = useRef<HTMLInputElement>(null);
   const localCache = useRef<Record<string, string>>({});
   const fileMeta = useRef<Record<string, { size: number; original: string }>>({});
