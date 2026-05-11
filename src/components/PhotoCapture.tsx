@@ -116,53 +116,63 @@ export function PhotoCapture({
 
   return (
     <div className="space-y-3">
-      <input
-        ref={inputRef}
-        type="file"
-        accept={isVideo ? "video/*" : "image/*"}
-        multiple
-        className="hidden"
-        onChange={handleFiles}
-      />
-      <button
-        type="button"
-        disabled={processing}
-        onClick={() => inputRef.current?.click()}
-        className={cn(
-          "flex min-h-16 w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-3 py-2 text-base font-semibold transition-colors active:scale-[0.99] disabled:opacity-60",
-          error
-            ? "field-error border-critical bg-critical/5 text-critical"
-            : "border-accent/40 bg-accent/5 text-accent hover:border-accent hover:bg-accent/10"
-        )}
-      >
-        {processing ? (
-          <>
-            <Loader2 className="h-6 w-6 animate-spin" />
-            Processing photo…
-          </>
-        ) : isVideo ? (
-          <>
-            <Camera className="h-6 w-6" />
-            Add Video
-          </>
-        ) : (
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="text-base font-bold">📷 Add Photo</span>
-            <span className="text-xs font-normal opacity-75">
-              🔄 Landscape orientation required
-            </span>
-          </div>
-        )}
-      </button>
+      {!readOnly && (
+        <>
+          <input
+            ref={inputRef}
+            type="file"
+            accept={isVideo ? "video/*" : "image/*"}
+            multiple
+            className="hidden"
+            onChange={handleFiles}
+          />
+          <button
+            type="button"
+            disabled={processing}
+            onClick={() => inputRef.current?.click()}
+            className={cn(
+              "flex min-h-16 w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-3 py-2 text-base font-semibold transition-colors active:scale-[0.99] disabled:opacity-60",
+              error
+                ? "field-error border-critical bg-critical/5 text-critical"
+                : "border-accent/40 bg-accent/5 text-accent hover:border-accent hover:bg-accent/10"
+            )}
+          >
+            {processing ? (
+              <>
+                <Loader2 className="h-6 w-6 animate-spin" />
+                Processing photo…
+              </>
+            ) : isVideo ? (
+              <>
+                <Camera className="h-6 w-6" />
+                Add Video
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-base font-bold">📷 Add Photo</span>
+                <span className="text-xs font-normal opacity-75">
+                  🔄 Landscape orientation required
+                </span>
+              </div>
+            )}
+          </button>
 
-      {orientationError && !isVideo && (
-        <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm font-medium text-destructive">
-          <span className="text-lg">📱➡️</span>
-          <span>
-            Portrait photo detected.<br />
-            <strong>Please rotate your phone sideways</strong> and retake.
-          </span>
-        </div>
+          {orientationError && !isVideo && (
+            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm font-medium text-destructive">
+              <span className="text-lg">📱➡️</span>
+              <span>
+                Portrait photo detected.<br />
+                <strong>Please rotate your phone sideways</strong> and retake.
+              </span>
+            </div>
+          )}
+        </>
+      )}
+
+      {readOnly && (
+        <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground">
+          Photos are read-only in admin edit view.
+        </p>
       )}
 
       {photos.length > 0 && (
