@@ -1331,7 +1331,15 @@ function Lightbox({
         </button>
       </div>
       <div className="flex flex-1 items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
-        <img src={photo.src} alt={photo.filename} className="max-h-full max-w-full object-contain" />
+        {photo.src ? (
+          <img src={photo.src} alt={photo.filename} className="max-h-full max-w-full object-contain" />
+        ) : (
+          <div className="flex flex-col items-center gap-3 text-center text-white/70">
+            <ImageIcon className="h-10 w-10" aria-hidden />
+            <p className="text-sm font-medium">Photo not yet available</p>
+            <p className="max-w-xs text-xs">{photo.filename}</p>
+          </div>
+        )}
       </div>
       {total > 1 && (
         <>
