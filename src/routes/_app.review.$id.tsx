@@ -427,10 +427,10 @@ function ReviewScreen() {
     setUploadStatus("uploading");
     setUploadError(null);
     if (mode === "initial") setDriveUrl(null);
-    const adminUpload = isAdmin && walk.user_id !== user.id;
+    const adminUpload = isAdmin && !!walk.userId && walk.userId !== user.id;
     const res = await uploadWithRetry(walk, user.id, (p) => setUploadProgress(p), 3, {
       mode,
-      ...(adminUpload ? { isAdmin: true, targetUserId: walk.user_id } : {}),
+      ...(adminUpload ? { isAdmin: true, targetUserId: walk.userId } : {}),
     });
     if (res.success) {
       setUploadStatus("success");
