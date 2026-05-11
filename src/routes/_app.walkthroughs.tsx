@@ -715,7 +715,7 @@ function CompletedCard({
                       incompleteCount > 0 ? ` (${incompleteCount} remaining)` : ""
                     }`
               }
-              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-sm font-semibold text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {status === "uploading" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
