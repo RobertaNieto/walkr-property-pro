@@ -30,15 +30,31 @@ if (typeof window !== "undefined") {
   });
 }
 
-function openDB(): Promise<IDBDatabase> {
+function openDB(name: string = dbName()): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(dbName(), DB_VERSION);
+    const req = indexedDB.open(name, DB_VERSION);
     req.onupgradeneeded = () => {
       req.result.createObjectStore(STORE);
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
+}
+
+// Read a filename from a specific IDB database name. Returns undefined when
+// the key isn't present or the DB doesn't exist.
+async function readFromDB(name: string, filename: string): Promise<string | undefined> {
+  try {
+    const db = await openDB(name);
+    return await new Promise<string | undefined>((resolve) => {
+      const tx = db.transaction(STORE, "readonly");
+      const req = tx.objectStore(STORE).get(filename);
+      req.onsuccess = () => resolve(req.result as string | undefined);
+      req.onerror = () => resolve(undefined);
+    });
+  } catch {
+    return undefined;
+  }
 }
 
 export async function savePhoto(filename: string, dataUrl: string): Promise<void> {
