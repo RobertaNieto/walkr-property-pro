@@ -221,9 +221,9 @@ function UploadButton({
   if (state.kind === "photos_done") {
     return (
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-center gap-2 rounded-2xl bg-success/10 px-4 py-2 text-sm font-semibold text-success">
-          <CheckCircle2 className="h-4 w-4" />
-          Photos &amp; Report uploaded
+        <div className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-success px-6 text-base font-semibold text-success-foreground">
+          <CheckCircle2 className="h-5 w-5" />
+          ✓ Photos &amp; Report Uploaded
         </div>
         <a
           href={state.url}
@@ -231,7 +231,7 @@ function UploadButton({
           rel="noopener noreferrer"
           className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-border bg-card text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
         >
-          View in Drive
+          View in Drive →
           <ExternalLink className="h-3.5 w-3.5" />
         </a>
         <button
@@ -240,7 +240,7 @@ function UploadButton({
           className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Film className="h-5 w-5" />
-          Upload Videos ({state.pendingVideos})
+          Upload Videos to Drive ({state.pendingVideos})
         </button>
       </div>
     );
