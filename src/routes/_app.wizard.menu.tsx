@@ -85,6 +85,7 @@ function SectionMenuScreen() {
   const [tick, setTick] = useState(0);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const w: Walkthrough | null = useMemo(() => loadActive(), [tick]);
+  const adminEditing = useMemo(() => isAdminEditing(), [tick]);
 
   useEffect(() => {
     if (w) updateWalkthrough({ lastRoute: "/wizard/menu" });
