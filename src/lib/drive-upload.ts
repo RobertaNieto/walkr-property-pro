@@ -119,7 +119,7 @@ async function stageFile(
 ): Promise<void> {
   const dataUrl = await preloadPhoto(fname);
   if (!dataUrl) {
-    throw new Error(`Could not find ${fname} in local browser storage. Reattach the file, then retry.`);
+    throw new MissingLocalPhotoError(fname);
   }
   const blob = dataUrlToBlob(dataUrl, fname);
   const path = `${stagingUserId}/${walkId}/${fname}`;
@@ -127,6 +127,23 @@ async function stageFile(
     .from(BUCKET)
     .upload(path, blob, { upsert: true, contentType: blob.type });
   if (error) throw new Error(`Stage failed for ${fname}: ${error.message}`);
+}
+
+function buildMissingPhotoFailure(walk: Walkthrough, e: MissingLocalPhotoError): UploadResult {
+  const loc = findQuestionForFilename(walk, e.filename);
+  const sectionName = loc?.sectionName ?? "the relevant";
+  const message = `Photo ${e.filename} needs to be reattached. Go to the ${sectionName} section and re-add this photo from your camera roll, then retry upload.`;
+  return {
+    success: false,
+    error: message,
+    missingPhoto: loc ?? {
+      filename: e.filename,
+      questionId: "",
+      questionLabel: e.filename,
+      sectionIndex: 0,
+      sectionName: "",
+    },
+  };
 }
 
 // =================== PHASE 1: photos + SUMMARY.pdf ===================
