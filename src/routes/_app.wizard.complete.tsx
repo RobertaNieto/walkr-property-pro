@@ -255,7 +255,7 @@ function UploadButton({
         className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-success px-6 text-base font-semibold text-success-foreground transition-colors hover:bg-success/90"
       >
         <CheckCircle2 className="h-5 w-5" />
-        Fully uploaded to Drive
+        Fully Uploaded ✓
         <ExternalLink className="h-4 w-4" />
       </a>
     );
