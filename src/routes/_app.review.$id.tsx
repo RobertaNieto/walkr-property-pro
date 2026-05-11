@@ -903,7 +903,16 @@ function ReviewScreen() {
                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                       </div>
                     )}
-                    <img src={p.src} alt={p.filename} className="h-full w-full object-cover" />
+                    {p.src ? (
+                      <img src={p.src} alt={p.filename} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-muted px-1 text-center">
+                        <ImageIcon className="h-5 w-5 text-muted-foreground/60" aria-hidden />
+                        <span className="text-[9px] font-medium leading-tight text-muted-foreground">
+                          Not uploaded
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <p className="truncate text-[10px] font-medium text-muted-foreground" title={p.filename}>
                     {p.filename}
