@@ -144,6 +144,7 @@ function ReviewScreen() {
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "photos_done" | "success" | "error">("idle");
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [missingPhoto, setMissingPhoto] = useState<MissingPhotoLocation | null>(null);
   const [driveUrl, setDriveUrl] = useState<string | null>(null);
   const [confirmReupload, setConfirmReupload] = useState(false);
   const [pendingVideoCount, setPendingVideoCount] = useState(0);
