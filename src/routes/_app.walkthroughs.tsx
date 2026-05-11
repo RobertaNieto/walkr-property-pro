@@ -571,8 +571,6 @@ function CompletedCard({
     setConfirmReupload(false);
     void runUpload("reupload");
   };
-  // Suppress unused import warning when full upload flow no longer used directly here
-  void uploadWithRetry;
 
   const pct =
     progress && progress.total > 0
