@@ -118,12 +118,38 @@ export function PhotoCapture({
 
   const remove = (idx: number) => {
     const entry = photos[idx];
-    // Only remove from store if it was a filename we saved.
-    if (entry && !entry.startsWith("data:")) void removePhoto(entry);
+    if (entry && !entry.startsWith("data:")) {
+      if (useStorage && storageContext) void removeStoragePhoto(storageContext, entry);
+      else void removePhoto(entry);
+    }
     const nextPhotos = photos.filter((_, i) => i !== idx);
     const nextNames = (filenames ?? photos).filter((_, i) => i !== idx);
     onChange(nextPhotos, nextNames);
   };
+
+  // In storage mode, fetch signed URLs for all photo filenames so thumbnails
+  // render. We never look in the admin's local IDB for these files.
+  useEffect(() => {
+    if (!useStorage || !storageContext) return;
+    let cancelled = false;
+    const need = photos.filter(
+      (e) => e && !e.startsWith("data:") && !e.startsWith("blob:") && !e.startsWith("http"),
+    );
+    if (need.length === 0) return;
+    void Promise.all(
+      need.map(async (fn) => [fn, await getStorageSignedUrl(storageContext, fn)] as const),
+    ).then((pairs) => {
+      if (cancelled) return;
+      setSignedUrls((prev) => {
+        const next = { ...prev };
+        for (const [fn, url] of pairs) next[fn] = url;
+        return next;
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [useStorage, storageContext, photos]);
 
   return (
     <div className="space-y-3">
