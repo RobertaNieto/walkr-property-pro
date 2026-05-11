@@ -374,6 +374,7 @@ interface DbRow {
 function fromDb(row: DbRow): Walkthrough {
   return {
     id: row.id,
+    userId: row.user_id,
     createdAt: new Date(row.created_at).getTime(),
     updatedAt: new Date(row.updated_at).getTime(),
     address: {
