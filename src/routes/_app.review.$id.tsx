@@ -37,6 +37,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { preloadPhoto, resolvePhotoSrc } from "@/lib/photo-store";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import {
   fetchById,
@@ -69,7 +70,7 @@ const RATING_DOT: Record<number, string> = {
 const RATING_EMOJI: Record<number, string> = { 1: "🟢", 2: "🟡", 3: "🔴" };
 
 interface PhotoEntry {
-  src: string;
+  src: string | null; // null = file not available in Storage (admin cross-agent view)
   filename: string;
   questionLabel: string;
   sectionName: string;
@@ -145,6 +146,15 @@ function ReviewScreen() {
   const [confirmReupload, setConfirmReupload] = useState(false);
   const [pendingVideoCount, setPendingVideoCount] = useState(0);
 
+  // For admin viewing another agent's walkthrough: photos must NEVER come from
+  // the admin's local IndexedDB (those would be the wrong agent's files).
+  // Instead resolve every filename against Supabase Storage for THIS specific
+  // walkthrough id. Map value: signed URL string, or null = file not in Storage.
+  // null map itself = not yet loaded.
+  const [remoteUrls, setRemoteUrls] = useState<Map<string, string | null> | null>(null);
+
+  const isOtherAgent = !!(isAdmin && walk?.userId && user && walk.userId !== user.id);
+
   // Section refs for scroll-to behavior
   const sectionsRef = useRef<HTMLDivElement | null>(null);
   const photosRef = useRef<HTMLDivElement | null>(null);
@@ -192,6 +202,12 @@ function ReviewScreen() {
   // this walkthrough, then bump photoTick to force thumbnails to re-render.
   useEffect(() => {
     if (!walk?.answers) return;
+    // For admin viewing someone else's walkthrough, skip the local IDB
+    // preload entirely — see the Storage-based effect below.
+    if (isOtherAgent) {
+      setPhotoTick((t) => t + 1);
+      return;
+    }
     const filenames: string[] = [];
     for (const ans of Object.values(walk.answers)) {
       const a = ans as WizardAnswer;
@@ -213,7 +229,90 @@ function ReviewScreen() {
     void Promise.all(filenames.map((f) => preloadPhoto(f))).then(() =>
       setPhotoTick((t) => t + 1),
     );
-  }, [walk]);
+  }, [walk, isOtherAgent]);
+
+  // Admin-cross-agent: list files actually present in Supabase Storage for
+  // this walkthrough id, then sign URLs for them. Filenames not found get
+  // explicitly mapped to null so the UI can render a placeholder.
+  useEffect(() => {
+    if (!isOtherAgent || !walk?.userId) return;
+    let cancelled = false;
+    const run = async () => {
+      const wanted = new Set<string>();
+      for (const ans of Object.values(walk.answers ?? {})) {
+        const a = ans as WizardAnswer;
+        for (const p of [...(a.photos ?? []), ...(a.poorPhotos ?? [])]) {
+          if (
+            p &&
+            !p.startsWith("data:") &&
+            !p.startsWith("blob:") &&
+            !p.startsWith("http")
+          ) {
+            wanted.add(p);
+          }
+        }
+      }
+      const map = new Map<string, string | null>();
+      if (wanted.size === 0) {
+        if (!cancelled) {
+          setRemoteUrls(map);
+          setPhotoTick((t) => t + 1);
+        }
+        return;
+      }
+      const prefix = `${walk.userId}/${walk.id}`;
+      const { data: listed } = await supabase.storage
+        .from("walkthrough-photos")
+        .list(prefix, { limit: 1000 });
+      const present = new Set((listed ?? []).map((f) => f.name));
+      const existingPaths: string[] = [];
+      for (const fn of wanted) {
+        if (present.has(fn)) existingPaths.push(`${prefix}/${fn}`);
+        else map.set(fn, null);
+      }
+      if (existingPaths.length > 0) {
+        const { data: signed } = await supabase.storage
+          .from("walkthrough-photos")
+          .createSignedUrls(existingPaths, 3600);
+        for (const item of signed ?? []) {
+          const fn = item.path?.split("/").pop();
+          if (fn) map.set(fn, item.signedUrl ?? null);
+        }
+      }
+      if (!cancelled) {
+        setRemoteUrls(map);
+        setPhotoTick((t) => t + 1);
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOtherAgent, walk?.id, walk?.userId, walk?.answers]);
+
+  // Single resolver: returns { src } when displayable, { missing: true }
+  // when admin-cross-agent and Storage has no copy, or undefined while loading.
+  const resolveSrcFor = (entry: string | undefined, filename: string):
+    | { src: string }
+    | { missing: true }
+    | undefined => {
+    if (!entry) return undefined;
+    if (
+      entry.startsWith("data:") ||
+      entry.startsWith("blob:") ||
+      entry.startsWith("http")
+    ) {
+      return { src: entry };
+    }
+    if (isOtherAgent) {
+      if (!remoteUrls) return undefined; // still loading
+      const v = remoteUrls.get(filename);
+      if (v == null) return { missing: true };
+      return { src: v };
+    }
+    const local = resolvePhotoSrc(entry);
+    return local ? { src: local } : { missing: true };
+  };
 
   const ctx: SkipContext | null = useMemo(
     () =>
@@ -258,9 +357,10 @@ function ReviewScreen() {
       }
       const list = a.photos ?? [];
       list.forEach((entry, i) => {
-        const src = resolvePhotoSrc(entry);
-        if (!src) return;
         const filename = a.photoNames?.[i] ?? `${q.photoName ?? q.id.toUpperCase()}.${q.field === "video" ? "mp4" : "jpg"}`;
+        const resolved = resolveSrcFor(entry, filename);
+        if (!resolved) return; // still loading — skip this render pass
+        const src = "missing" in resolved ? null : resolved.src;
         const item: PhotoEntry = {
           src,
           filename,
@@ -281,7 +381,7 @@ function ReviewScreen() {
       photoBySection: photoCounts,
       criticalBySection: flagCounts,
     };
-  }, [walk, allQuestions, photoTick]);
+  }, [walk, allQuestions, photoTick, isOtherAgent, remoteUrls]);
 
   const visibleChecklist = useMemo(
     () => FINAL_CHECKLIST_ITEMS.filter((it) => !it.visible || it.visible(walk?.config ?? {})),
@@ -543,6 +643,27 @@ function ReviewScreen() {
 
       {/* Body */}
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 print:max-w-none">
+        {isOtherAgent &&
+          walk.uploadStatus !== "confirmed" &&
+          walk.uploadStatus !== "photos_complete" &&
+          remoteUrls &&
+          remoteUrls.size > 0 &&
+          Array.from(remoteUrls.values()).every((v) => v === null) && (
+            <section className="mb-6 rounded-2xl border-2 border-warning bg-warning/10 p-4 sm:p-5 print:hidden">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-5 w-5 text-warning" />
+                <div>
+                  <h2 className="text-base font-bold text-foreground">
+                    Photos not yet available
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Agent has not uploaded this walkthrough to Drive yet. Photo
+                    placeholders show where each image will appear once uploaded.
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
         {/* Incomplete sections gate */}
         {(() => {
           const completedAt = walk.completedAt ?? null;
@@ -742,6 +863,7 @@ function ReviewScreen() {
                           key={q.id}
                           q={q}
                           a={walk.answers?.[q.id] as WizardAnswer | undefined}
+                          resolveSrc={resolveSrcFor}
                           onPhotoOpen={(filename) => {
                             const idx = photos.findIndex((p) => p.filename === filename);
                             if (idx >= 0) setLightboxIndex(idx);
@@ -804,7 +926,16 @@ function ReviewScreen() {
                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                       </div>
                     )}
-                    <img src={p.src} alt={p.filename} className="h-full w-full object-cover" />
+                    {p.src ? (
+                      <img src={p.src} alt={p.filename} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-muted px-1 text-center">
+                        <ImageIcon className="h-5 w-5 text-muted-foreground/60" aria-hidden />
+                        <span className="text-[9px] font-medium leading-tight text-muted-foreground">
+                          Not uploaded
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <p className="truncate text-[10px] font-medium text-muted-foreground" title={p.filename}>
                     {p.filename}
@@ -845,7 +976,13 @@ function ReviewScreen() {
                       </span>
                     </summary>
                     <div className="mt-3 overflow-hidden rounded-xl bg-black">
-                      <video src={v.src} controls className="h-full w-full" />
+                      {v.src ? (
+                        <video src={v.src} controls className="h-full w-full" />
+                      ) : (
+                        <div className="flex h-32 w-full items-center justify-center text-xs text-muted-foreground">
+                          Video not uploaded yet
+                        </div>
+                      )}
                     </div>
                   </details>
                 </li>
@@ -1068,14 +1205,21 @@ function answerHasValue(a: WizardAnswer | undefined): boolean {
   );
 }
 
+type SrcResolver = (
+  entry: string | undefined,
+  filename: string,
+) => { src: string } | { missing: true } | undefined;
+
 function AnswerRow({
   q,
   a,
   onPhotoOpen,
+  resolveSrc,
 }: {
   q: QuestionDef;
   a: WizardAnswer | undefined;
   onPhotoOpen: (filename: string) => void;
+  resolveSrc: SrcResolver;
 }) {
   const hasAnswer = answerHasValue(a);
   return (
@@ -1105,14 +1249,22 @@ function AnswerRow({
         {a?.photos && a.photos.length > 0 && (
           <div className="mt-2 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             {a.photos.map((entry, i) => {
-              const src = resolvePhotoSrc(entry);
               const filename = a.photoNames?.[i] ?? entry;
-              if (!src) return null;
+              const resolved = resolveSrc(entry, filename);
+              if (!resolved) return null; // still loading
+              const missing = "missing" in resolved;
+              const src = missing ? null : resolved.src;
               if (q.field === "video") {
                 return (
                   <div key={i} className="flex w-28 flex-shrink-0 flex-col gap-1">
                     <div className="aspect-square overflow-hidden rounded-lg bg-black">
-                      <video src={src} className="h-full w-full object-cover" controls />
+                      {src ? (
+                        <video src={src} className="h-full w-full object-cover" controls />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-muted text-[10px] text-muted-foreground">
+                          Not uploaded
+                        </div>
+                      )}
                     </div>
                     <p className="truncate text-[10px] text-muted-foreground" title={filename}>
                       {filename}
@@ -1128,7 +1280,16 @@ function AnswerRow({
                   className="flex w-24 flex-shrink-0 flex-col gap-1 text-left"
                 >
                   <div className="aspect-square overflow-hidden rounded-lg bg-secondary ring-1 ring-border transition-transform hover:scale-[1.03]">
-                    <img src={src} alt={filename} className="h-full w-full object-cover" />
+                    {src ? (
+                      <img src={src} alt={filename} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-0.5 bg-muted px-1 text-center">
+                        <ImageIcon className="h-4 w-4 text-muted-foreground/60" aria-hidden />
+                        <span className="text-[9px] font-medium leading-tight text-muted-foreground">
+                          Not uploaded
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <p className="truncate text-[10px] text-muted-foreground" title={filename}>
                     {filename}
@@ -1217,7 +1378,15 @@ function Lightbox({
         </button>
       </div>
       <div className="flex flex-1 items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
-        <img src={photo.src} alt={photo.filename} className="max-h-full max-w-full object-contain" />
+        {photo.src ? (
+          <img src={photo.src} alt={photo.filename} className="max-h-full max-w-full object-contain" />
+        ) : (
+          <div className="flex flex-col items-center gap-3 text-center text-white/70">
+            <ImageIcon className="h-10 w-10" aria-hidden />
+            <p className="text-sm font-medium">Photo not yet available</p>
+            <p className="max-w-xs text-xs">{photo.filename}</p>
+          </div>
+        )}
       </div>
       {total > 1 && (
         <>
