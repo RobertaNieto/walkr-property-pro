@@ -917,6 +917,7 @@ function PoorPhotoSection({
         photos={value.poorPhotos ?? []}
         filenames={value.poorPhotoNames ?? []}
         baseName={q.poorPhotoName}
+        storageContext={getAdminStorageContext()}
         onChange={(photos, photoNames) =>
           onChange((d) => ({ ...d, poorPhotos: photos, poorPhotoNames: photoNames }))
         }
