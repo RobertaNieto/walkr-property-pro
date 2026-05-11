@@ -1165,9 +1165,18 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const walkId = body.walkthroughId as string;
     const isReupload = body.mode === "reupload";
+    // phase: "photos" (default) uploads images + SUMMARY.pdf, then marks
+    // upload_status = "photos_complete" (or "confirmed" if no videos exist).
+    // phase: "videos" uploads a single named video. The client iterates one
+    // video at a time so each call stays well under the edge timeout.
+    const phase = (body.phase as "photos" | "videos") ?? "photos";
+    const videoFilename = body.videoFilename as string | undefined;
+    const purgeVideosFolder = body.purgeFirst === true; // only used in phase=videos
+    const markConfirmed = body.markComplete === true; // only used in phase=videos
     walkIdForFailure = walkId;
-    console.log("[upload-to-drive] request payload", { walkthroughId: walkId, mode: isReupload ? "reupload" : "initial" });
+    console.log("[upload-to-drive] request payload", { walkthroughId: walkId, mode: isReupload ? "reupload" : "initial", phase, videoFilename, purgeVideosFolder, markConfirmed });
     if (!walkId) throw new Error("Upload failed: missing walkthroughId in request payload");
+    if (phase === "videos" && !videoFilename) throw new Error("Upload failed: videoFilename is required for phase=videos");
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
