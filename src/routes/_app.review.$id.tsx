@@ -890,8 +890,36 @@ function ReviewScreen() {
               />
             </div>
           )}
+          {uploadStatus === "photos_done" && driveUrl && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 rounded-2xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
+                <CheckCircle2 className="h-4 w-4" />
+                Photos &amp; Report in Drive
+              </div>
+              <a
+                href={driveUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
+              >
+                View in Drive →
+              </a>
+              <button
+                type="button"
+                onClick={() => void runVideoUpload()}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <Film className="h-4 w-4" />
+                Upload Videos ({pendingVideoCount})
+              </button>
+            </div>
+          )}
           {uploadStatus === "success" && driveUrl && (
             <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 rounded-2xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
+                <CheckCircle2 className="h-4 w-4" />
+                Fully uploaded to Drive
+              </div>
               <a
                 href={driveUrl}
                 target="_blank"
