@@ -114,7 +114,7 @@ function CompleteScreen() {
     if (res.success && (res.driveFolderUrl ?? currentUrl)) {
       setUpload({ kind: "success", url: res.driveFolderUrl ?? currentUrl! });
     } else {
-      setUpload({ kind: "error", message: res.error ?? "Video upload failed" });
+      setUpload({ kind: "error", message: res.error ?? "Video upload failed", missingPhoto: res.missingPhoto });
     }
   };
 
