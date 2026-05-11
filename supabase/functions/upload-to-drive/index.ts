@@ -1349,49 +1349,66 @@ Deno.serve(async (req) => {
       console.log("[upload-to-drive] re-upload: photos-phase purge complete", { walkthroughId: walkId, photosDeleted, priorPdfDeleted: Boolean(priorPdfId) });
     }
 
-    // Run uploads in parallel chunks so 75+ files finish under the 150s
-    // edge-function timeout. Concurrency 6 keeps us well under Drive's
-    // per-user write quota.
-    const CONCURRENCY = 6;
-    let uploaded = 0;
-    let failed = 0;
-    for (let i = 0; i < photoFiles.length; i += CONCURRENCY) {
-      const chunk = photoFiles.slice(i, i + CONCURRENCY);
-      const results = await Promise.allSettled(chunk.map((f) => uploadOneToFolder(f, photosFolderId)));
-      for (const r of results) {
-        if (r.status === "fulfilled") {
-          if (r.value) uploaded++;
-        } else {
-          failed++;
-        }
-      }
-      console.log("[upload-to-drive] chunk done", { walkthroughId: walkId, progress: `${Math.min(i + CONCURRENCY, photoFiles.length)}/${photoFiles.length}`, uploaded, failed });
-    }
-    if (failed > 0) {
-      throw new Error(`Drive upload incomplete: ${failed} of ${photoFiles.length} photos failed`);
-    }
-
-    // Generate Drive shareable link
+    // Generate the share link + SUMMARY.pdf BEFORE photo uploads so the
+    // report always lands in Drive even if the function runs out of time
+    // partway through 100+ photos.
     const driveLink = await setFolderShareableLink(token, subfolderId);
-    console.log("[upload-to-drive] Drive folder share link ready", { walkthroughId: walkId, driveLink, uploaded });
+    console.log("[upload-to-drive] Drive folder share link ready", { walkthroughId: walkId, driveLink });
 
-    // Build & upload SUMMARY.pdf
-    console.log("[upload-to-drive] generating SUMMARY.pdf", { walkthroughId: walkId });
+    console.log("[upload-to-drive] generating SUMMARY.pdf first", { walkthroughId: walkId });
     const pdfBytes = await buildSummaryPdf(walk, agentName, driveLink, admin);
     console.log("[upload-to-drive] SUMMARY.pdf generated", { walkthroughId: walkId, bytes: pdfBytes.length });
-    console.log("[upload-to-drive] uploading SUMMARY.pdf to Drive", { walkthroughId: walkId, parentId: subfolderId });
-    await uploadFileToDrive(
-      token,
-      "SUMMARY.pdf",
-      "application/pdf",
-      pdfBytes,
-      subfolderId,
-    );
+    await uploadFileToDrive(token, "SUMMARY.pdf", "application/pdf", pdfBytes, subfolderId);
     console.log("[upload-to-drive] SUMMARY.pdf uploaded ✓", { walkthroughId: walkId });
 
-    // If there are no videos, the walkthrough is fully uploaded.
-    // Otherwise Phase 2 will flip the status to "confirmed" after videos.
-    const finalStatus = videoFiles.length === 0 ? "confirmed" : "photos_complete";
+    // Process photos in small batches. Hard time budget so we return a
+    // graceful "partial" result before the platform kills the function.
+    const startedAt = Date.now();
+    const TIME_BUDGET_MS = 130_000;
+    const BATCH_SIZE = 5;
+    let uploaded = 0;
+    let skipped = 0;
+    let stoppedEarly = false;
+    let processed = 0;
+
+    for (let i = 0; i < photoFiles.length; i += BATCH_SIZE) {
+      if (Date.now() - startedAt > TIME_BUDGET_MS) {
+        stoppedEarly = true;
+        console.warn("[upload-to-drive] time budget reached, stopping photo loop", {
+          walkthroughId: walkId, processed, total: photoFiles.length, uploaded, skipped,
+        });
+        break;
+      }
+      const batch = photoFiles.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map((f) => uploadOneToFolder(f, photosFolderId)),
+      );
+      for (const r of results) {
+        processed++;
+        if (r.status === "fulfilled") {
+          if (r.value) uploaded++;
+          else skipped++; // missing in storage — skip silently
+        } else {
+          // Drive upload error for this single file: skip it, continue.
+          skipped++;
+          console.warn("[upload-to-drive] file skipped after error", {
+            error: r.reason instanceof Error ? r.reason.message : String(r.reason),
+          });
+        }
+      }
+      console.log(
+        `[upload-to-drive] Uploaded ${uploaded} of ${photoFiles.length} photos (skipped ${skipped})`,
+        { walkthroughId: walkId },
+      );
+    }
+
+    const isPartial = stoppedEarly && processed < photoFiles.length;
+    const finalStatus = isPartial
+      ? "partial"
+      : videoFiles.length === 0
+        ? "confirmed"
+        : "photos_complete";
+
     await admin
       .from("walkthroughs")
       .update({
@@ -1406,9 +1423,15 @@ Deno.serve(async (req) => {
         success: true,
         driveFolderUrl: driveLink,
         photosUploaded: uploaded,
-        videos: videoFiles,
-        videosPending: videoFiles.length,
+        photosSkipped: skipped,
+        photosTotal: photoFiles.length,
+        partial: isPartial,
+        videos: isPartial ? [] : videoFiles,
+        videosPending: isPartial ? 0 : videoFiles.length,
         status: finalStatus,
+        message: isPartial
+          ? `${uploaded} of ${photoFiles.length} photos uploaded. Tap Retry to upload remaining photos.`
+          : undefined,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

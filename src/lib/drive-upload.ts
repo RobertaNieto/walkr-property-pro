@@ -28,10 +28,17 @@ export interface UploadResult {
   /** Filenames of videos that still need a Phase 2 upload (Phase 1 only). */
   videosPending?: string[];
   /** Final walkthrough upload_status reported by the edge function. */
-  status?: "photos_complete" | "confirmed";
+  status?: "photos_complete" | "confirmed" | "partial";
   error?: string;
   /** Set when the upload failed because a photo is missing from local storage. */
   missingPhoto?: MissingPhotoLocation;
+  /** True when only some photos were uploaded before the time budget ran out. */
+  partial?: boolean;
+  /** Counts for partial uploads, e.g. "12 of 130 photos uploaded". */
+  photosUploaded?: number;
+  photosTotal?: number;
+  /** Friendly partial-upload message from the edge function. */
+  partialMessage?: string;
 }
 
 interface UploadOptions {
@@ -183,17 +190,26 @@ export async function uploadPhotosPhase(
     if (!data?.success) throw new Error(data?.error ?? "Upload failed");
 
     const videosPending = (data.videos as string[] | undefined) ?? [];
+    const isPartial = data.partial === true || data.status === "partial";
     onProgress?.({
       phase: "done",
       current: total,
       total,
-      message: videosPending.length > 0 ? "Photos & report uploaded" : "Upload complete",
+      message: isPartial
+        ? (data.message as string | undefined) ?? "Some photos uploaded"
+        : videosPending.length > 0
+          ? "Photos & report uploaded"
+          : "Upload complete",
     });
     return {
       success: true,
       driveFolderUrl: data.driveFolderUrl,
       videosPending,
       status: data.status,
+      partial: isPartial,
+      photosUploaded: data.photosUploaded,
+      photosTotal: data.photosTotal,
+      partialMessage: data.message,
     };
   } catch (e) {
     if (e instanceof MissingLocalPhotoError) return buildMissingPhotoFailure(walk, e);
@@ -323,6 +339,9 @@ export async function uploadWithRetry(
 ): Promise<UploadResult> {
   const phase1 = await uploadPhotosWithRetry(walk, userId, onProgress, maxAttempts, options);
   if (!phase1.success) return phase1;
+  // Partial photo uploads must not auto-trigger Phase 2 — the agent retries
+  // photos first, then uploads videos once Phase 1 fully completes.
+  if (phase1.partial) return phase1;
   if ((phase1.videosPending?.length ?? 0) === 0) return phase1;
   const phase2 = await uploadVideosWithRetry(walk, userId, onProgress, maxAttempts, options);
   if (!phase2.success) return { ...phase2, driveFolderUrl: phase1.driveFolderUrl };
