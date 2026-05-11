@@ -95,7 +95,11 @@ export function PhotoCapture({
           : `PHOTO_${Date.now()}_${i}.${isVideo ? "mp4" : "jpg"}`;
         // Persist heavy data in IndexedDB photo bucket. Await ensures any
         // failure surfaces before we tell the parent the photo exists.
-        await savePhoto(name, compressed);
+        if (useStorage && storageContext) {
+          await saveStoragePhoto(storageContext, name, compressed);
+        } else {
+          await savePhoto(name, compressed);
+        }
         // Belt-and-suspenders: keep an instance-local copy so the thumbnail
         // renders even if the IDB write or memCache lookup is somehow slow.
         localCache.current[name] = compressed;
