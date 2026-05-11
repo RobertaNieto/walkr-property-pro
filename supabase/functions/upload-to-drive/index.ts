@@ -1209,12 +1209,15 @@ Deno.serve(async (req) => {
     const walk = walkRow as Walkthrough;
     console.log("[upload-to-drive] walkthrough loaded", { walkthroughId: walk.id, userId: walk.user_id });
 
-    // Mark as uploading
-    await admin
-      .from("walkthroughs")
-      .update({ upload_status: "uploading" })
-      .eq("id", walkId);
-    console.log("[upload-to-drive] marked walkthrough uploading", { walkthroughId: walkId });
+    // Mark as uploading only for photos phase. Videos phase keeps the
+    // existing "photos_complete" status visible until it flips to confirmed.
+    if (phase === "photos") {
+      await admin
+        .from("walkthroughs")
+        .update({ upload_status: "uploading" })
+        .eq("id", walkId);
+      console.log("[upload-to-drive] marked walkthrough uploading", { walkthroughId: walkId });
+    }
 
     // Get Google access token
     const token = await getAccessToken();
