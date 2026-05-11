@@ -36,9 +36,11 @@ function CompleteScreen() {
   const [confirmFresh, setConfirmFresh] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [upload, setUpload] = useState<UploadState>({ kind: "idle" });
+  const adminEditing = useMemo(() => isAdminEditing(), []);
 
   // Mark complete in DB and snapshot to local "completed" list.
   useEffect(() => {
+    if (adminEditing) return;
     void completeWalkthrough().then(async (w) => {
       if (!w) return;
       setWalk(w);
@@ -53,7 +55,11 @@ function CompleteScreen() {
         }
       }
     });
-  }, []);
+  }, [adminEditing]);
+
+  if (adminEditing) {
+    return <Navigate to="/wizard/menu" replace />;
+  }
 
   const handleStartFresh = async () => {
     setClearing(true);
