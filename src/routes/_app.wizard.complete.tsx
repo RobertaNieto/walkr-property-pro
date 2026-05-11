@@ -266,10 +266,7 @@ function UploadButton({
   if (state.kind === "error") {
     return (
       <div className="flex flex-col gap-2">
-        <div className="flex items-start gap-2 rounded-xl bg-critical/10 p-3 text-left text-xs text-critical">
-          <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{state.message}</span>
-        </div>
+        <UploadErrorBanner message={state.message} missingPhoto={state.missingPhoto} />
         <button
           onClick={onUpload}
           disabled={!online}
