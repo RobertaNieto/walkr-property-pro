@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, CheckCircle2, CloudUpload, Eye, Film, Image as ImageIcon, Loader2, PlayCircle, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Progress } from "@/components/ui/progress";
-import { uploadPhotosWithRetry, uploadVideosWithRetry, uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import { uploadPhotosWithRetry, uploadVideosWithRetry, type UploadProgress } from "@/lib/drive-upload";
 import { fetchById } from "@/lib/walkthrough";
 import { buildQuestionList, hasUserAnswer, SECTIONS, type SkipContext } from "@/lib/wizard-schema";
 import { toast } from "sonner";
