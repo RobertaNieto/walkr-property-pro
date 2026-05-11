@@ -146,6 +146,15 @@ function ReviewScreen() {
   const [confirmReupload, setConfirmReupload] = useState(false);
   const [pendingVideoCount, setPendingVideoCount] = useState(0);
 
+  // For admin viewing another agent's walkthrough: photos must NEVER come from
+  // the admin's local IndexedDB (those would be the wrong agent's files).
+  // Instead resolve every filename against Supabase Storage for THIS specific
+  // walkthrough id. Map value: signed URL string, or null = file not in Storage.
+  // null map itself = not yet loaded.
+  const [remoteUrls, setRemoteUrls] = useState<Map<string, string | null> | null>(null);
+
+  const isOtherAgent = !!(isAdmin && walk?.userId && user && walk.userId !== user.id);
+
   // Section refs for scroll-to behavior
   const sectionsRef = useRef<HTMLDivElement | null>(null);
   const photosRef = useRef<HTMLDivElement | null>(null);
