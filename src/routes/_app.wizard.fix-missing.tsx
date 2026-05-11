@@ -40,6 +40,7 @@ interface MissingItem {
 type UploadState =
   | { kind: "idle" }
   | { kind: "uploading"; progress: UploadProgress }
+  | { kind: "photos_done"; url: string; pendingVideos: number }
   | { kind: "success"; url: string }
   | { kind: "error"; message: string };
 
