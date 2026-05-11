@@ -1,6 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { CheckCircle2, CloudUpload, Eye, ExternalLink, Loader2, RefreshCw, Trash2, XCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { completeWalkthrough, fetchById, formatPropertyAddress, submitWalkthrough, type Walkthrough } from "@/lib/walkthrough";
+import { completeWalkthrough, fetchById, formatPropertyAddress, isAdminEditing, submitWalkthrough, type Walkthrough } from "@/lib/walkthrough";
 import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
 import { useAuth } from "@/lib/auth";
 import { useOnlineStatus } from "@/hooks/use-online-status";
