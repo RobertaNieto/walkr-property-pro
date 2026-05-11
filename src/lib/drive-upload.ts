@@ -9,6 +9,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { preloadPhoto } from "@/lib/photo-store";
+import { findQuestionForFilename, type MissingPhotoLocation } from "@/lib/missing-photo";
 import type { Walkthrough } from "@/lib/walkthrough";
 
 const BUCKET = "walkthrough-photos";
@@ -29,12 +30,21 @@ export interface UploadResult {
   /** Final walkthrough upload_status reported by the edge function. */
   status?: "photos_complete" | "confirmed";
   error?: string;
+  /** Set when the upload failed because a photo is missing from local storage. */
+  missingPhoto?: MissingPhotoLocation;
 }
 
 interface UploadOptions {
   mode?: "initial" | "reupload";
   targetUserId?: string;
   isAdmin?: boolean;
+}
+
+class MissingLocalPhotoError extends Error {
+  constructor(public filename: string) {
+    super(`MISSING_LOCAL_PHOTO:${filename}`);
+    this.name = "MissingLocalPhotoError";
+  }
 }
 
 const isVideoName = (n: string) => /\.(mp4|mov)$/i.test(n);
