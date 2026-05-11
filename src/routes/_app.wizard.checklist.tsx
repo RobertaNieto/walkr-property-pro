@@ -90,6 +90,10 @@ function ChecklistScreen() {
     }
   };
 
+  if (adminEditing) {
+    return <Navigate to="/wizard/menu" replace />;
+  }
+
   if (completing) {
     return (
       <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-3 bg-background px-6 text-center">
