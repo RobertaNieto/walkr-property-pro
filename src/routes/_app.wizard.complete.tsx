@@ -290,7 +290,7 @@ function UploadButton({
       className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-primary"
     >
       <CloudUpload className="h-5 w-5" />
-      Upload to Drive
+      Upload Photos &amp; Report to Drive
     </button>
   );
 
