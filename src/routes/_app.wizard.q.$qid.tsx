@@ -839,6 +839,7 @@ function FieldRenderer({
                 photos={value.photos ?? []}
                 filenames={value.photoNames ?? []}
                 baseName={q.withPhoto.name}
+                storageContext={getAdminStorageContext()}
                 onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
                 error={attempted && (value.photos?.length ?? 0) < (q.withPhoto.min ?? 1)}
               />
