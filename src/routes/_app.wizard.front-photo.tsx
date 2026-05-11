@@ -74,6 +74,7 @@ function FrontPhotoScreen() {
             Photos <span className="text-critical">*</span>
           </p>
           <PhotoCapture
+            readOnly={isAdminEditing()}
             photos={photos}
             onChange={setPhotos}
             error={attempted && !photosOk}
