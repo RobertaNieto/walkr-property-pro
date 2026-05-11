@@ -608,6 +608,21 @@ export function discardActive() {
   clearCache(id);
 }
 
+// Flush any pending writes for the walkthrough being admin-edited and then
+// clear the local cache + admin-edit flag so the admin's session no longer
+// references the agent's walkthrough.
+export async function exitAdminEdit(): Promise<void> {
+  const meta = getAdminEditing();
+  if (meta) {
+    if (pending.has(meta.walkthroughId)) {
+      clearTimeout(pending.get(meta.walkthroughId)!);
+      await flush(meta.walkthroughId);
+    }
+    clearCache(meta.walkthroughId);
+  }
+  setAdminEditing(null);
+}
+
 export function formatTimestamp(ts: number) {
   const d = new Date(ts);
   return d.toLocaleString(undefined, {
