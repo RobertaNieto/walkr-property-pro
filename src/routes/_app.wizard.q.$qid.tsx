@@ -9,6 +9,17 @@ import { SectionNav, type SectionMeta, type SectionStatus } from "@/components/S
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
 import { fetchById, getActiveId, getAdminEditing, isAdminEditing, loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer, type Walkthrough } from "@/lib/walkthrough";
+import type { StorageContext } from "@/lib/photo-store";
+
+// When an admin is editing/fixing another agent's walkthrough, all PhotoCapture
+// I/O must go directly to that agent's Supabase Storage path — never to the
+// admin's local IndexedDB. This helper returns the StorageContext to thread
+// through the renderer tree, or undefined for the agent's own session.
+function getAdminStorageContext(): StorageContext | undefined {
+  const a = getAdminEditing();
+  if (!a) return undefined;
+  return { agentId: a.agentId, walkthroughId: a.walkthroughId };
+}
 // loadActive is used in the initial state hydration (via useMemo above).
 import {
   buildQuestionList,
@@ -828,6 +839,7 @@ function FieldRenderer({
                 photos={value.photos ?? []}
                 filenames={value.photoNames ?? []}
                 baseName={q.withPhoto.name}
+                storageContext={getAdminStorageContext()}
                 onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
                 error={attempted && (value.photos?.length ?? 0) < (q.withPhoto.min ?? 1)}
               />
@@ -848,6 +860,7 @@ function FieldRenderer({
             filenames={value.photoNames ?? []}
             baseName={q.photoName ?? q.id.toUpperCase()}
             isVideo={isVideo}
+            storageContext={getAdminStorageContext()}
             onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
             error={errored}
           />
@@ -904,6 +917,7 @@ function PoorPhotoSection({
         photos={value.poorPhotos ?? []}
         filenames={value.poorPhotoNames ?? []}
         baseName={q.poorPhotoName}
+        storageContext={getAdminStorageContext()}
         onChange={(photos, photoNames) =>
           onChange((d) => ({ ...d, poorPhotos: photos, poorPhotoNames: photoNames }))
         }
@@ -944,6 +958,7 @@ function FollowUpRenderer({
             photos={value.photos ?? []}
             filenames={value.photoNames ?? []}
             baseName={fu.photoName ?? "FOLLOWUP"}
+            storageContext={getAdminStorageContext()}
             onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
             error={attempted && fu.required && (value.photos?.length ?? 0) < 1}
           />

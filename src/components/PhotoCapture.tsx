@@ -215,7 +215,11 @@ export function PhotoCapture({
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {photos.map((entry, i) => {
-            const src = resolvePhotoSrc(entry) ?? localCache.current[entry];
+            // In storage mode, NEVER look at the local IDB / memCache —
+            // those would be the admin's own photos, not the agent's.
+            const src = useStorage
+              ? signedUrls[entry] ?? localCache.current[entry] ?? null
+              : resolvePhotoSrc(entry) ?? localCache.current[entry];
             const meta = fileMeta.current[entry];
             const displayName = meta?.original ?? entry;
             const sizeMb = meta ? Math.max(1, Math.round(meta.size / (1024 * 1024))) : null;
