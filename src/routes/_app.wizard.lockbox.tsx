@@ -90,6 +90,7 @@ function LockboxScreen() {
             Lockbox location photo <span className="text-critical">*</span>
           </p>
           <PhotoCapture
+            readOnly={isAdminEditing()}
             photos={photos}
             onChange={setPhotos}
             error={attempted && !photoOk}
