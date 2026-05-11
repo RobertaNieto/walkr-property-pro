@@ -13,24 +13,17 @@ import {
 } from "@/lib/photo-store";
 
 interface PhotoCaptureProps {
-  // Each entry is either a filename (preferred, points into photo-store) or
-  // a legacy raw data URL. PhotoCapture handles both transparently.
   photos: string[];
-  // Index-aligned filenames for newly captured photos. When provided, the
-  // component will store the compressed data URL under that filename in the
-  // photo store and pass the filename back to the parent via onChange.
   filenames?: string[];
-  // Base filename used to generate names for newly captured photos
-  // (e.g. "EXTERIOR_FRONT" -> "EXTERIOR_FRONT.jpg", "EXTERIOR_FRONT_2.jpg").
   baseName?: string;
-  // True when capturing video (.mp4 extension and <video> preview).
   isVideo?: boolean;
   onChange: (photos: string[], filenames: string[]) => void;
   error?: boolean;
-  // When true, hides the add and remove controls. Used when an admin is
-  // editing another agent's walkthrough — they can view photos but not
-  // add or delete them.
   readOnly?: boolean;
+  // When set, all photo I/O bypasses local IndexedDB and goes to Supabase
+  // Storage at walkthrough-photos/{agentId}/{walkthroughId}/... — used for
+  // admin edit/fix-missing flows so the admin's device cache is never touched.
+  storageContext?: StorageContext;
 }
 
 function makeName(base: string, idx: number, isVideo: boolean): string {
@@ -46,10 +39,12 @@ export function PhotoCapture({
   onChange,
   error,
   readOnly: _readOnly,
+  storageContext,
 }: PhotoCaptureProps) {
-  // Admin edit mode previously disabled photo controls; that restriction has
-  // been removed so admins can add, replace, and delete photos like agents.
   const readOnly = false;
+  const useStorage = !!storageContext;
+  // Cached signed URLs for filenames being viewed in storage mode.
+  const [signedUrls, setSignedUrls] = useState<Record<string, string | null>>({});
   const inputRef = useRef<HTMLInputElement>(null);
   const localCache = useRef<Record<string, string>>({});
   const fileMeta = useRef<Record<string, { size: number; original: string }>>({});
