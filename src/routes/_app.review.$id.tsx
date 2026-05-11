@@ -70,7 +70,7 @@ const RATING_DOT: Record<number, string> = {
 const RATING_EMOJI: Record<number, string> = { 1: "🟢", 2: "🟡", 3: "🔴" };
 
 interface PhotoEntry {
-  src: string;
+  src: string | null; // null = file not available in Storage (admin cross-agent view)
   filename: string;
   questionLabel: string;
   sectionName: string;
