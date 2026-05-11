@@ -18,6 +18,10 @@ interface PhotoCaptureProps {
   isVideo?: boolean;
   onChange: (photos: string[], filenames: string[]) => void;
   error?: boolean;
+  // When true, hides the add and remove controls. Used when an admin is
+  // editing another agent's walkthrough — they can view photos but not
+  // add or delete them.
+  readOnly?: boolean;
 }
 
 function makeName(base: string, idx: number, isVideo: boolean): string {
@@ -32,6 +36,7 @@ export function PhotoCapture({
   isVideo,
   onChange,
   error,
+  readOnly,
 }: PhotoCaptureProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const localCache = useRef<Record<string, string>>({});
