@@ -164,6 +164,16 @@ function ReviewScreen() {
           if (remote.uploadStatus === "confirmed" && remote.driveFolderUrl) {
             setUploadStatus("success");
             setDriveUrl(remote.driveFolderUrl);
+          } else if (remote.uploadStatus === "photos_complete" && remote.driveFolderUrl) {
+            setUploadStatus("photos_done");
+            setDriveUrl(remote.driveFolderUrl);
+            const vids: string[] = [];
+            for (const ans of Object.values(remote.answers ?? {})) {
+              for (const n of [...(ans.photoNames ?? []), ...(ans.poorPhotoNames ?? [])]) {
+                if (n && /\.(mp4|mov)$/i.test(n)) vids.push(n);
+              }
+            }
+            setPendingVideoCount(vids.length);
           }
         } else {
           setNotFound(true);
