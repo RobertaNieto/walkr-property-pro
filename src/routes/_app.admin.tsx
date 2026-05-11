@@ -992,19 +992,40 @@ function WalkthroughsTab() {
                   <span className="truncate text-sm font-medium text-foreground">
                     {agent?.name ?? w.user_id.slice(0, 8)}
                   </span>
+                  {adminEdits.get(w.id) && (
+                    <Pill tone="amber" className="ml-auto">
+                      <ShieldAlert className="h-3 w-3" />
+                      Admin edited {fmtDate(adminEdits.get(w.id)!)}
+                    </Pill>
+                  )}
                 </div>
 
-                <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
                   <span className="text-xs text-muted-foreground">
                     Started {fmtDate(w.created_at)}
                   </span>
-                  <Link
-                    to="/review/$id"
-                    params={{ id: w.id }}
-                    className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                  >
-                    View Report
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleEditWalkthrough(w)}
+                      disabled={editingId === w.id}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-transparent px-3 text-xs font-semibold text-foreground hover:bg-secondary disabled:opacity-60"
+                    >
+                      {editingId === w.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Pencil className="h-3.5 w-3.5" />
+                      )}
+                      Edit Walkthrough
+                    </button>
+                    <Link
+                      to="/review/$id"
+                      params={{ id: w.id }}
+                      className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                    >
+                      View Report
+                    </Link>
+                  </div>
                 </div>
               </article>
             );
