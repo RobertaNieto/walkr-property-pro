@@ -958,6 +958,7 @@ function FollowUpRenderer({
             photos={value.photos ?? []}
             filenames={value.photoNames ?? []}
             baseName={fu.photoName ?? "FOLLOWUP"}
+            storageContext={getAdminStorageContext()}
             onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
             error={attempted && fu.required && (value.photos?.length ?? 0) < 1}
           />
