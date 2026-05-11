@@ -4,7 +4,7 @@ import { NotesField } from "@/components/NotesField";
 import { PhotoCapture } from "@/components/PhotoCapture";
 import { RatingButtons } from "@/components/RatingButtons";
 import { WizardLayout } from "@/components/WizardLayout";
-import { loadActive, setAnswer, updateWalkthrough, type Rating } from "@/lib/walkthrough";
+import { isAdminEditing, loadActive, setAnswer, updateWalkthrough, type Rating } from "@/lib/walkthrough";
 
 const QID = "front_of_house";
 const SECTION = 2;
