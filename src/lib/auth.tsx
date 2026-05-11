@@ -1,7 +1,13 @@
 import { Session, User } from "@supabase/supabase-js";
-import { ReactNode, createContext, useCallback, useContext, useEffect, useState } from "react";
+import { ReactNode, createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  clearPreviousUserScope,
+  getCurrentUserScope,
+  getPreviousUserScope,
+  setCurrentUserScope,
+} from "@/lib/local-scope";
 
 export type UserRole = "admin" | "agent";
 export type UserStatus = "active" | "blocked";
@@ -50,6 +56,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleSession = useCallback(
     async (newSession: Session | null) => {
       setSession(newSession);
+      const newUserId = newSession?.user?.id ?? null;
+      // Update the per-device user scope FIRST so any storage helpers
+      // invoked downstream (walkthrough cache, photo IDB) see the correct
+      // user. setCurrentUserScope is idempotent for the same id.
+      const prevScope = getCurrentUserScope();
+      setCurrentUserScope(newUserId);
+      // If a real account swap happened on this device, warn the user.
+      if (
+        newUserId &&
+        prevScope &&
+        prevScope !== "anon" &&
+        prevScope !== newUserId
+      ) {
+        toast.warning(
+          "Switching accounts — any unuploaded photos from the previous session will remain on this device but will not be accessible to the new account.",
+          { duration: 8000 },
+        );
+        clearPreviousUserScope();
+      } else if (!newUserId && getPreviousUserScope()) {
+        clearPreviousUserScope();
+      }
       if (!newSession?.user) {
         setRole(null);
         setLoading(false);
@@ -68,6 +95,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [fetchRole],
   );
+
+  // Suppress unused import in builds where the ref isn't needed yet.
+  void useRef;
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {

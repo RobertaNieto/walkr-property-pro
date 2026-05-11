@@ -1,27 +1,29 @@
 import { Camera, CheckCircle2, Loader2, Play, X } from "lucide-react";
-import { ChangeEvent, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { compressImage, removePhoto, resolvePhotoSrc, savePhoto } from "@/lib/photo-store";
+import {
+  compressImage,
+  getStorageSignedUrl,
+  removePhoto,
+  removeStoragePhoto,
+  resolvePhotoSrc,
+  savePhoto,
+  saveStoragePhoto,
+  type StorageContext,
+} from "@/lib/photo-store";
 
 interface PhotoCaptureProps {
-  // Each entry is either a filename (preferred, points into photo-store) or
-  // a legacy raw data URL. PhotoCapture handles both transparently.
   photos: string[];
-  // Index-aligned filenames for newly captured photos. When provided, the
-  // component will store the compressed data URL under that filename in the
-  // photo store and pass the filename back to the parent via onChange.
   filenames?: string[];
-  // Base filename used to generate names for newly captured photos
-  // (e.g. "EXTERIOR_FRONT" -> "EXTERIOR_FRONT.jpg", "EXTERIOR_FRONT_2.jpg").
   baseName?: string;
-  // True when capturing video (.mp4 extension and <video> preview).
   isVideo?: boolean;
   onChange: (photos: string[], filenames: string[]) => void;
   error?: boolean;
-  // When true, hides the add and remove controls. Used when an admin is
-  // editing another agent's walkthrough — they can view photos but not
-  // add or delete them.
   readOnly?: boolean;
+  // When set, all photo I/O bypasses local IndexedDB and goes to Supabase
+  // Storage at walkthrough-photos/{agentId}/{walkthroughId}/... — used for
+  // admin edit/fix-missing flows so the admin's device cache is never touched.
+  storageContext?: StorageContext;
 }
 
 function makeName(base: string, idx: number, isVideo: boolean): string {
@@ -37,10 +39,12 @@ export function PhotoCapture({
   onChange,
   error,
   readOnly: _readOnly,
+  storageContext,
 }: PhotoCaptureProps) {
-  // Admin edit mode previously disabled photo controls; that restriction has
-  // been removed so admins can add, replace, and delete photos like agents.
   const readOnly = false;
+  const useStorage = !!storageContext;
+  // Cached signed URLs for filenames being viewed in storage mode.
+  const [signedUrls, setSignedUrls] = useState<Record<string, string | null>>({});
   const inputRef = useRef<HTMLInputElement>(null);
   const localCache = useRef<Record<string, string>>({});
   const fileMeta = useRef<Record<string, { size: number; original: string }>>({});
@@ -91,7 +95,11 @@ export function PhotoCapture({
           : `PHOTO_${Date.now()}_${i}.${isVideo ? "mp4" : "jpg"}`;
         // Persist heavy data in IndexedDB photo bucket. Await ensures any
         // failure surfaces before we tell the parent the photo exists.
-        await savePhoto(name, compressed);
+        if (useStorage && storageContext) {
+          await saveStoragePhoto(storageContext, name, compressed);
+        } else {
+          await savePhoto(name, compressed);
+        }
         // Belt-and-suspenders: keep an instance-local copy so the thumbnail
         // renders even if the IDB write or memCache lookup is somehow slow.
         localCache.current[name] = compressed;
@@ -110,12 +118,38 @@ export function PhotoCapture({
 
   const remove = (idx: number) => {
     const entry = photos[idx];
-    // Only remove from store if it was a filename we saved.
-    if (entry && !entry.startsWith("data:")) void removePhoto(entry);
+    if (entry && !entry.startsWith("data:")) {
+      if (useStorage && storageContext) void removeStoragePhoto(storageContext, entry);
+      else void removePhoto(entry);
+    }
     const nextPhotos = photos.filter((_, i) => i !== idx);
     const nextNames = (filenames ?? photos).filter((_, i) => i !== idx);
     onChange(nextPhotos, nextNames);
   };
+
+  // In storage mode, fetch signed URLs for all photo filenames so thumbnails
+  // render. We never look in the admin's local IDB for these files.
+  useEffect(() => {
+    if (!useStorage || !storageContext) return;
+    let cancelled = false;
+    const need = photos.filter(
+      (e) => e && !e.startsWith("data:") && !e.startsWith("blob:") && !e.startsWith("http"),
+    );
+    if (need.length === 0) return;
+    void Promise.all(
+      need.map(async (fn) => [fn, await getStorageSignedUrl(storageContext, fn)] as const),
+    ).then((pairs) => {
+      if (cancelled) return;
+      setSignedUrls((prev) => {
+        const next = { ...prev };
+        for (const [fn, url] of pairs) next[fn] = url;
+        return next;
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [useStorage, storageContext, photos]);
 
   return (
     <div className="space-y-3">
