@@ -105,6 +105,17 @@ export function WizardLayout({
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background">
+      {adminEdit && (
+        <div className="sticky top-0 z-30 border-b border-amber-500/40 bg-amber-500/15 px-4 py-2 text-amber-900 dark:text-amber-200">
+          <div className="mx-auto flex w-full max-w-2xl items-start gap-2">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            <p className="text-[12px] font-semibold leading-snug">
+              You are editing {adminEdit.agentName}'s walkthrough
+              {adminEdit.address ? ` for ${adminEdit.address}` : ""}. Changes save immediately.
+            </p>
+          </div>
+        </div>
+      )}
       {/* Sticky top */}
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto w-full max-w-2xl px-4 pb-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
