@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, CloudUpload, Eye, ExternalLink, Loader2, RefreshCw, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, CloudUpload, Eye, ExternalLink, Film, Loader2, RefreshCw, Trash2, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
@@ -14,7 +14,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { completeWalkthrough, fetchById, formatPropertyAddress, isAdminEditing, submitWalkthrough, type Walkthrough } from "@/lib/walkthrough";
-import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import { uploadPhotosWithRetry, uploadVideosWithRetry, type UploadProgress } from "@/lib/drive-upload";
 import { useAuth } from "@/lib/auth";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 
@@ -25,6 +25,7 @@ export const Route = createFileRoute("/_app/wizard/complete")({
 type UploadState =
   | { kind: "idle" }
   | { kind: "uploading"; progress: UploadProgress }
+  | { kind: "photos_done"; url: string; pendingVideos: number }
   | { kind: "success"; url: string }
   | { kind: "error"; message: string };
 
@@ -44,14 +45,19 @@ function CompleteScreen() {
     void completeWalkthrough().then(async (w) => {
       if (!w) return;
       setWalk(w);
-      // Refetch from DB to get authoritative upload_status / drive_folder_url
       const fresh = await fetchById(w.id);
       if (fresh) {
         setWalk(fresh);
-        const status = (fresh as unknown as { upload_status?: string; drive_folder_url?: string }).upload_status;
-        const url = (fresh as unknown as { drive_folder_url?: string }).drive_folder_url;
-        if (status === "confirmed" && url) {
-          setUpload({ kind: "success", url });
+        if (fresh.uploadStatus === "confirmed" && fresh.driveFolderUrl) {
+          setUpload({ kind: "success", url: fresh.driveFolderUrl });
+        } else if (fresh.uploadStatus === "photos_complete" && fresh.driveFolderUrl) {
+          let pending = 0;
+          for (const ans of Object.values(fresh.answers ?? {})) {
+            for (const n of [...(ans.photoNames ?? []), ...(ans.poorPhotoNames ?? [])]) {
+              if (n && /\.(mp4|mov)$/i.test(n)) pending++;
+            }
+          }
+          setUpload({ kind: "photos_done", url: fresh.driveFolderUrl, pendingVideos: pending });
         }
       }
     });
@@ -78,13 +84,35 @@ function CompleteScreen() {
       kind: "uploading",
       progress: { phase: "staging", current: 0, total: 0, message: "Starting..." },
     });
-    const res = await uploadWithRetry(walk, user.id, (p) => {
+    const res = await uploadPhotosWithRetry(walk, user.id, (p) => {
       setUpload({ kind: "uploading", progress: p });
     });
-    if (res.success && res.driveFolderUrl) {
+    if (!res.success || !res.driveFolderUrl) {
+      setUpload({ kind: "error", message: res.error ?? "Upload failed" });
+      return;
+    }
+    const pending = res.videosPending?.length ?? 0;
+    if (pending === 0) {
       setUpload({ kind: "success", url: res.driveFolderUrl });
     } else {
-      setUpload({ kind: "error", message: res.error ?? "Upload failed" });
+      setUpload({ kind: "photos_done", url: res.driveFolderUrl, pendingVideos: pending });
+    }
+  };
+
+  const handleVideoUpload = async () => {
+    if (!walk || !user || !online) return;
+    const currentUrl = upload.kind === "photos_done" ? upload.url : null;
+    setUpload({
+      kind: "uploading",
+      progress: { phase: "staging", current: 0, total: 0, message: "Starting video upload..." },
+    });
+    const res = await uploadVideosWithRetry(walk, user.id, (p) => {
+      setUpload({ kind: "uploading", progress: p });
+    });
+    if (res.success && (res.driveFolderUrl ?? currentUrl)) {
+      setUpload({ kind: "success", url: res.driveFolderUrl ?? currentUrl! });
+    } else {
+      setUpload({ kind: "error", message: res.error ?? "Video upload failed" });
     }
   };
 
@@ -118,7 +146,7 @@ function CompleteScreen() {
           </Link>
         )}
 
-        <UploadButton state={upload} onUpload={handleUpload} online={online} />
+        <UploadButton state={upload} onUpload={handleUpload} onUploadVideos={handleVideoUpload} online={online} />
 
         <Link
           to="/"
@@ -167,10 +195,12 @@ function CompleteScreen() {
 function UploadButton({
   state,
   onUpload,
+  onUploadVideos,
   online,
 }: {
   state: UploadState;
   onUpload: () => void;
+  onUploadVideos: () => void;
   online: boolean;
 }) {
   if (state.kind === "uploading") {
@@ -188,6 +218,34 @@ function UploadButton({
     );
   }
 
+  if (state.kind === "photos_done") {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-center gap-2 rounded-2xl bg-success/10 px-4 py-2 text-sm font-semibold text-success">
+          <CheckCircle2 className="h-4 w-4" />
+          Photos &amp; Report uploaded
+        </div>
+        <a
+          href={state.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-border bg-card text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
+        >
+          View in Drive
+          <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+        <button
+          onClick={onUploadVideos}
+          disabled={!online}
+          className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Film className="h-5 w-5" />
+          Upload Videos ({state.pendingVideos})
+        </button>
+      </div>
+    );
+  }
+
   if (state.kind === "success") {
     return (
       <a
@@ -197,7 +255,7 @@ function UploadButton({
         className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-success px-6 text-base font-semibold text-success-foreground transition-colors hover:bg-success/90"
       >
         <CheckCircle2 className="h-5 w-5" />
-        Uploaded — View in Drive
+        Fully uploaded to Drive
         <ExternalLink className="h-4 w-4" />
       </a>
     );

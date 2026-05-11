@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, CheckCircle2, CloudUpload, Eye, Image as ImageIcon, Loader2, PlayCircle, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, CloudUpload, Eye, Film, Image as ImageIcon, Loader2, PlayCircle, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Progress } from "@/components/ui/progress";
-import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import { uploadPhotosWithRetry, uploadVideosWithRetry, type UploadProgress } from "@/lib/drive-upload";
 import { fetchById } from "@/lib/walkthrough";
 import { buildQuestionList, hasUserAnswer, SECTIONS, type SkipContext } from "@/lib/wizard-schema";
 import { toast } from "sonner";
@@ -462,26 +462,33 @@ function CompletedCard({
   onDelete: () => void;
 }) {
   const alreadyUploaded = record.uploadStatus === "confirmed";
+  const photosOnly = record.uploadStatus === "photos_complete";
   const existingDriveUrl = record.driveFolderUrl ?? null;
-  const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">(
-    alreadyUploaded ? "success" : "idle",
+  const [status, setStatus] = useState<"idle" | "uploading" | "photos_done" | "success" | "error">(
+    alreadyUploaded ? "success" : photosOnly ? "photos_done" : "idle",
   );
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [driveUrl, setDriveUrl] = useState<string | null>(existingDriveUrl);
   const [confirmReupload, setConfirmReupload] = useState(false);
 
-  // Determine whether the walkthrough has any content and whether all required
-  // sections are complete. If we don't have the underlying walkthrough loaded
-  // (local-only summary), fall back to photo count from the summary.
-  const { hasAnyContent, allRequiredComplete, incompleteCount } = useMemo(() => {
+  const { hasAnyContent, allRequiredComplete, incompleteCount, pendingVideos } = useMemo(() => {
     const w = record._walk;
+    let pending = 0;
+    if (w) {
+      for (const ans of Object.values(w.answers ?? {})) {
+        for (const n of [...(ans.photoNames ?? []), ...(ans.poorPhotoNames ?? [])]) {
+          if (n && /\.(mp4|mov)$/i.test(n)) pending++;
+        }
+      }
+    }
     if (!w) {
       const photos = record.totalPhotos ?? 0;
       return {
         hasAnyContent: photos > 0,
         allRequiredComplete: photos > 0,
         incompleteCount: 0,
+        pendingVideos: pending,
       };
     }
     const ctx: SkipContext = {
@@ -508,6 +515,7 @@ function CompletedCard({
       hasAnyContent: totalPhotos > 0 || completeSecs > 0,
       allRequiredComplete: incompleteSecs === 0,
       incompleteCount: incompleteSecs,
+      pendingVideos: pending,
     };
   }, [record]);
 
@@ -522,13 +530,35 @@ function CompletedCard({
     try {
       const walk = await fetchById(record.id);
       if (!walk) throw new Error("Walkthrough not found");
-      const res = await uploadWithRetry(walk, userId, (p) => setProgress(p), 3, { mode });
-      if (res.success) {
-        setStatus("success");
-        setDriveUrl(res.driveFolderUrl ?? existingDriveUrl);
-      } else {
+      const res = await uploadPhotosWithRetry(walk, userId, (p) => setProgress(p), 3, { mode });
+      if (!res.success) {
         setStatus("error");
         setError(res.error ?? "Upload failed");
+        return;
+      }
+      setDriveUrl(res.driveFolderUrl ?? existingDriveUrl);
+      const pending = res.videosPending?.length ?? 0;
+      setStatus(pending === 0 ? "success" : "photos_done");
+    } catch (e) {
+      setStatus("error");
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const runVideoUpload = async () => {
+    if (!userId) return;
+    setStatus("uploading");
+    setError(null);
+    try {
+      const walk = await fetchById(record.id);
+      if (!walk) throw new Error("Walkthrough not found");
+      const res = await uploadVideosWithRetry(walk, userId, (p) => setProgress(p));
+      if (res.success) {
+        setStatus("success");
+        setDriveUrl(res.driveFolderUrl ?? driveUrl);
+      } else {
+        setStatus("error");
+        setError(res.error ?? "Video upload failed");
       }
     } catch (e) {
       setStatus("error");
@@ -557,6 +587,18 @@ function CompletedCard({
             <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400">
               Completed
             </span>
+            {status === "success" && (
+              <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-semibold text-success ring-1 ring-success/30">
+                <CheckCircle2 className="h-2.5 w-2.5" />
+                Fully uploaded
+              </span>
+            )}
+            {status === "photos_done" && (
+              <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-500/30 dark:text-amber-400">
+                <ImageIcon className="h-2.5 w-2.5" />
+                Photos uploaded
+              </span>
+            )}
             <p className="mt-1.5 truncate text-base font-bold text-foreground">
               {record.propertyAddress || "Untitled walkthrough"}
             </p>
@@ -629,6 +671,27 @@ function CompletedCard({
                 <CloudUpload className="h-3.5 w-3.5" />
                 Re-upload to Drive
               </button>
+            </div>
+          ) : status === "photos_done" ? (
+            <div className="flex flex-1 flex-col gap-1.5">
+              <button
+                type="button"
+                onClick={() => void runVideoUpload()}
+                className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <Film className="h-4 w-4" />
+                Upload Videos{pendingVideos > 0 ? ` (${pendingVideos})` : ""}
+              </button>
+              {driveUrl && (
+                <a
+                  href={driveUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                >
+                  View in Drive →
+                </a>
+              )}
             </div>
           ) : status === "error" ? (
             <button
