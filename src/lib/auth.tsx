@@ -1,7 +1,13 @@
 import { Session, User } from "@supabase/supabase-js";
-import { ReactNode, createContext, useCallback, useContext, useEffect, useState } from "react";
+import { ReactNode, createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  clearPreviousUserScope,
+  getCurrentUserScope,
+  getPreviousUserScope,
+  setCurrentUserScope,
+} from "@/lib/local-scope";
 
 export type UserRole = "admin" | "agent";
 export type UserStatus = "active" | "blocked";
