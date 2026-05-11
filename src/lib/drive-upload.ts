@@ -103,27 +103,39 @@ export async function uploadWalkthroughToDrive(
     const total = names.length;
     console.log("[drive-upload] media discovered", { walkthroughId: walk.id, total, names });
 
-    // Phase 1: stage every local file from IndexedDB to Supabase Storage
-    for (let i = 0; i < names.length; i++) {
-      const fname = names[i];
+    // Phase 1: stage every local file from IndexedDB to Supabase Storage.
+    // For admin re-uploads, all photos already exist in Supabase Storage
+    // (uploaded by the agent), so we skip local staging entirely.
+    if (options?.isAdmin) {
+      console.log("[drive-upload] admin re-upload — skipping local staging, using Storage directly");
       onProgress?.({
         phase: "staging",
-        current: i,
+        current: total,
         total,
-        message: `Preparing photos... ${i + 1} of ${total}`,
+        message: "Reading photos from cloud storage...",
       });
-      const dataUrl = await preloadPhoto(fname);
-      if (!dataUrl) {
-        throw new Error(`Could not find ${fname} in local browser storage. Reattach the file, then retry.`);
+    } else {
+      for (let i = 0; i < names.length; i++) {
+        const fname = names[i];
+        onProgress?.({
+          phase: "staging",
+          current: i,
+          total,
+          message: `Preparing photos... ${i + 1} of ${total}`,
+        });
+        const dataUrl = await preloadPhoto(fname);
+        if (!dataUrl) {
+          throw new Error(`Could not find ${fname} in local browser storage. Reattach the file, then retry.`);
+        }
+        console.log("[drive-upload] IndexedDB file loaded", { walkthroughId: walk.id, filename: fname });
+        const blob = dataUrlToBlob(dataUrl, fname);
+        const path = `${stagingUserId}/${walk.id}/${fname}`;
+        const { error } = await supabase.storage
+          .from(BUCKET)
+          .upload(path, blob, { upsert: true, contentType: blob.type });
+        if (error) throw new Error(`Stage failed for ${fname}: ${error.message}`);
+        console.log("[drive-upload] storage staged", { walkthroughId: walk.id, path, contentType: blob.type, bytes: blob.size });
       }
-      console.log("[drive-upload] IndexedDB file loaded", { walkthroughId: walk.id, filename: fname });
-      const blob = dataUrlToBlob(dataUrl, fname);
-      const path = `${stagingUserId}/${walk.id}/${fname}`;
-      const { error } = await supabase.storage
-        .from(BUCKET)
-        .upload(path, blob, { upsert: true, contentType: blob.type });
-      if (error) throw new Error(`Stage failed for ${fname}: ${error.message}`);
-      console.log("[drive-upload] storage staged", { walkthroughId: walk.id, path, contentType: blob.type, bytes: blob.size });
     }
 
     // Phase 2: invoke edge function to push to Drive
