@@ -2,18 +2,37 @@
 // Replaces localStorage photo bucket which has a 5MB quota that iOS Safari
 // enforces strictly, causing silent write failures. IndexedDB quota is 50MB+
 // on mobile Safari and effectively unlimited on Chrome.
+//
+// Per-user isolation: the database name is suffixed with the current user's
+// id so two accounts on the same device cannot read or overwrite each other's
+// captured photos. The in-memory cache is wiped on every user-scope change.
 
-const DB_NAME = "propertywalk_photos";
+import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUserScope, onUserScopeChange } from "./local-scope";
+
+const DB_NAME_BASE = "propertywalk_photos";
 const STORE = "photos";
 const DB_VERSION = 1;
+
+function dbName(): string {
+  return `${DB_NAME_BASE}_${getCurrentUserScope()}`;
+}
 
 // In-memory cache so thumbnails render immediately after capture without
 // waiting for an async IDB read.
 const memCache = new Map<string, string>();
 
+if (typeof window !== "undefined") {
+  onUserScopeChange(() => {
+    // Account switched on this device — drop any cached blobs from the
+    // previous user so they can never appear in the new session.
+    memCache.clear();
+  });
+}
+
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    const req = indexedDB.open(dbName(), DB_VERSION);
     req.onupgradeneeded = () => {
       req.result.createObjectStore(STORE);
     };
@@ -88,20 +107,10 @@ export function resolvePhotoSrc(entry: string | undefined): string | undefined {
   }
   // Check in-memory cache first (fast).
   if (memCache.has(entry)) return memCache.get(entry);
-  // Legacy localStorage fallback.
-  try {
-    if (typeof localStorage === "undefined") return undefined;
-    const raw = localStorage.getItem("propertywalk_photos");
-    if (raw) {
-      const map = JSON.parse(raw) as Record<string, string>;
-      if (map[entry]) {
-        memCache.set(entry, map[entry]);
-        return map[entry];
-      }
-    }
-  } catch {
-    // ignore
-  }
+  // NOTE: legacy unscoped localStorage fallback removed — that bucket was
+  // shared across user accounts on the same device, which leaked photos
+  // between agents and admins. Anything not in the per-user IDB / memCache
+  // must come from Supabase Storage.
   return undefined;
 }
 
@@ -150,4 +159,59 @@ export async function compressImage(file: File): Promise<string> {
   } catch {
     return original;
   }
+}
+
+// =================== Supabase Storage adapter ===================
+// Used when an admin is editing/fixing another agent's walkthrough. Photos
+// MUST never touch the admin's local IndexedDB in that mode — they would
+// otherwise leak into the admin's own walkthroughs and corrupt the agent's
+// data on re-upload. All reads/writes go directly to the agent's bucket
+// path: walkthrough-photos/{agentId}/{walkthroughId}/{filename}.
+
+const BUCKET = "walkthrough-photos";
+
+function dataUrlToBlob(dataUrl: string, filename: string): Blob {
+  const [meta, b64] = dataUrl.split(",");
+  const mimeMatch = /data:([^;]+)/.exec(meta);
+  const mime = mimeMatch?.[1] || (filename.endsWith(".mp4") ? "video/mp4" : "image/jpeg");
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+export interface StorageContext {
+  agentId: string;
+  walkthroughId: string;
+}
+
+export async function saveStoragePhoto(
+  ctx: StorageContext,
+  filename: string,
+  dataUrl: string,
+): Promise<void> {
+  const blob = dataUrlToBlob(dataUrl, filename);
+  const path = `${ctx.agentId}/${ctx.walkthroughId}/${filename}`;
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, blob, { upsert: true, contentType: blob.type });
+  if (error) throw new Error(`Storage upload failed for ${filename}: ${error.message}`);
+}
+
+export async function removeStoragePhoto(
+  ctx: StorageContext,
+  filename: string,
+): Promise<void> {
+  const path = `${ctx.agentId}/${ctx.walkthroughId}/${filename}`;
+  await supabase.storage.from(BUCKET).remove([path]);
+}
+
+export async function getStorageSignedUrl(
+  ctx: StorageContext,
+  filename: string,
+  expiresInSec = 3600,
+): Promise<string | null> {
+  const path = `${ctx.agentId}/${ctx.walkthroughId}/${filename}`;
+  const { data } = await supabase.storage.from(BUCKET).createSignedUrl(path, expiresInSec);
+  return data?.signedUrl ?? null;
 }
