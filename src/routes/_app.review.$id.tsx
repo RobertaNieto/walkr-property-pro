@@ -24,7 +24,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useAuth } from "@/lib/auth";
-import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import { uploadPhotosWithRetry, uploadVideosWithRetry, type UploadProgress } from "@/lib/drive-upload";
 import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
@@ -137,12 +137,13 @@ function ReviewScreen() {
   // Photo lightbox state
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  // Drive upload state
-  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
+  // Drive upload state. "photos_done" = Phase 1 complete, awaiting Phase 2 (videos).
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "photos_done" | "success" | "error">("idle");
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [driveUrl, setDriveUrl] = useState<string | null>(null);
   const [confirmReupload, setConfirmReupload] = useState(false);
+  const [pendingVideoCount, setPendingVideoCount] = useState(0);
 
   // Section refs for scroll-to behavior
   const sectionsRef = useRef<HTMLDivElement | null>(null);
@@ -163,6 +164,16 @@ function ReviewScreen() {
           if (remote.uploadStatus === "confirmed" && remote.driveFolderUrl) {
             setUploadStatus("success");
             setDriveUrl(remote.driveFolderUrl);
+          } else if (remote.uploadStatus === "photos_complete" && remote.driveFolderUrl) {
+            setUploadStatus("photos_done");
+            setDriveUrl(remote.driveFolderUrl);
+            const vids: string[] = [];
+            for (const ans of Object.values(remote.answers ?? {})) {
+              for (const n of [...(ans.photoNames ?? []), ...(ans.poorPhotoNames ?? [])]) {
+                if (n && /\.(mp4|mov)$/i.test(n)) vids.push(n);
+              }
+            }
+            setPendingVideoCount(vids.length);
           }
         } else {
           setNotFound(true);
@@ -428,16 +439,43 @@ function ReviewScreen() {
     setUploadError(null);
     if (mode === "initial") setDriveUrl(null);
     const adminUpload = isAdmin && !!walk.userId && walk.userId !== user.id;
-    const res = await uploadWithRetry(walk, user.id, (p) => setUploadProgress(p), 3, {
+    const opts = {
       mode,
       ...(adminUpload ? { isAdmin: true, targetUserId: walk.userId } : {}),
-    });
+    };
+    const res = await uploadPhotosWithRetry(walk, user.id, (p) => setUploadProgress(p), 3, opts);
+    if (!res.success) {
+      setUploadStatus("error");
+      setUploadError(res.error ?? "Upload failed");
+      return;
+    }
+    setDriveUrl(res.driveFolderUrl ?? driveUrl);
+    const pending = res.videosPending?.length ?? 0;
+    setPendingVideoCount(pending);
+    if (pending === 0) {
+      setUploadStatus("success");
+    } else {
+      setUploadStatus("photos_done");
+    }
+  };
+
+  const runVideoUpload = async () => {
+    if (!walk || !user) return;
+    setUploadStatus("uploading");
+    setUploadError(null);
+    const adminUpload = isAdmin && !!walk.userId && walk.userId !== user.id;
+    const opts = {
+      mode: (walk.uploadStatus === "confirmed" ? "reupload" : "initial") as "initial" | "reupload",
+      ...(adminUpload ? { isAdmin: true, targetUserId: walk.userId } : {}),
+    };
+    const res = await uploadVideosWithRetry(walk, user.id, (p) => setUploadProgress(p), 3, opts);
     if (res.success) {
       setUploadStatus("success");
       setDriveUrl(res.driveFolderUrl ?? driveUrl);
+      setPendingVideoCount(0);
     } else {
       setUploadStatus("error");
-      setUploadError(res.error ?? "Upload failed");
+      setUploadError(res.error ?? "Video upload failed");
     }
   };
 

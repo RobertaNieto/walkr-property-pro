@@ -49,6 +49,7 @@ interface Walkthrough {
   config: Record<string, unknown>;
   answers: Record<string, AnswerRow>;
   completed_at: string | null;
+  drive_folder_url?: string | null;
 }
 
 interface AnswerRow {
@@ -1165,9 +1166,18 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const walkId = body.walkthroughId as string;
     const isReupload = body.mode === "reupload";
+    // phase: "photos" (default) uploads images + SUMMARY.pdf, then marks
+    // upload_status = "photos_complete" (or "confirmed" if no videos exist).
+    // phase: "videos" uploads a single named video. The client iterates one
+    // video at a time so each call stays well under the edge timeout.
+    const phase = (body.phase as "photos" | "videos") ?? "photos";
+    const videoFilename = body.videoFilename as string | undefined;
+    const purgeVideosFolder = body.purgeFirst === true; // only used in phase=videos
+    const markConfirmed = body.markComplete === true; // only used in phase=videos
     walkIdForFailure = walkId;
-    console.log("[upload-to-drive] request payload", { walkthroughId: walkId, mode: isReupload ? "reupload" : "initial" });
+    console.log("[upload-to-drive] request payload", { walkthroughId: walkId, mode: isReupload ? "reupload" : "initial", phase, videoFilename, purgeVideosFolder, markConfirmed });
     if (!walkId) throw new Error("Upload failed: missing walkthroughId in request payload");
+    if (phase === "videos" && !videoFilename) throw new Error("Upload failed: videoFilename is required for phase=videos");
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
@@ -1199,12 +1209,15 @@ Deno.serve(async (req) => {
     const walk = walkRow as Walkthrough;
     console.log("[upload-to-drive] walkthrough loaded", { walkthroughId: walk.id, userId: walk.user_id });
 
-    // Mark as uploading
-    await admin
-      .from("walkthroughs")
-      .update({ upload_status: "uploading" })
-      .eq("id", walkId);
-    console.log("[upload-to-drive] marked walkthrough uploading", { walkthroughId: walkId });
+    // Mark as uploading only for photos phase. Videos phase keeps the
+    // existing "photos_complete" status visible until it flips to confirmed.
+    if (phase === "photos") {
+      await admin
+        .from("walkthroughs")
+        .update({ upload_status: "uploading" })
+        .eq("id", walkId);
+      console.log("[upload-to-drive] marked walkthrough uploading", { walkthroughId: walkId });
+    }
 
     // Get Google access token
     const token = await getAccessToken();
@@ -1239,48 +1252,26 @@ Deno.serve(async (req) => {
     const videosFolderId = await createDriveFolder(token, "Videos", subfolderId);
     console.log("[upload-to-drive] Videos subfolder ready", { walkthroughId: walkId, videosFolderId });
 
-    // Re-upload mode: purge existing contents so the folder reflects only the
-    // current walkthrough state. Done after subfolders are ready so we don't
-    // delete the subfolders themselves.
-    if (isReupload) {
-      console.log("[upload-to-drive] re-upload: purging existing folder contents", { walkthroughId: walkId });
-      const [photosDeleted, videosDeleted] = await Promise.all([
-        purgeFolderContents(token, photosFolderId),
-        purgeFolderContents(token, videosFolderId),
-      ]);
-      // Delete prior SUMMARY.pdf at the property root
-      const priorPdfId = await findFileByName(token, "SUMMARY.pdf", subfolderId);
-      if (priorPdfId) {
-        const delRes = await fetch(`https://www.googleapis.com/drive/v3/files/${priorPdfId}?${DRIVE_QS}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!delRes.ok && delRes.status !== 404) {
-          console.warn("[upload-to-drive] re-upload: failed to delete prior SUMMARY.pdf (non-fatal)", { status: delRes.status });
-        }
-      }
-      console.log("[upload-to-drive] re-upload: purge complete", { walkthroughId: walkId, photosDeleted, videosDeleted, priorPdfDeleted: Boolean(priorPdfId) });
-    }
+    const isVideoName = (n: string) => /\.(mp4|mov)$/i.test(n);
 
-    // Collect photo filenames from answers
-    const photoNames = new Set<string>();
+    // Collect ALL filenames referenced by answers, then split by media type.
+    const allNames = new Set<string>();
     for (const ans of Object.values(walk.answers ?? {})) {
-      (ans.photoNames ?? []).forEach((n) => n && photoNames.add(n));
-      (ans.poorPhotoNames ?? []).forEach((n) => n && photoNames.add(n));
+      (ans.photoNames ?? []).forEach((n) => n && allNames.add(n));
+      (ans.poorPhotoNames ?? []).forEach((n) => n && allNames.add(n));
     }
-    const allFiles = Array.from(photoNames);
-    console.log("[upload-to-drive] staged filenames from walkthrough", { walkthroughId: walkId, total: allFiles.length });
+    const photoFiles = Array.from(allNames).filter((n) => !isVideoName(n));
+    const videoFiles = Array.from(allNames).filter(isVideoName);
+    console.log("[upload-to-drive] media split", { walkthroughId: walkId, photos: photoFiles.length, videos: videoFiles.length, phase });
 
-    // Upload one staged file: download from Supabase Storage, push to Drive.
-    const uploadOne = async (fname: string): Promise<boolean> => {
-      // Files are always staged under the walkthrough owner's user folder,
-      // even when an admin triggers re-upload on behalf of an agent.
+    // Helper: download from Storage and push to Drive.
+    const uploadOneToFolder = async (fname: string, folderId: string): Promise<boolean> => {
       const path = `${walk.user_id}/${walkId}/${fname}`;
       const { data: blob, error: dlErr } = await admin.storage
         .from("walkthrough-photos")
         .download(path);
       if (dlErr || !blob) {
-        console.warn("[upload-to-drive] missing photo in storage", { path, error: dlErr?.message });
+        console.warn("[upload-to-drive] missing file in storage", { path, error: dlErr?.message });
         return false;
       }
       const bytes = new Uint8Array(await blob.arrayBuffer());
@@ -1292,9 +1283,8 @@ Deno.serve(async (req) => {
           : lower.endsWith(".mp4")
             ? "video/mp4"
             : "image/jpeg";
-      const targetFolderId = mime.startsWith("video/") ? videosFolderId : photosFolderId;
       try {
-        await uploadFileToDrive(token, fname, mime, bytes, targetFolderId);
+        await uploadFileToDrive(token, fname, mime, bytes, folderId);
         console.log("[upload-to-drive] file uploaded ✓", { filename: fname, mime, bytes: bytes.length });
         return true;
       } catch (err) {
@@ -1303,15 +1293,71 @@ Deno.serve(async (req) => {
       }
     };
 
+    // ============= PHASE: VIDEOS =============
+    // Upload a single named video to the Videos subfolder. Optionally purge
+    // the Videos folder first (used by the client on the first video of a
+    // re-upload run). Optionally mark the walkthrough as fully confirmed
+    // (set by the client on the last video).
+    if (phase === "videos") {
+      if (purgeVideosFolder) {
+        const deleted = await purgeFolderContents(token, videosFolderId);
+        console.log("[upload-to-drive] re-upload: purged Videos folder", { walkthroughId: walkId, deleted });
+      }
+      const ok = await uploadOneToFolder(videoFilename!, videosFolderId);
+      if (!ok) throw new Error(`Video upload failed: ${videoFilename} could not be read from storage`);
+
+      const driveLink = walk.drive_folder_url ?? (await setFolderShareableLink(token, subfolderId));
+      if (markConfirmed) {
+        await admin
+          .from("walkthroughs")
+          .update({
+            upload_status: "confirmed",
+            drive_folder_url: driveLink,
+            uploaded_at: new Date().toISOString(),
+          })
+          .eq("id", walkId);
+      } else {
+        // keep status as photos_complete; ensure drive link is set
+        await admin
+          .from("walkthroughs")
+          .update({ upload_status: "photos_complete", drive_folder_url: driveLink })
+          .eq("id", walkId);
+      }
+      return new Response(
+        JSON.stringify({ success: true, driveFolderUrl: driveLink, videoUploaded: videoFilename, markedConfirmed: markConfirmed }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // ============= PHASE: PHOTOS (default) =============
+    // Re-upload mode: purge existing Photos folder + prior SUMMARY.pdf so
+    // this folder reflects the latest photos only. Videos folder is left
+    // alone — Phase 2 will purge it before uploading the first new video.
+    if (isReupload) {
+      console.log("[upload-to-drive] re-upload: purging Photos folder + prior SUMMARY.pdf", { walkthroughId: walkId });
+      const photosDeleted = await purgeFolderContents(token, photosFolderId);
+      const priorPdfId = await findFileByName(token, "SUMMARY.pdf", subfolderId);
+      if (priorPdfId) {
+        const delRes = await fetch(`https://www.googleapis.com/drive/v3/files/${priorPdfId}?${DRIVE_QS}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!delRes.ok && delRes.status !== 404) {
+          console.warn("[upload-to-drive] re-upload: failed to delete prior SUMMARY.pdf (non-fatal)", { status: delRes.status });
+        }
+      }
+      console.log("[upload-to-drive] re-upload: photos-phase purge complete", { walkthroughId: walkId, photosDeleted, priorPdfDeleted: Boolean(priorPdfId) });
+    }
+
     // Run uploads in parallel chunks so 75+ files finish under the 150s
     // edge-function timeout. Concurrency 6 keeps us well under Drive's
     // per-user write quota.
     const CONCURRENCY = 6;
     let uploaded = 0;
     let failed = 0;
-    for (let i = 0; i < allFiles.length; i += CONCURRENCY) {
-      const chunk = allFiles.slice(i, i + CONCURRENCY);
-      const results = await Promise.allSettled(chunk.map(uploadOne));
+    for (let i = 0; i < photoFiles.length; i += CONCURRENCY) {
+      const chunk = photoFiles.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(chunk.map((f) => uploadOneToFolder(f, photosFolderId)));
       for (const r of results) {
         if (r.status === "fulfilled") {
           if (r.value) uploaded++;
@@ -1319,10 +1365,10 @@ Deno.serve(async (req) => {
           failed++;
         }
       }
-      console.log("[upload-to-drive] chunk done", { walkthroughId: walkId, progress: `${Math.min(i + CONCURRENCY, allFiles.length)}/${allFiles.length}`, uploaded, failed });
+      console.log("[upload-to-drive] chunk done", { walkthroughId: walkId, progress: `${Math.min(i + CONCURRENCY, photoFiles.length)}/${photoFiles.length}`, uploaded, failed });
     }
     if (failed > 0) {
-      throw new Error(`Drive upload incomplete: ${failed} of ${allFiles.length} files failed`);
+      throw new Error(`Drive upload incomplete: ${failed} of ${photoFiles.length} photos failed`);
     }
 
     // Generate Drive shareable link
@@ -1343,11 +1389,13 @@ Deno.serve(async (req) => {
     );
     console.log("[upload-to-drive] SUMMARY.pdf uploaded ✓", { walkthroughId: walkId });
 
-    // Mark confirmed
+    // If there are no videos, the walkthrough is fully uploaded.
+    // Otherwise Phase 2 will flip the status to "confirmed" after videos.
+    const finalStatus = videoFiles.length === 0 ? "confirmed" : "photos_complete";
     await admin
       .from("walkthroughs")
       .update({
-        upload_status: "confirmed",
+        upload_status: finalStatus,
         drive_folder_url: driveLink,
         uploaded_at: new Date().toISOString(),
       })
@@ -1358,6 +1406,9 @@ Deno.serve(async (req) => {
         success: true,
         driveFolderUrl: driveLink,
         photosUploaded: uploaded,
+        videos: videoFiles,
+        videosPending: videoFiles.length,
+        status: finalStatus,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
