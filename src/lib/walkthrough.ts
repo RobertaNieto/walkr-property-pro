@@ -71,8 +71,48 @@ export interface Walkthrough {
 const ACTIVE_KEY = "propertywalk:active-id";
 const CACHE_PREFIX = "propertywalk:cache:";
 const COMPLETED_KEY = "propertywalk_completed";
+const ADMIN_EDIT_KEY = "propertywalk:admin-editing";
 export const COMPLETING_KEY = "propertywalk_completing";
 const MAX_COMPLETED = 50;
+
+// ---------- admin-edit session ----------
+// When an admin opens another agent's walkthrough for tech-support edits, we
+// flag the local session so the wizard UI can show a banner, hide submit/upload
+// actions, and make photo controls read-only. The flag is per-browser only.
+export interface AdminEditMeta {
+  walkthroughId: string;
+  agentName: string;
+  agentId: string;
+  address: string;
+}
+
+export function setAdminEditing(meta: AdminEditMeta | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (meta) localStorage.setItem(ADMIN_EDIT_KEY, JSON.stringify(meta));
+    else localStorage.removeItem(ADMIN_EDIT_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+export function getAdminEditing(): AdminEditMeta | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(ADMIN_EDIT_KEY);
+    if (!raw) return null;
+    const m = JSON.parse(raw) as AdminEditMeta;
+    const active = getActiveId();
+    if (active && m.walkthroughId === active) return m;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function isAdminEditing(): boolean {
+  return !!getAdminEditing();
+}
 
 // Lightweight summary stored in localStorage. The full walkthrough (with
 // answers and photos) lives in Supabase — local storage only needs enough
