@@ -540,6 +540,7 @@ function ReviewScreen() {
     if (!walk || !user) return;
     setUploadStatus("uploading");
     setUploadError(null);
+    setMissingPhoto(null);
     if (mode === "initial") setDriveUrl(null);
     const adminUpload = isAdmin && !!walk.userId && walk.userId !== user.id;
     const opts = {
@@ -550,6 +551,7 @@ function ReviewScreen() {
     if (!res.success) {
       setUploadStatus("error");
       setUploadError(res.error ?? "Upload failed");
+      setMissingPhoto(res.missingPhoto ?? null);
       return;
     }
     setDriveUrl(res.driveFolderUrl ?? driveUrl);
