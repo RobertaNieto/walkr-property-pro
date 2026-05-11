@@ -118,7 +118,7 @@ export async function uploadWalkthroughToDrive(
       }
       console.log("[drive-upload] IndexedDB file loaded", { walkthroughId: walk.id, filename: fname });
       const blob = dataUrlToBlob(dataUrl, fname);
-      const path = `${userId}/${walk.id}/${fname}`;
+      const path = `${stagingUserId}/${walk.id}/${fname}`;
       const { error } = await supabase.storage
         .from(BUCKET)
         .upload(path, blob, { upsert: true, contentType: blob.type });
