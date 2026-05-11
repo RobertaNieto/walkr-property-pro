@@ -1273,7 +1273,9 @@ Deno.serve(async (req) => {
 
     // Upload one staged file: download from Supabase Storage, push to Drive.
     const uploadOne = async (fname: string): Promise<boolean> => {
-      const path = `${userId}/${walkId}/${fname}`;
+      // Files are always staged under the walkthrough owner's user folder,
+      // even when an admin triggers re-upload on behalf of an agent.
+      const path = `${walk.user_id}/${walkId}/${fname}`;
       const { data: blob, error: dlErr } = await admin.storage
         .from("walkthrough-photos")
         .download(path);
