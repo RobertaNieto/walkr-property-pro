@@ -530,6 +530,7 @@ function CompletedCard({
     }
     setStatus("uploading");
     setError(null);
+    setMissingPhoto(null);
     try {
       const walk = await fetchById(record.id);
       if (!walk) throw new Error("Walkthrough not found");
@@ -537,6 +538,7 @@ function CompletedCard({
       if (!res.success) {
         setStatus("error");
         setError(res.error ?? "Upload failed");
+        setMissingPhoto(res.missingPhoto ?? null);
         return;
       }
       setDriveUrl(res.driveFolderUrl ?? existingDriveUrl);
