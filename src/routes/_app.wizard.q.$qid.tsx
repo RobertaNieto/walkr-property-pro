@@ -8,7 +8,7 @@ import { RatingButtons } from "@/components/RatingButtons";
 import { SectionNav, type SectionMeta, type SectionStatus } from "@/components/SectionNav";
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
-import { fetchById, getActiveId, isAdminEditing, loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer, type Walkthrough } from "@/lib/walkthrough";
+import { fetchById, getActiveId, getAdminEditing, isAdminEditing, loadActive, setAnswer, updateWalkthrough, type Rating, type WizardAnswer, type Walkthrough } from "@/lib/walkthrough";
 // loadActive is used in the initial state hydration (via useMemo above).
 import {
   buildQuestionList,
@@ -195,6 +195,9 @@ function QuestionScreen() {
   const answeredCount = list.filter((x) => isQuestionAnswered(x, ctxWithDraft.answers[x.id])).length;
   const progress = (answeredCount / totalQ) * 100;
 
+  const adminEdit = getAdminEditing();
+  const fixMode = adminEdit?.mode === "fix";
+
   const goNext = () => {
     const freshCtx: SkipContext = {
       config: ctx.config,
@@ -206,6 +209,15 @@ function QuestionScreen() {
         ),
       },
     };
+    // Persist immediately so fix-missing recomputes correctly.
+    setAnswer(qid, draft);
+    for (const [cid, val] of Object.entries(compDrafts)) {
+      setAnswer(cid, val);
+    }
+    if (fixMode) {
+      navigate({ to: "/wizard/fix-missing" });
+      return;
+    }
     const refreshedFull = buildQuestionList(freshCtx);
     const refreshedNav = refreshedFull.filter((x) => !x.renderedByCompanion);
     const here = refreshedNav.findIndex((x) => x.id === qid);
@@ -222,12 +234,6 @@ function QuestionScreen() {
       });
       navigate({ to: "/wizard/menu" });
     }
-    setTimeout(() => {
-      setAnswer(qid, draft);
-      for (const [cid, val] of Object.entries(compDrafts)) {
-        setAnswer(cid, val);
-      }
-    }, 0);
   };
 
   // ----- Section navigation drawer -----
@@ -307,6 +313,10 @@ function QuestionScreen() {
 
   const goBack = () => {
     persistDraft();
+    if (fixMode) {
+      navigate({ to: "/wizard/fix-missing" });
+      return;
+    }
     if (prevQ) {
       navigate({ to: "/wizard/q/$qid", params: { qid: prevQ.id } });
     } else {
@@ -346,8 +356,27 @@ function QuestionScreen() {
       onNext={goNext}
       onAttemptNext={() => setAttempted(true)}
       onBack={goBack}
-      nextLabel={getNextLabel(q, ctxWithDraft.answers[qid]?.text)}
+      nextLabel={fixMode ? "Save & Next Missing →" : getNextLabel(q, ctxWithDraft.answers[qid]?.text)}
     >
+      {fixMode && (
+        <div className="mb-4 flex items-center justify-between gap-2 rounded-2xl border-2 border-amber-500/40 bg-amber-500/10 p-3">
+          <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+            Fixing missing item — save returns to the list.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              persistDraft();
+              navigate({ to: "/wizard/fix-missing" });
+            }}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-card px-3 text-xs font-semibold text-foreground ring-1 ring-border hover:bg-secondary"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Missing Items
+          </button>
+        </div>
+      )}
+
       {editingFromReview && (
         <div className="mb-4 flex flex-col gap-2 rounded-2xl border-2 border-warning bg-warning/15 p-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm font-semibold text-warning-foreground">
