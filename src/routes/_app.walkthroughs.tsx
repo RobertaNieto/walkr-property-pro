@@ -554,6 +554,7 @@ function CompletedCard({
     if (!userId) return;
     setStatus("uploading");
     setError(null);
+    setMissingPhoto(null);
     try {
       const walk = await fetchById(record.id);
       if (!walk) throw new Error("Walkthrough not found");
@@ -564,6 +565,7 @@ function CompletedCard({
       } else {
         setStatus("error");
         setError(res.error ?? "Video upload failed");
+        setMissingPhoto(res.missingPhoto ?? null);
       }
     } catch (e) {
       setStatus("error");
