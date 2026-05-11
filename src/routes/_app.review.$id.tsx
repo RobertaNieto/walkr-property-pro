@@ -381,7 +381,7 @@ function ReviewScreen() {
       photoBySection: photoCounts,
       criticalBySection: flagCounts,
     };
-  }, [walk, allQuestions, photoTick]);
+  }, [walk, allQuestions, photoTick, isOtherAgent, remoteUrls]);
 
   const visibleChecklist = useMemo(
     () => FINAL_CHECKLIST_ITEMS.filter((it) => !it.visible || it.visible(walk?.config ?? {})),
