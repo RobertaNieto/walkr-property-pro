@@ -195,6 +195,9 @@ function QuestionScreen() {
   const answeredCount = list.filter((x) => isQuestionAnswered(x, ctxWithDraft.answers[x.id])).length;
   const progress = (answeredCount / totalQ) * 100;
 
+  const adminEdit = getAdminEditing();
+  const fixMode = adminEdit?.mode === "fix";
+
   const goNext = () => {
     const freshCtx: SkipContext = {
       config: ctx.config,
@@ -206,6 +209,15 @@ function QuestionScreen() {
         ),
       },
     };
+    // Persist immediately so fix-missing recomputes correctly.
+    setAnswer(qid, draft);
+    for (const [cid, val] of Object.entries(compDrafts)) {
+      setAnswer(cid, val);
+    }
+    if (fixMode) {
+      navigate({ to: "/wizard/fix-missing" });
+      return;
+    }
     const refreshedFull = buildQuestionList(freshCtx);
     const refreshedNav = refreshedFull.filter((x) => !x.renderedByCompanion);
     const here = refreshedNav.findIndex((x) => x.id === qid);
@@ -222,12 +234,6 @@ function QuestionScreen() {
       });
       navigate({ to: "/wizard/menu" });
     }
-    setTimeout(() => {
-      setAnswer(qid, draft);
-      for (const [cid, val] of Object.entries(compDrafts)) {
-        setAnswer(cid, val);
-      }
-    }, 0);
   };
 
   // ----- Section navigation drawer -----
