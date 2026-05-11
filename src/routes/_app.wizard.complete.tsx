@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, CloudUpload, Eye, ExternalLink, Film, Loader2, RefreshCw, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, CloudUpload, Eye, ExternalLink, Film, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
