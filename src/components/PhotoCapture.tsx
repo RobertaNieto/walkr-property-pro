@@ -229,14 +229,16 @@ export function PhotoCapture({
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => remove(i)}
-                  aria-label="Remove"
-                  className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-foreground/70 text-background backdrop-blur-sm transition-colors hover:bg-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={() => remove(i)}
+                    aria-label="Remove"
+                    className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-foreground/70 text-background backdrop-blur-sm transition-colors hover:bg-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             );
           })}
