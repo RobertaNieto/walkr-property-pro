@@ -800,18 +800,22 @@ function InviteAgentDialog({
 
 // ---------- Walkthroughs Tab ----------
 function WalkthroughsTab() {
+  const navigate = useNavigate();
+  const { user, role } = useAuth();
   const [rows, setRows] = useState<WalkRow[]>([]);
   const [agents, setAgents] = useState<
     Map<string, { name: string; email: string | null; avatar_url: string | null }>
   >(new Map());
+  const [adminEdits, setAdminEdits] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [query, setQuery] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
       setLoading(true);
-      const [{ data: walks, error }, { data: roles }, { data: profs }] = await Promise.all([
+      const [{ data: walks, error }, { data: roles }, { data: profs }, { data: edits }] = await Promise.all([
         supabase
           .from("walkthroughs")
           .select(
@@ -820,6 +824,7 @@ function WalkthroughsTab() {
           .order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id,full_name,email"),
         supabase.from("profiles").select("id,avatar_url"),
+        supabase.from("admin_edits").select("walkthrough_id,edited_at").order("edited_at", { ascending: false }),
       ]);
       if (error) {
         toast.error(error.message);
@@ -837,11 +842,47 @@ function WalkthroughsTab() {
           avatar_url: avatarMap.get(r.user_id) ?? null,
         });
       });
+      const editMap = new Map<string, string>();
+      (edits ?? []).forEach((e: { walkthrough_id: string; edited_at: string }) => {
+        if (!editMap.has(e.walkthrough_id)) editMap.set(e.walkthrough_id, e.edited_at);
+      });
+      setAdminEdits(editMap);
       setAgents(m);
       setRows((walks ?? []) as WalkRow[]);
       setLoading(false);
     })();
   }, []);
+
+  const handleEditWalkthrough = async (w: WalkRow) => {
+    if (!user) return;
+    const agent = agents.get(w.user_id);
+    setEditingId(w.id);
+    try {
+      const loaded = await resumeWalkthrough(w.id);
+      if (!loaded) {
+        toast.error("Could not load walkthrough");
+        setEditingId(null);
+        return;
+      }
+      const address = formatPropertyAddress(loaded.address) || `${formatStreet(w)} ${formatCityState(w)}`.trim();
+      setAdminEditing({
+        walkthroughId: w.id,
+        agentName: agent?.name ?? "agent",
+        agentId: w.user_id,
+        address,
+      });
+      const adminName = role?.full_name || role?.email || "admin";
+      await supabase.from("admin_edits").insert({
+        walkthrough_id: w.id,
+        edited_by: user.id,
+        note: `Admin edit by ${adminName}`,
+      });
+      navigate({ to: "/wizard/menu" });
+    } catch (e) {
+      toast.error((e as Error).message);
+      setEditingId(null);
+    }
+  };
 
   const filteredSorted = useMemo(() => {
     const q = query.trim().toLowerCase();
