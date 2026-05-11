@@ -3,6 +3,8 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, CloudUpload, Eye, Film, Image a
 import { useEffect, useMemo, useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { uploadPhotosWithRetry, uploadVideosWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import type { MissingPhotoLocation } from "@/lib/missing-photo";
+import { UploadErrorBanner } from "@/components/UploadErrorBanner";
 import { fetchById } from "@/lib/walkthrough";
 import { buildQuestionList, hasUserAnswer, SECTIONS, type SkipContext } from "@/lib/wizard-schema";
 import { toast } from "sonner";
