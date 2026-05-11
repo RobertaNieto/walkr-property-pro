@@ -86,6 +86,19 @@ function SectionMenuScreen() {
   const [leaveOpen, setLeaveOpen] = useState(false);
   const w: Walkthrough | null = useMemo(() => loadActive(), [tick]);
   const adminEditing = useMemo(() => isAdminEditing(), [tick]);
+  const adminMeta = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("propertywalk:admin-editing");
+      return raw ? (JSON.parse(raw) as { mode?: string }) : null;
+    } catch { return null; }
+  }, [tick]);
+
+  useEffect(() => {
+    if (adminEditing && adminMeta?.mode === "fix") {
+      navigate({ to: "/wizard/fix-missing", replace: true });
+    }
+  }, [adminEditing, adminMeta, navigate]);
 
   useEffect(() => {
     if (w) updateWalkthrough({ lastRoute: "/wizard/menu" });
