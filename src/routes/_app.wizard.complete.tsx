@@ -45,14 +45,19 @@ function CompleteScreen() {
     void completeWalkthrough().then(async (w) => {
       if (!w) return;
       setWalk(w);
-      // Refetch from DB to get authoritative upload_status / drive_folder_url
       const fresh = await fetchById(w.id);
       if (fresh) {
         setWalk(fresh);
-        const status = (fresh as unknown as { upload_status?: string; drive_folder_url?: string }).upload_status;
-        const url = (fresh as unknown as { drive_folder_url?: string }).drive_folder_url;
-        if (status === "confirmed" && url) {
-          setUpload({ kind: "success", url });
+        if (fresh.uploadStatus === "confirmed" && fresh.driveFolderUrl) {
+          setUpload({ kind: "success", url: fresh.driveFolderUrl });
+        } else if (fresh.uploadStatus === "photos_complete" && fresh.driveFolderUrl) {
+          let pending = 0;
+          for (const ans of Object.values(fresh.answers ?? {})) {
+            for (const n of [...(ans.photoNames ?? []), ...(ans.poorPhotoNames ?? [])]) {
+              if (n && /\.(mp4|mov)$/i.test(n)) pending++;
+            }
+          }
+          setUpload({ kind: "photos_done", url: fresh.driveFolderUrl, pendingVideos: pending });
         }
       }
     });
@@ -79,13 +84,35 @@ function CompleteScreen() {
       kind: "uploading",
       progress: { phase: "staging", current: 0, total: 0, message: "Starting..." },
     });
-    const res = await uploadWithRetry(walk, user.id, (p) => {
+    const res = await uploadPhotosWithRetry(walk, user.id, (p) => {
       setUpload({ kind: "uploading", progress: p });
     });
-    if (res.success && res.driveFolderUrl) {
+    if (!res.success || !res.driveFolderUrl) {
+      setUpload({ kind: "error", message: res.error ?? "Upload failed" });
+      return;
+    }
+    const pending = res.videosPending?.length ?? 0;
+    if (pending === 0) {
       setUpload({ kind: "success", url: res.driveFolderUrl });
     } else {
-      setUpload({ kind: "error", message: res.error ?? "Upload failed" });
+      setUpload({ kind: "photos_done", url: res.driveFolderUrl, pendingVideos: pending });
+    }
+  };
+
+  const handleVideoUpload = async () => {
+    if (!walk || !user || !online) return;
+    const currentUrl = upload.kind === "photos_done" ? upload.url : null;
+    setUpload({
+      kind: "uploading",
+      progress: { phase: "staging", current: 0, total: 0, message: "Starting video upload..." },
+    });
+    const res = await uploadVideosWithRetry(walk, user.id, (p) => {
+      setUpload({ kind: "uploading", progress: p });
+    });
+    if (res.success && (res.driveFolderUrl ?? currentUrl)) {
+      setUpload({ kind: "success", url: res.driveFolderUrl ?? currentUrl! });
+    } else {
+      setUpload({ kind: "error", message: res.error ?? "Video upload failed" });
     }
   };
 
