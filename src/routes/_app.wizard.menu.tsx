@@ -35,7 +35,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { getSectionColor } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
-import { formatPropertyAddress, loadActive, updateWalkthrough, type Walkthrough } from "@/lib/walkthrough";
+import { exitAdminEdit, formatPropertyAddress, isAdminEditing, loadActive, updateWalkthrough, type Walkthrough } from "@/lib/walkthrough";
 import {
   buildQuestionList,
   hasUserAnswer,
