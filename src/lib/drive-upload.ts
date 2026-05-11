@@ -161,7 +161,7 @@ export async function uploadWithRetry(
   userId: string,
   onProgress?: (p: UploadProgress) => void,
   maxAttempts = 3,
-  options?: { mode?: "initial" | "reupload" },
+  options?: { mode?: "initial" | "reupload"; targetUserId?: string; isAdmin?: boolean },
 ): Promise<UploadResult> {
   let lastErr = "";
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
