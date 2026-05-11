@@ -235,7 +235,16 @@ export function removeCompletedLocal(id: string) {
 // the app to appear frozen.
 
 function cacheKey(id: string) {
-  return `${CACHE_PREFIX}${id}`;
+  return `${CACHE_PREFIX()}${id}`;
+}
+
+// Wipe in-memory mirrors when the signed-in user changes so admin/agent
+// sessions on the same device cannot read each other's drafts.
+const memCache = new Map<string, Walkthrough>();
+if (typeof window !== "undefined") {
+  onUserScopeChange(() => {
+    memCache.clear();
+  });
 }
 
 // In-memory mirror. Source of truth for the running session; localStorage is
