@@ -79,6 +79,11 @@ export function WizardLayout({
   const navigate = useNavigate();
   const propertyAddress = useMemo(() => formatPropertyAddress(loadActive()?.address), []);
   const [homeConfirmOpen, setHomeConfirmOpen] = useState(false);
+  const [adminEdit, setAdminEdit] = useState<AdminEditMeta | null>(null);
+
+  useEffect(() => {
+    setAdminEdit(getAdminEditing());
+  }, []);
 
   const handleBack = () => {
     if (onBack) {
@@ -88,8 +93,13 @@ export function WizardLayout({
     }
   };
 
-  const handleConfirmLeave = () => {
+  const handleConfirmLeave = async () => {
     setHomeConfirmOpen(false);
+    if (adminEdit) {
+      await exitAdminEdit();
+      void navigate({ to: "/admin" });
+      return;
+    }
     void navigate({ to: "/" });
   };
 
