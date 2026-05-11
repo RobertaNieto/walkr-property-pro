@@ -339,6 +339,9 @@ export async function uploadWithRetry(
 ): Promise<UploadResult> {
   const phase1 = await uploadPhotosWithRetry(walk, userId, onProgress, maxAttempts, options);
   if (!phase1.success) return phase1;
+  // Partial photo uploads must not auto-trigger Phase 2 — the agent retries
+  // photos first, then uploads videos once Phase 1 fully completes.
+  if (phase1.partial) return phase1;
   if ((phase1.videosPending?.length ?? 0) === 0) return phase1;
   const phase2 = await uploadVideosWithRetry(walk, userId, onProgress, maxAttempts, options);
   if (!phase2.success) return { ...phase2, driveFolderUrl: phase1.driveFolderUrl };
