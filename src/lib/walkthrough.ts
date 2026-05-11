@@ -132,7 +132,7 @@ export interface CompletedSummary {
   completedAt: number;
   totalPhotos: number;
   criticalFlags: { questionId: string; label: string; notes?: string }[];
-  uploadStatus?: "pending" | "uploading" | "photos_complete" | "confirmed" | "failed";
+  uploadStatus?: "pending" | "uploading" | "photos_complete" | "confirmed" | "failed" | "partial";
   driveFolderUrl?: string | null;
 }
 
