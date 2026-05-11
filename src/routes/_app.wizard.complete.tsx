@@ -146,7 +146,7 @@ function CompleteScreen() {
           </Link>
         )}
 
-        <UploadButton state={upload} onUpload={handleUpload} online={online} />
+        <UploadButton state={upload} onUpload={handleUpload} onUploadVideos={handleVideoUpload} online={online} />
 
         <Link
           to="/"
