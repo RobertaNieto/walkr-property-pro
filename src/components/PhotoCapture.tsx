@@ -1,7 +1,16 @@
 import { Camera, CheckCircle2, Loader2, Play, X } from "lucide-react";
-import { ChangeEvent, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { compressImage, removePhoto, resolvePhotoSrc, savePhoto } from "@/lib/photo-store";
+import {
+  compressImage,
+  getStorageSignedUrl,
+  removePhoto,
+  removeStoragePhoto,
+  resolvePhotoSrc,
+  savePhoto,
+  saveStoragePhoto,
+  type StorageContext,
+} from "@/lib/photo-store";
 
 interface PhotoCaptureProps {
   // Each entry is either a filename (preferred, points into photo-store) or
