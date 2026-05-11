@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Home as HomeIcon, MapPin, Save } from "lucide-react";
-import { ReactNode, useMemo, useState } from "react";
+import { Home as HomeIcon, MapPin, Save, ShieldAlert } from "lucide-react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,7 +12,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { formatPropertyAddress, formatTimestamp, loadActive } from "@/lib/walkthrough";
+import {
+  exitAdminEdit,
+  formatPropertyAddress,
+  formatTimestamp,
+  getAdminEditing,
+  loadActive,
+  type AdminEditMeta,
+} from "@/lib/walkthrough";
 
 const SECTION_COLORS: Record<number, string> = {
   1: "#1B3A6B",
