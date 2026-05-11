@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, CloudUpload, Eye, ExternalLink, Loader2, RefreshCw, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, CloudUpload, Eye, ExternalLink, Film, Loader2, RefreshCw, Trash2, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
@@ -14,7 +14,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { completeWalkthrough, fetchById, formatPropertyAddress, isAdminEditing, submitWalkthrough, type Walkthrough } from "@/lib/walkthrough";
-import { uploadWithRetry, type UploadProgress } from "@/lib/drive-upload";
+import { uploadPhotosWithRetry, uploadVideosWithRetry, type UploadProgress } from "@/lib/drive-upload";
 import { useAuth } from "@/lib/auth";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 
@@ -25,6 +25,7 @@ export const Route = createFileRoute("/_app/wizard/complete")({
 type UploadState =
   | { kind: "idle" }
   | { kind: "uploading"; progress: UploadProgress }
+  | { kind: "photos_done"; url: string; pendingVideos: number }
   | { kind: "success"; url: string }
   | { kind: "error"; message: string };
 
