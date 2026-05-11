@@ -953,7 +953,13 @@ function ReviewScreen() {
                       </span>
                     </summary>
                     <div className="mt-3 overflow-hidden rounded-xl bg-black">
-                      <video src={v.src} controls className="h-full w-full" />
+                      {v.src ? (
+                        <video src={v.src} controls className="h-full w-full" />
+                      ) : (
+                        <div className="flex h-32 w-full items-center justify-center text-xs text-muted-foreground">
+                          Video not uploaded yet
+                        </div>
+                      )}
                     </div>
                   </details>
                 </li>
