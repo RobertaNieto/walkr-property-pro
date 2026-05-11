@@ -568,6 +568,7 @@ function ReviewScreen() {
     if (!walk || !user) return;
     setUploadStatus("uploading");
     setUploadError(null);
+    setMissingPhoto(null);
     const adminUpload = isAdmin && !!walk.userId && walk.userId !== user.id;
     const opts = {
       mode: (walk.uploadStatus === "confirmed" ? "reupload" : "initial") as "initial" | "reupload",
@@ -581,6 +582,7 @@ function ReviewScreen() {
     } else {
       setUploadStatus("error");
       setUploadError(res.error ?? "Video upload failed");
+      setMissingPhoto(res.missingPhoto ?? null);
     }
   };
 
