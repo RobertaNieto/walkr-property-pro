@@ -1161,10 +1161,10 @@ Deno.serve(async (req) => {
       });
     }
     const userId = userRes.user.id;
-    const agentName =
-      (userRes.user.user_metadata?.display_name as string | undefined) ??
-      userRes.user.email ??
-      "Agent";
+    // agentName is resolved below from the walkthrough OWNER's profile, not
+    // the caller — admins re-uploading on behalf of an agent must still see
+    // the agent's name on the SUMMARY.pdf.
+    let agentName = "Agent";
 
     const body = await req.json();
     const walkId = body.walkthroughId as string;
