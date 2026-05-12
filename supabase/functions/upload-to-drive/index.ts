@@ -15,7 +15,7 @@ const THUMB_GAP = 8;
 // Inline thumbnails in SUMMARY.pdf are disabled — decoding 60+ JPEGs through
 // imagescript reliably blows the per-request CPU budget on large walkthroughs.
 // The PDF still lists every photo filename per section.
-const MAX_TOTAL_THUMBS = 0;
+const MAX_TOTAL_THUMBS = 40;
 
 async function makeThumbnail(bytes: Uint8Array): Promise<Uint8Array | null> {
   try {
@@ -1161,10 +1161,10 @@ Deno.serve(async (req) => {
       });
     }
     const userId = userRes.user.id;
-    const agentName =
-      (userRes.user.user_metadata?.display_name as string | undefined) ??
-      userRes.user.email ??
-      "Agent";
+    // agentName is resolved below from the walkthrough OWNER's profile, not
+    // the caller — admins re-uploading on behalf of an agent must still see
+    // the agent's name on the SUMMARY.pdf.
+    let agentName = "Agent";
 
     const body = await req.json();
     const walkId = body.walkthroughId as string;
@@ -1358,6 +1358,13 @@ Deno.serve(async (req) => {
     const driveLink = await setFolderShareableLink(token, subfolderId);
     console.log("[upload-to-drive] Drive folder share link ready", { walkthroughId: walkId, driveLink });
 
+    const { data: agentProfile } = await admin
+      .from("user_roles")
+      .select("full_name, email")
+      .eq("user_id", walk.user_id)
+      .maybeSingle();
+    agentName = agentProfile?.full_name ?? agentProfile?.email ?? "Agent";
+
     console.log("[upload-to-drive] generating SUMMARY.pdf first", { walkthroughId: walkId });
     const pdfBytes = await buildSummaryPdf(walk, agentName, driveLink, admin);
     console.log("[upload-to-drive] SUMMARY.pdf generated", { walkthroughId: walkId, bytes: pdfBytes.length });
@@ -1408,9 +1415,11 @@ Deno.serve(async (req) => {
     const isPartial = stoppedEarly && processed < photoFiles.length;
     const finalStatus = isPartial
       ? "partial"
-      : videoFiles.length === 0
-        ? "confirmed"
-        : "photos_complete";
+      : uploaded === 0 && photoFiles.length > 0
+        ? "failed"
+        : videoFiles.length === 0
+          ? "confirmed"
+          : "photos_complete";
 
     await admin
       .from("walkthroughs")
