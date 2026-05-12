@@ -15,7 +15,7 @@ const THUMB_GAP = 8;
 // Inline thumbnails in SUMMARY.pdf are disabled — decoding 60+ JPEGs through
 // imagescript reliably blows the per-request CPU budget on large walkthroughs.
 // The PDF still lists every photo filename per section.
-const MAX_TOTAL_THUMBS = 0;
+const MAX_TOTAL_THUMBS = 40;
 
 async function makeThumbnail(bytes: Uint8Array): Promise<Uint8Array | null> {
   try {
