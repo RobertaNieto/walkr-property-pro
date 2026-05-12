@@ -1415,9 +1415,11 @@ Deno.serve(async (req) => {
     const isPartial = stoppedEarly && processed < photoFiles.length;
     const finalStatus = isPartial
       ? "partial"
-      : videoFiles.length === 0
-        ? "confirmed"
-        : "photos_complete";
+      : uploaded === 0 && photoFiles.length > 0
+        ? "failed"
+        : videoFiles.length === 0
+          ? "confirmed"
+          : "photos_complete";
 
     await admin
       .from("walkthroughs")
