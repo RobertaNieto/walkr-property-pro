@@ -1358,6 +1358,13 @@ Deno.serve(async (req) => {
     const driveLink = await setFolderShareableLink(token, subfolderId);
     console.log("[upload-to-drive] Drive folder share link ready", { walkthroughId: walkId, driveLink });
 
+    const { data: agentProfile } = await admin
+      .from("user_roles")
+      .select("full_name, email")
+      .eq("user_id", walk.user_id)
+      .maybeSingle();
+    agentName = agentProfile?.full_name ?? agentProfile?.email ?? "Agent";
+
     console.log("[upload-to-drive] generating SUMMARY.pdf first", { walkthroughId: walkId });
     const pdfBytes = await buildSummaryPdf(walk, agentName, driveLink, admin);
     console.log("[upload-to-drive] SUMMARY.pdf generated", { walkthroughId: walkId, bytes: pdfBytes.length });
