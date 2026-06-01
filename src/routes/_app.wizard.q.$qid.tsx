@@ -885,6 +885,8 @@ function FieldRenderer({
         </div>
       );
     }
+
+    case "rating":
       if (suppressRating) return null;
       return (
         <>
