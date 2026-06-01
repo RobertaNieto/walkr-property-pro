@@ -637,7 +637,7 @@ const S8: SectionDef = {
       },
       photoQ("s8_floor_photo", 8, "Living Room", "Flooring detail photo", "LIVING_FLOOR"),
     ];
-    if (hasFireplace) {
+    if (hasFp) {
       out.push(photoQ("s8_fireplace_photo", 8, "Living Room", "Fireplace detail photo", "LIVING_FIREPLACE"));
     }
     out.push(
