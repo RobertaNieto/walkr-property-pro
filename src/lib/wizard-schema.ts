@@ -1098,7 +1098,7 @@ function bedroomQuestions(n: number, total: number): QuestionDef[] {
   const pn = (k: string) => `BEDROOM${n}_${k}`;
   return [
     {
-      ...photoQ(id("mls"), 12, tag, "MLS-style wide photo", pn("MLS")),
+      ...photoQ(id("mls"), 12, tag, `BEDROOM ${n} MLS-style wide photo`, pn("MLS")),
       helper: "Wide angle, mimic professional real estate photography",
     },
     photoQ(id("closet"), 12, tag, "Closet door open photo", pn("CLOSET")),
