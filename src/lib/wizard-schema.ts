@@ -1697,7 +1697,7 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
   }
 
   // Bedrooms (section 12) per-loop
-  const bedTotal = bedCount(ctx.config);
+  const bedTotal = bedCount(ctx);
   for (let n = 1; n <= bedTotal; n++) {
     const id = (k: string) => `s12_b${n}_${k}`;
     groups[id("closet")] = [id("closet_cond")];
