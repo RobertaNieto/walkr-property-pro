@@ -1377,14 +1377,14 @@ function photoQ(
   };
 }
 
-// Combined "Living Areas" section: merges Living Room, Kitchen, Hallways,
+// Combined "Interior" section: merges Living Room, Kitchen, Hallways,
 // and Laundry into one section using section index 8 for color/grouping.
 const S_LIVING_AREAS: SectionDef = {
   index: 8,
-  name: "Living Areas",
+  name: "Interior",
   resolve: (ctx) => {
     const remap = (qs: QuestionDef[]): QuestionDef[] =>
-      qs.map((q) => ({ ...q, sectionIndex: 8, sectionName: "Living Areas" }));
+      qs.map((q) => ({ ...q, sectionIndex: 8, sectionName: "Interior" }));
     return [
       ...remap(S8.resolve(ctx)),
       ...remap(S9.resolve(ctx)),
