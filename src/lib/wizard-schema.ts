@@ -1679,8 +1679,6 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s14_furnace_photo: ["s14_furnace_cond"],
     s14_thermo_photo: ["s14_thermo_cond"],
     s14_wh_photo: ["s14_wh_strapped"],
-    // Section 16
-    s16_neighbors: ["s16_other"],
   };
 
   // Bathrooms (section 11) per-loop
