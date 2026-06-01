@@ -188,9 +188,11 @@ function SectionMenuScreen() {
   }
 
   const goToSection = (row: SectionRow) => {
-    if (row.index !== 1 && !propertySetupComplete && !adminEditing) {
-      // Redirect to Property Setup instead.
-      navigate({ to: "/wizard/section/$sidx", params: { sidx: "1" } });
+    const isLocked = row.index !== 1 && row.index !== 0 && !propertySetupComplete && !adminEditing;
+    if (isLocked) {
+      const setupRow = rows.find((r) => r.index === 1 || r.index === 0);
+      const targetSidx = String(setupRow?.index ?? 1);
+      navigate({ to: "/wizard/section/$sidx", params: { sidx: targetSidx } });
       return;
     }
     navigate({ to: "/wizard/section/$sidx", params: { sidx: String(row.index) } });
