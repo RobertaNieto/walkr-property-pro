@@ -1168,16 +1168,18 @@ function bathroomQuestions(n: number, total: number, ctx: SkipContext): Question
     },
   ];
   if (n === 1) return questions;
-  // Bathrooms 2+ open with a "present" yes/no; if No, all loop questions hide.
+  // When S1 has a bath list, every n is already a confirmed bath — no gating
+  // question needed. Legacy drafts (no S1 list) keep the "exists" yes/no.
+  if (mappedType) return questions;
   const existsId = id("exists");
-  const isPresent = (ctx: SkipContext) =>
-    ctx.answers?.[existsId]?.bool === true;
+  const isPresent = (c: SkipContext) =>
+    c.answers?.[existsId]?.bool === true;
   const gated: QuestionDef[] = questions.map((q) => {
     const prev = q.visible;
     return {
       ...q,
-      visible: (ctx: SkipContext) =>
-        isPresent(ctx) && (prev ? prev(ctx) : true),
+      visible: (c: SkipContext) =>
+        isPresent(c) && (prev ? prev(c) : true),
     };
   });
   const existsQ: QuestionDef = {
