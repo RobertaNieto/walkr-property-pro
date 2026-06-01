@@ -1859,6 +1859,7 @@ export function hasUserAnswer(qIn: QuestionDef, ansMaybe: SkipContext["answers"]
       if (q.withRating && ans.rating !== undefined) return true;
       return false;
     case "multichoice":
+    case "bathlist":
       return Array.isArray(ans.choices) && ans.choices.length > 0;
     case "rating":
       if (ans.rating !== undefined) return true;
