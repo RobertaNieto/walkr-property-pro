@@ -726,7 +726,7 @@ function FieldRenderer({
             placeholder={q.helper ?? ""}
             className={cn(
               "h-14 w-full rounded-2xl border-2 bg-card px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-              errored && q.required ? "field-error" : "border-input",
+              "border-input",
             )}
           />
           {q.withRating && !suppressRating && (
