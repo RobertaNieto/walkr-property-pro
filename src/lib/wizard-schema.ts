@@ -1265,6 +1265,15 @@ const S14: SectionDef = {
       critical: true,
     },
     {
+      id: "s14_wh_strapped",
+      sectionIndex: 14,
+      sectionName: "Mechanical Systems",
+      label: "Water heater confirmed double-strapped",
+      field: "yesno",
+      required: true,
+      critical: true,
+    },
+    {
       id: "s14_additional",
       sectionIndex: 14,
       sectionName: "Mechanical Systems",
@@ -1564,7 +1573,7 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s14_hvac_photo: ["s14_hvac_cond"],
     s14_furnace_photo: ["s14_furnace_cond"],
     s14_thermo_photo: ["s14_thermo_cond"],
-    
+    s14_wh_photo: ["s14_wh_strapped"],
   };
 
   // Bathrooms (section 11) per-loop
