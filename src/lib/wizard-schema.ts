@@ -1425,7 +1425,25 @@ function photoQ(
   };
 }
 
-export const SECTIONS: SectionDef[] = [S1, S2, S4, S6, S8, S9, S10, S11, S12, S13, S14, S15];
+// Combined "Living Areas" section: merges Living Room, Kitchen, Hallways,
+// and Laundry into one section using section index 8 for color/grouping.
+const S_LIVING_AREAS: SectionDef = {
+  index: 8,
+  name: "Living Areas",
+  resolve: (ctx) => {
+    const remap = (qs: QuestionDef[]): QuestionDef[] =>
+      qs.map((q) => ({ ...q, sectionIndex: 8, sectionName: "Living Areas" }));
+    return [
+      ...remap(S8.resolve(ctx)),
+      ...remap(S9.resolve(ctx)),
+      ...remap(S10.resolve(ctx)),
+      ...remap(S13.resolve(ctx)),
+    ];
+  },
+};
+
+export const SECTIONS: SectionDef[] = [S1, S2, S4, S6, S_LIVING_AREAS, S11, S12, S14, S15];
+
 
 
 // Final checklist (Section 17) is rendered by its own dedicated route.
