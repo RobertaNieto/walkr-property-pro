@@ -1470,32 +1470,6 @@ Call out anything you notice — damage, smells, condition issues, anything unus
   ],
 };
 
-const S16: SectionDef = {
-  index: 16,
-  name: "Miscellaneous",
-  resolve: () => [
-    {
-      id: "s16_neighbors",
-      sectionIndex: 16,
-      sectionName: "Miscellaneous",
-      label: "Final observations",
-      helper:
-        "Note anything that doesn't fit elsewhere — neighbor observations, unusual circumstances, access issues, or anything the reviewer should know.",
-      field: "longtext",
-      required: false,
-    },
-    {
-      id: "s16_other",
-      sectionIndex: 16,
-      sectionName: "Miscellaneous",
-      label: "Additional notes",
-      helper: "Any final notes before completing the walkthrough.",
-      field: "longtext",
-      required: false,
-    },
-  ],
-};
-
 // ---------- helper to build photo questions concisely ----------
 
 function photoQ(
@@ -1517,7 +1491,8 @@ function photoQ(
   };
 }
 
-export const SECTIONS: SectionDef[] = [S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16];
+export const SECTIONS: SectionDef[] = [S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15];
+
 
 // Final checklist (Section 17) is rendered by its own dedicated route.
 export const FINAL_CHECKLIST_ITEMS: { id: string; label: string; visible?: (cfg: PreWalkConfig) => boolean }[] = [
@@ -1704,8 +1679,6 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     s14_furnace_photo: ["s14_furnace_cond"],
     s14_thermo_photo: ["s14_thermo_cond"],
     s14_wh_photo: ["s14_wh_strapped"],
-    // Section 16
-    s16_neighbors: ["s16_other"],
   };
 
   // Bathrooms (section 11) per-loop
