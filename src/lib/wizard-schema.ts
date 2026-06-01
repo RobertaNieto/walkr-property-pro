@@ -1380,12 +1380,13 @@ const S_LIVING_AREAS: SectionDef = {
       ...remap(S8.resolve(ctx)),
       ...remap(S9.resolve(ctx)),
       ...remap(S10.resolve(ctx)),
+      ...remap(S12.resolve(ctx)),
       ...remap(S13.resolve(ctx)),
     ];
   },
 };
 
-export const SECTIONS: SectionDef[] = [S1, S2, S4, S6, S_LIVING_AREAS, S11, S12, S14, S15];
+export const SECTIONS: SectionDef[] = [S1, S2, S4, S6, S_LIVING_AREAS, S11, S14, S15];
 
 
 
