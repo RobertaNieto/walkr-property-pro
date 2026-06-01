@@ -655,7 +655,7 @@ const S8: SectionDef = {
         notesPlaceholder: "Describe stains, damage, smell and location",
       },
     );
-    if (hasFireplace) {
+    if (hasFp) {
       out.push({
         id: "s8_fireplace_type",
         sectionIndex: 8,
