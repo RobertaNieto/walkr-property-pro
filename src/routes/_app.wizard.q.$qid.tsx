@@ -651,6 +651,7 @@ function pickValue(q: QuestionDef, ans: WizardAnswer): unknown {
     case "choice":
       return ans.choice;
     case "multichoice":
+    case "bathlist":
       return ans.choices;
     case "text":
     case "longtext":
