@@ -395,16 +395,17 @@ export function FieldRenderer({
     }
 
     case "rating":
-      if (suppressRating) return null;
       return (
         <>
-          <RatingButtons
-            value={value.rating}
-            onChange={(r) =>
-              onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
-            }
-            error={attempted && value.rating === undefined}
-          />
+          {!suppressRating && (
+            <RatingButtons
+              value={value.rating}
+              onChange={(r) =>
+                onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
+              }
+              error={attempted && value.rating === undefined}
+            />
+          )}
           {q.withPhoto && (
             <div className="mt-4">
               <p className="mb-2 text-sm font-semibold text-foreground">
