@@ -143,7 +143,7 @@ function SectionScreen() {
         params: { sidx: String(nextSidx) },
       });
     } else {
-      void navigate({ to: "/wizard/checklist" });
+      void navigate({ to: "/wizard/complete" });
     }
   };
 

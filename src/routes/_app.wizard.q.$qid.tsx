@@ -176,9 +176,10 @@ function QuestionScreen() {
       void navigate({ to: "/wizard/q/$qid", params: { qid: owner.id }, replace: true });
       return null;
     }
-    // Unknown question id — fall through to checklist (defensive).
-    void navigate({ to: "/wizard/checklist" });
+    // Unknown question id — fall through to complete (defensive).
+    void navigate({ to: "/wizard/complete" });
     return null;
+
   }
 
   const ctxWithDraft: SkipContext = {
@@ -298,20 +299,14 @@ function QuestionScreen() {
         skipReason,
       });
     }
-    // Section 17 — Final Checklist (lives on its own route).
-    out.push({
-      index: 17,
-      name: "Final Checklist",
-      status: q.sectionIndex === 17 ? "current" : "todo",
-      route: "/wizard/checklist",
-    });
     // Section 18 — Review.
     out.push({
       index: 18,
       name: "Review",
       status: q.sectionIndex === 18 ? "current" : "todo",
-      route: "/wizard/checklist",
+      route: "/wizard/complete",
     });
+
     return out;
   }, [navList, ctxWithDraft.answers, ctx.config, q.sectionIndex]);
 

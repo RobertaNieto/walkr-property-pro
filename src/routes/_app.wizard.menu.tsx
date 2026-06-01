@@ -167,16 +167,6 @@ function SectionMenuScreen() {
         firstQuestionId,
       });
     }
-    // Section 17 — Final Checklist (own route)
-    out.push({
-      index: 17,
-      name: "Final Checklist",
-      icon: SECTION_ICONS[17],
-      total: 0,
-      answered: 0,
-      status: "todo",
-      isChecklist: true,
-    });
     return out;
   }, [navList, ctx.answers]);
 
@@ -196,12 +186,9 @@ function SectionMenuScreen() {
   }
 
   const goToSection = (row: SectionRow) => {
-    if (row.isChecklist) {
-      navigate({ to: "/wizard/checklist" });
-      return;
-    }
     navigate({ to: "/wizard/section/$sidx", params: { sidx: String(row.index) } });
   };
+
 
   const startFromBeginning = () => {
     const first = navList[0];
@@ -312,10 +299,9 @@ function SectionMenuScreen() {
                       {row.name}
                     </p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      {row.isChecklist
-                        ? "Final checks before submit"
-                        : `${row.total} question${row.total === 1 ? "" : "s"}`}
+                      {`${row.total} question${row.total === 1 ? "" : "s"}`}
                     </p>
+
                   </div>
                   <div className="flex flex-shrink-0 items-center justify-center">
                     {isComplete ? (
@@ -367,7 +353,7 @@ function SectionMenuScreen() {
               {anyComplete && (
                 <button
                   type="button"
-                  onClick={() => navigate({ to: "/wizard/checklist" })}
+                  onClick={() => navigate({ to: "/wizard/complete" })}
                   className="inline-flex h-12 w-full items-center justify-center rounded-2xl border-2 border-border bg-card text-sm font-semibold text-foreground transition-all hover:border-accent/40 active:scale-[0.99]"
                 >
                   Review & Submit
