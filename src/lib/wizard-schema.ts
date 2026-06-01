@@ -1257,7 +1257,7 @@ const S14: SectionDef = {
       sectionIndex: 14,
       sectionName: "Mechanical Systems",
       label: "Water heater photo showing both straps clearly visible",
-      helper: "Both safety straps must be clearly visible in the photo",
+      
       field: "photo",
       required: true,
       minPhotos: 1,
