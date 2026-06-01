@@ -875,9 +875,15 @@ function bathroomQuestions(n: number, total: number, ctx: SkipContext): Question
     s1Type === "3/4" ? "Three-quarter bath" :
     s1Type === "Half" ? "Half bath" :
     s1Type ?? undefined;
+  const shortType =
+    mappedType === "Full bath" ? "Full bath" :
+    mappedType === "Three-quarter bath" ? "3/4 bath" :
+    mappedType === "Half bath" ? "Half bath" :
+    mappedType;
   const tag = mappedType
     ? `Bathroom ${n} of ${total} — ${mappedType}`
     : `Bathroom ${n} of ${total}`;
+  const sub = shortType ? `Bathroom ${n} — ${shortType}` : `Bathroom ${n}`;
   const id = (k: string) => `s11_b${n}_${k}`;
   const pn = (k: string) => `BATHROOM${n}_${k}`;
   // When S1 already declared the bath type, hide the redundant type question
@@ -886,6 +892,7 @@ function bathroomQuestions(n: number, total: number, ctx: SkipContext): Question
     id: id("type"),
     sectionIndex: 11,
     sectionName: tag,
+    subSection: sub,
     label: "Bathroom type",
     field: "choice",
     options: ["Full bath", "Three-quarter bath", "Half bath"],
