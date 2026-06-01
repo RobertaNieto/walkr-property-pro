@@ -422,6 +422,7 @@ export function FieldRenderer({
         <PhotoCapture
           readOnly={isAdminEditing()}
           label={inlinePhotoLabel ? q.label : undefined}
+          labelColor={labelColor}
           photos={value.photos ?? []}
           filenames={value.photoNames ?? []}
           baseName={q.photoName ?? q.id.toUpperCase()}
