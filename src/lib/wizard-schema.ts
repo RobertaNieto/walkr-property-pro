@@ -1425,7 +1425,7 @@ function photoQ(
   };
 }
 
-export const SECTIONS: SectionDef[] = [S1, S2, S4, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15];
+export const SECTIONS: SectionDef[] = [S1, S2, S4, S6, S8, S9, S10, S11, S12, S13, S14, S15];
 
 
 // Final checklist (Section 17) is rendered by its own dedicated route.
