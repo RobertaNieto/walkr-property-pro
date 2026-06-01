@@ -184,7 +184,10 @@ export function FieldRenderer({
   inlinePhotoLabel?: boolean;
 }) {
 
-  const errored = attempted && !isAnsweredLocal(q, value);
+  // All required-field validation has been disabled app-wide. Fields never
+  // render error styles, asterisks, or "required" hints.
+  const errored = false;
+  void attempted;
 
   switch (q.field) {
     case "text":
@@ -196,25 +199,22 @@ export function FieldRenderer({
             placeholder={q.helper ?? ""}
             className={cn(
               "h-12 w-full rounded-xl border-2 bg-card px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-              errored && q.required ? "field-error" : "border-input",
+              "border-input",
             )}
           />
           {q.withRating && !suppressRating && (
             <div className="mt-3">
-              <p className="mb-2 text-sm font-semibold text-foreground">
-                Condition rating <span className="text-critical">*</span>
-              </p>
+              <p className="mb-2 text-sm font-semibold text-foreground">Condition rating</p>
               <RatingButtons
                 value={value.rating}
                 onChange={(r: Rating) =>
                   onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
                 }
-                error={attempted && value.rating === undefined}
               />
             </div>
           )}
           {q.withRating && (
-            <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
+            <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={false} />
           )}
         </>
       );
@@ -240,7 +240,7 @@ export function FieldRenderer({
           }}
           className={cn(
             "h-12 w-full rounded-xl border-2 bg-card px-4 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-            errored ? "field-error" : "border-input",
+            "border-input",
           )}
         />
       );
@@ -260,9 +260,7 @@ export function FieldRenderer({
                   "min-h-12 rounded-xl border-2 px-4 py-2.5 text-base font-semibold transition-all active:scale-95",
                   selected
                     ? "border-accent bg-accent text-accent-foreground shadow-[var(--shadow-soft)]"
-                    : errored
-                      ? "field-error border-input bg-card text-foreground"
-                      : "border-border bg-card text-foreground hover:border-accent/40",
+                    : "border-border bg-card text-foreground hover:border-accent/40",
                 )}
               >
                 {label}
@@ -284,20 +282,17 @@ export function FieldRenderer({
           />
           {q.withRating && !suppressRating && (
             <div className="mt-3">
-              <p className="mb-2 text-sm font-semibold text-foreground">
-                Condition rating <span className="text-critical">*</span>
-              </p>
+              <p className="mb-2 text-sm font-semibold text-foreground">Condition rating</p>
               <RatingButtons
                 value={value.rating}
                 onChange={(r: Rating) =>
                   onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
                 }
-                error={attempted && value.rating === undefined}
               />
             </div>
           )}
           {q.withRating && (
-            <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
+            <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={false} />
           )}
         </>
       );
@@ -385,11 +380,6 @@ export function FieldRenderer({
                 </button>
               ))}
             </div>
-            {items.length === 0 && errored && (
-              <p className="mt-2 text-sm font-medium text-critical">
-                Add at least one bathroom to continue.
-              </p>
-            )}
           </div>
         </div>
       );
@@ -404,7 +394,6 @@ export function FieldRenderer({
               onChange={(r) =>
                 onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
               }
-              error={attempted && value.rating === undefined}
             />
           )}
           {q.withPhoto && (
@@ -412,7 +401,6 @@ export function FieldRenderer({
               <PhotoCapture
                 readOnly={isAdminEditing()}
                 label="Photo"
-                required
                 photos={value.photos ?? []}
                 filenames={value.photoNames ?? []}
                 baseName={q.withPhoto.name}
@@ -420,11 +408,10 @@ export function FieldRenderer({
                 onChange={(photos, photoNames) =>
                   onChange((d) => ({ ...d, photos, photoNames }))
                 }
-                error={attempted && (value.photos?.length ?? 0) < (q.withPhoto.min ?? 1)}
               />
             </div>
           )}
-          <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
+          <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={false} />
         </>
       );
 
@@ -435,17 +422,16 @@ export function FieldRenderer({
         <PhotoCapture
           readOnly={isAdminEditing()}
           label={inlinePhotoLabel ? q.label : undefined}
-          required={inlinePhotoLabel ? q.required : undefined}
           photos={value.photos ?? []}
           filenames={value.photoNames ?? []}
           baseName={q.photoName ?? q.id.toUpperCase()}
           isVideo={isVideo}
           storageContext={getAdminStorageContext()}
           onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-          error={errored}
         />
       );
     }
 
   }
+
 }
