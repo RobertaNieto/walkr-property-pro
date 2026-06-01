@@ -48,15 +48,7 @@ export function PhotoCapture({
   const localCache = useRef<Record<string, string>>({});
   const fileMeta = useRef<Record<string, { size: number; original: string }>>({});
   const [processing, setProcessing] = useState(false);
-  const [orientationError, setOrientationError] = useState(false);
 
-  const getDimensions = (dataUrl: string) =>
-    new Promise<{ width: number; height: number }>((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-      img.onerror = () => reject(new Error("decode failed"));
-      img.src = dataUrl;
-    });
 
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
