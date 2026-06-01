@@ -300,12 +300,6 @@ function SectionScreen() {
       {/* Sticky footer */}
       <footer className="sticky bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
         <div className="mx-auto w-full max-w-2xl px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-3">
-          {attempted && !valid && (
-            <p className="mb-2 text-center text-xs font-medium text-critical">
-              {missingRequired.length} required field
-              {missingRequired.length === 1 ? "" : "s"} still needed
-            </p>
-          )}
           <button
             onClick={handleContinue}
             className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-primary/90 active:scale-[0.99]"
