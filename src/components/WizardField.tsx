@@ -214,8 +214,10 @@ export function FieldRenderer({
                 }
                 error={attempted && value.rating === undefined}
               />
-              <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
             </div>
+          )}
+          {q.withRating && (
+            <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
           )}
         </>
       );
