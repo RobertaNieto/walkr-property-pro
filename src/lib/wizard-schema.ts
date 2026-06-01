@@ -334,7 +334,7 @@ const S2: SectionDef = {
       id: "s2_siding_type",
       sectionIndex: 2,
       sectionName: "Exterior",
-      label: "Siding type",
+      label: "Siding type + condition",
       field: "choice",
       options: ["Stucco", "Wood", "Combo"],
       required: true,
