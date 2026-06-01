@@ -27,6 +27,7 @@ import { Route as AppWizardExteriorPaintRouteImport } from './routes/_app.wizard
 import { Route as AppWizardCompleteRouteImport } from './routes/_app.wizard.complete'
 import { Route as AppWizardChecklistRouteImport } from './routes/_app.wizard.checklist'
 import { Route as AppReviewIdRouteImport } from './routes/_app.review.$id'
+import { Route as AppWizardSectionSidxRouteImport } from './routes/_app.wizard.section.$sidx'
 import { Route as AppWizardQQidRouteImport } from './routes/_app.wizard.q.$qid'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -118,6 +119,11 @@ const AppReviewIdRoute = AppReviewIdRouteImport.update({
   path: '/review/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWizardSectionSidxRoute = AppWizardSectionSidxRouteImport.update({
+  id: '/wizard/section/$sidx',
+  path: '/wizard/section/$sidx',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppWizardQQidRoute = AppWizardQQidRouteImport.update({
   id: '/wizard/q/$qid',
   path: '/wizard/q/$qid',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/wizard/lockbox': typeof AppWizardLockboxRoute
   '/wizard/menu': typeof AppWizardMenuRoute
   '/wizard/q/$qid': typeof AppWizardQQidRoute
+  '/wizard/section/$sidx': typeof AppWizardSectionSidxRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/wizard/lockbox': typeof AppWizardLockboxRoute
   '/wizard/menu': typeof AppWizardMenuRoute
   '/wizard/q/$qid': typeof AppWizardQQidRoute
+  '/wizard/section/$sidx': typeof AppWizardSectionSidxRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/_app/wizard/lockbox': typeof AppWizardLockboxRoute
   '/_app/wizard/menu': typeof AppWizardMenuRoute
   '/_app/wizard/q/$qid': typeof AppWizardQQidRoute
+  '/_app/wizard/section/$sidx': typeof AppWizardSectionSidxRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/wizard/lockbox'
     | '/wizard/menu'
     | '/wizard/q/$qid'
+    | '/wizard/section/$sidx'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/wizard/lockbox'
     | '/wizard/menu'
     | '/wizard/q/$qid'
+    | '/wizard/section/$sidx'
   id:
     | '__root__'
     | '/'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/_app/wizard/lockbox'
     | '/_app/wizard/menu'
     | '/_app/wizard/q/$qid'
+    | '/_app/wizard/section/$sidx'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -386,6 +398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReviewIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/wizard/section/$sidx': {
+      id: '/_app/wizard/section/$sidx'
+      path: '/wizard/section/$sidx'
+      fullPath: '/wizard/section/$sidx'
+      preLoaderRoute: typeof AppWizardSectionSidxRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/wizard/q/$qid': {
       id: '/_app/wizard/q/$qid'
       path: '/wizard/q/$qid'
@@ -411,6 +430,7 @@ interface AppRouteChildren {
   AppWizardLockboxRoute: typeof AppWizardLockboxRoute
   AppWizardMenuRoute: typeof AppWizardMenuRoute
   AppWizardQQidRoute: typeof AppWizardQQidRoute
+  AppWizardSectionSidxRoute: typeof AppWizardSectionSidxRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -428,6 +448,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppWizardLockboxRoute: AppWizardLockboxRoute,
   AppWizardMenuRoute: AppWizardMenuRoute,
   AppWizardQQidRoute: AppWizardQQidRoute,
+  AppWizardSectionSidxRoute: AppWizardSectionSidxRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
