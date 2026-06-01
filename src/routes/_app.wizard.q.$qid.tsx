@@ -161,6 +161,14 @@ function QuestionScreen() {
   }, [compDrafts, qid]);
 
   if (!w) {
+    if (!remoteLoading && editingFromReview && !search?.reviewId) {
+      void navigate({ to: "/wizard/menu", replace: true });
+      return null;
+    }
+    if (!remoteLoading && !getActiveId() && !search?.reviewId) {
+      void navigate({ to: "/wizard/menu", replace: true });
+      return null;
+    }
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-6 text-center">
         <p className="text-sm text-muted-foreground">
