@@ -183,11 +183,10 @@ export function FieldRenderer({
   /** When true, photo/video fields render their own inline label+button row. */
   inlinePhotoLabel?: boolean;
 }) {
-
   // All required-field validation has been disabled app-wide. Fields never
   // render error styles, asterisks, or "required" hints.
-  const errored = false;
   void attempted;
+
 
   switch (q.field) {
     case "text":
