@@ -254,41 +254,45 @@ function SectionScreen() {
                   Array.isArray(q.options) &&
                   q.options.length >= 2 &&
                   q.options.length <= 4;
+                const isPhotoField = q.field === "photo" || q.field === "video";
                 const handledInline = hasInlineRating || isInlineYesNo || isInlineChoice;
+                const skipOuterLabel = isPhotoField;
                 return (
                   <div key={q.id} id={`q-${q.id}`} className="scroll-mt-24">
-                    <div className="mb-1.5 flex flex-wrap items-center justify-between gap-3">
-                      <label className="block text-sm font-semibold text-foreground">
-                        {q.label}
-                        {q.required && <span className="ml-0.5 text-critical">*</span>}
-                      </label>
-                      {hasInlineRating && (
-                        <RatingButtons
-                          value={value.rating}
-                          onChange={(r: import("@/lib/walkthrough").Rating) =>
-                            setDraftFor(q.id, (d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
-                          }
-                        />
-                      )}
-                      {isInlineYesNo && (
-                        <InlinePillGroup
-                          options={[
-                            { label: "Yes", selected: value.bool === true, onClick: () => setDraftFor(q.id, (d) => ({ ...d, bool: true })), tone: "good" },
-                            { label: "No", selected: value.bool === false, onClick: () => setDraftFor(q.id, (d) => ({ ...d, bool: false })), tone: "neutral" },
-                          ]}
-                        />
-                      )}
-                      {isInlineChoice && (
-                        <InlinePillGroup
-                          options={(q.options ?? []).map((opt) => ({
-                            label: opt,
-                            selected: value.choice === opt,
-                            onClick: () => setDraftFor(q.id, (d) => ({ ...d, choice: opt })),
-                            tone: "neutral",
-                          }))}
-                        />
-                      )}
-                    </div>
+                    {!skipOuterLabel && (
+                      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-3">
+                        <label className="block text-sm font-semibold text-foreground">
+                          {q.label}
+                          {q.required && <span className="ml-0.5 text-critical">*</span>}
+                        </label>
+                        {hasInlineRating && (
+                          <RatingButtons
+                            value={value.rating}
+                            onChange={(r: import("@/lib/walkthrough").Rating) =>
+                              setDraftFor(q.id, (d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
+                            }
+                          />
+                        )}
+                        {isInlineYesNo && (
+                          <InlinePillGroup
+                            options={[
+                              { label: "Yes", selected: value.bool === true, onClick: () => setDraftFor(q.id, (d) => ({ ...d, bool: true })), tone: "good" },
+                              { label: "No", selected: value.bool === false, onClick: () => setDraftFor(q.id, (d) => ({ ...d, bool: false })), tone: "neutral" },
+                            ]}
+                          />
+                        )}
+                        {isInlineChoice && (
+                          <InlinePillGroup
+                            options={(q.options ?? []).map((opt) => ({
+                              label: opt,
+                              selected: value.choice === opt,
+                              onClick: () => setDraftFor(q.id, (d) => ({ ...d, choice: opt })),
+                              tone: "neutral",
+                            }))}
+                          />
+                        )}
+                      </div>
+                    )}
                     {q.helper && q.field !== "text" && q.field !== "longtext" && (
                       <p className="mb-2 text-xs text-muted-foreground">
                         {q.helper}
@@ -300,6 +304,7 @@ function SectionScreen() {
                         value={value}
                         onChange={(v) => setDraftFor(q.id, v)}
                         attempted={false}
+                        inlinePhotoLabel={isPhotoField}
                       />
                     )}
                     {handledInline && hasInlineRating && (
@@ -311,6 +316,7 @@ function SectionScreen() {
                         suppressRating
                       />
                     )}
+
 
 
                     {q.followUp && q.followUp.when(pickValue(q, value)) && (

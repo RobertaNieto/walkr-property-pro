@@ -82,13 +82,11 @@ export function PoorPhotoSection({
   if (value.rating !== 3 || !q.poorPhotoName) return null;
   const missing = (value.poorPhotos?.length ?? 0) < 1;
   return (
-    <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
-      <p className="mb-2 text-sm font-semibold text-critical">
-        ⚠️ Photo required for Poor rating
-      </p>
-      <LandscapeHint />
+    <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
       <PhotoCapture
         readOnly={isAdminEditing()}
+        label="⚠️ Photo required for Poor rating"
+        required
         photos={value.poorPhotos ?? []}
         filenames={value.poorPhotoNames ?? []}
         baseName={q.poorPhotoName}
@@ -101,6 +99,7 @@ export function PoorPhotoSection({
     </div>
   );
 }
+
 
 export function FollowUpRenderer({
   q,
@@ -127,19 +126,17 @@ export function FollowUpRenderer({
         />
       )}
       {fu.field === "photo" && (
-        <>
-          <LandscapeHint />
-          <PhotoCapture
-            readOnly={isAdminEditing()}
-            photos={value.photos ?? []}
-            filenames={value.photoNames ?? []}
-            baseName={fu.photoName ?? "FOLLOWUP"}
-            storageContext={getAdminStorageContext()}
-            onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-            error={attempted && fu.required && (value.photos?.length ?? 0) < 1}
-          />
-        </>
+        <PhotoCapture
+          readOnly={isAdminEditing()}
+          photos={value.photos ?? []}
+          filenames={value.photoNames ?? []}
+          baseName={fu.photoName ?? "FOLLOWUP"}
+          storageContext={getAdminStorageContext()}
+          onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
+          error={attempted && fu.required && (value.photos?.length ?? 0) < 1}
+        />
       )}
+
       {fu.field === "multichoice" && (
         <div className="grid grid-cols-2 gap-2">
           {(fu.options ?? []).map((opt) => {
@@ -180,13 +177,17 @@ export function FieldRenderer({
   onChange,
   attempted,
   suppressRating = false,
+  inlinePhotoLabel = false,
 }: {
   q: QuestionDef;
   value: WizardAnswer;
   onChange: (v: WizardAnswer | ((prev: WizardAnswer) => WizardAnswer)) => void;
   attempted: boolean;
   suppressRating?: boolean;
+  /** When true, photo/video fields render their own inline label+button row. */
+  inlinePhotoLabel?: boolean;
 }) {
+
   const errored = attempted && !isAnsweredLocal(q, value);
 
   switch (q.field) {
@@ -411,13 +412,11 @@ export function FieldRenderer({
             />
           )}
           {q.withPhoto && (
-            <div className="mt-4">
-              <p className="mb-2 text-sm font-semibold text-foreground">
-                Photo <span className="text-critical">*</span>
-              </p>
-              <LandscapeHint />
+            <div className="mt-3">
               <PhotoCapture
                 readOnly={isAdminEditing()}
+                label="Photo"
+                required
                 photos={value.photos ?? []}
                 filenames={value.photoNames ?? []}
                 baseName={q.withPhoto.name}
@@ -437,20 +436,20 @@ export function FieldRenderer({
     case "video": {
       const isVideo = q.field === "video";
       return (
-        <>
-          {!isVideo && <LandscapeHint />}
-          <PhotoCapture
-            readOnly={isAdminEditing()}
-            photos={value.photos ?? []}
-            filenames={value.photoNames ?? []}
-            baseName={q.photoName ?? q.id.toUpperCase()}
-            isVideo={isVideo}
-            storageContext={getAdminStorageContext()}
-            onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-            error={errored}
-          />
-        </>
+        <PhotoCapture
+          readOnly={isAdminEditing()}
+          label={inlinePhotoLabel ? q.label : undefined}
+          required={inlinePhotoLabel ? q.required : undefined}
+          photos={value.photos ?? []}
+          filenames={value.photoNames ?? []}
+          baseName={q.photoName ?? q.id.toUpperCase()}
+          isVideo={isVideo}
+          storageContext={getAdminStorageContext()}
+          onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
+          error={errored}
+        />
       );
     }
+
   }
 }
