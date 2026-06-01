@@ -406,53 +406,56 @@ function QuestionScreen() {
         </div>
       )}
 
-      <div
-        className={cn(
-          "rounded-2xl",
-          q.critical && "border-2 border-critical bg-critical/5 p-4",
-        )}
-      >
-        <div className="flex items-start gap-2">
-          {q.critical && <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-critical" />}
-          <div className="flex-1">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="text-2xl font-bold leading-tight text-foreground">
-                  {q.label} {q.required && <span className="text-critical">*</span>}
-                </h2>
-                {q.helper && <p className="mt-1.5 text-sm text-muted-foreground">{q.helper}</p>}
+      {q.field !== "photo" && q.field !== "video" && (
+        <div
+          className={cn(
+            "rounded-2xl",
+            q.critical && "border-2 border-critical bg-critical/5 p-4",
+          )}
+        >
+          <div className="flex items-start gap-2">
+            {q.critical && <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-critical" />}
+            <div className="flex-1">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="text-2xl font-bold leading-tight text-foreground">
+                    {q.label} {q.required && <span className="text-critical">*</span>}
+                  </h2>
+                  {q.helper && <p className="mt-1.5 text-sm text-muted-foreground">{q.helper}</p>}
+                </div>
+                {(q.field === "rating" || q.withRating === true) && (
+                  <RatingButtons
+                    value={draft.rating}
+                    onChange={(r: Rating) =>
+                      setDraft((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
+                    }
+                    error={attempted && draft.rating === undefined}
+                  />
+                )}
+                {q.field === "yesno" && (
+                  <InlinePillGroup
+                    options={[
+                      { label: "Yes", selected: draft.bool === true, onClick: () => setDraft((d) => ({ ...d, bool: true })), tone: "good" },
+                      { label: "No", selected: draft.bool === false, onClick: () => setDraft((d) => ({ ...d, bool: false })), tone: "neutral" },
+                    ]}
+                  />
+                )}
+                {q.field === "choice" && Array.isArray(q.options) && q.options.length >= 2 && q.options.length <= 4 && q.withRating !== true && (
+                  <InlinePillGroup
+                    options={q.options.map((opt) => ({
+                      label: opt,
+                      selected: draft.choice === opt,
+                      onClick: () => setDraft((d) => ({ ...d, choice: opt })),
+                      tone: "neutral",
+                    }))}
+                  />
+                )}
               </div>
-              {(q.field === "rating" || q.withRating === true) && (
-                <RatingButtons
-                  value={draft.rating}
-                  onChange={(r: Rating) =>
-                    setDraft((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
-                  }
-                  error={attempted && draft.rating === undefined}
-                />
-              )}
-              {q.field === "yesno" && (
-                <InlinePillGroup
-                  options={[
-                    { label: "Yes", selected: draft.bool === true, onClick: () => setDraft((d) => ({ ...d, bool: true })), tone: "good" },
-                    { label: "No", selected: draft.bool === false, onClick: () => setDraft((d) => ({ ...d, bool: false })), tone: "neutral" },
-                  ]}
-                />
-              )}
-              {q.field === "choice" && Array.isArray(q.options) && q.options.length >= 2 && q.options.length <= 4 && q.withRating !== true && (
-                <InlinePillGroup
-                  options={q.options.map((opt) => ({
-                    label: opt,
-                    selected: draft.choice === opt,
-                    onClick: () => setDraft((d) => ({ ...d, choice: opt })),
-                    tone: "neutral",
-                  }))}
-                />
-              )}
             </div>
           </div>
         </div>
-      </div>
+      )}
+
 
       <div className="mt-6 space-y-6">
         {(() => {
