@@ -256,7 +256,7 @@ function SectionScreen() {
                       {hasInlineRating && (
                         <RatingButtons
                           value={value.rating}
-                          onChange={(r) =>
+                          onChange={(r: import("@/lib/walkthrough").Rating) =>
                             setDraftFor(q.id, (d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
                           }
                         />
