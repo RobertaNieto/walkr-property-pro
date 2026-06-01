@@ -264,7 +264,7 @@ function SectionScreen() {
                   }
                 };
                 let lastSub: string | undefined = undefined;
-                const nodes: React.ReactNode[] = [];
+                const nodes: ReactNode[] = [];
                 sectionQs.forEach((q) => {
                   if (q.subSection && q.subSection !== lastSub) {
                     lastSub = q.subSection;
