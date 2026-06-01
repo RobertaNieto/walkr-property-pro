@@ -4,7 +4,7 @@ import {
   useParams,
 } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, Home as HomeIcon, MapPin } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
