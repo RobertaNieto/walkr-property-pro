@@ -91,52 +91,229 @@ function parseCount(v: string | undefined): number {
   return m ? parseInt(m[1], 10) : 0;
 }
 
-function bathCount(c: PreWalkConfig): number {
-  // "1.5", "2.5" etc — round up so half-baths still get a loop.
-  if (!c.bathrooms) return 0;
-  const n = parseFloat(c.bathrooms);
+// Bathroom count — primary source is the S1 bathroom list (one entry per
+// bath). Falls back to the legacy pre-walk config field for older drafts.
+function bathCount(ctx: SkipContext): number {
+  const list = ctx.answers?.s1_bathrooms?.choices;
+  if (Array.isArray(list) && list.length > 0) return list.length;
+  const c = ctx.config?.bathrooms;
+  if (!c) return 0;
+  const n = parseFloat(c);
   return Number.isFinite(n) ? Math.ceil(n) : 0;
 }
 
-function bedCount(c: PreWalkConfig): number {
-  return parseCount(c.bedrooms);
+function bedCount(ctx: SkipContext): number {
+  const fromAnswer = ctx.answers?.s1_bedrooms?.choice;
+  if (fromAnswer) return parseCount(fromAnswer);
+  return parseCount(ctx.config?.bedrooms);
+}
+
+// Read a boolean S1 answer with fallback to legacy config "Yes"/"No" strings.
+function s1Bool(ctx: SkipContext, qid: string, legacy?: string | undefined): boolean {
+  const a = ctx.answers?.[qid]?.bool;
+  if (a !== undefined) return a;
+  if (legacy === "Yes") return true;
+  return false;
+}
+
+function hasGarage(ctx: SkipContext): boolean {
+  if (ctx.answers?.s1_garage?.bool !== undefined) return ctx.answers.s1_garage.bool === true;
+  return Boolean(ctx.config?.garage && ctx.config.garage !== "None");
+}
+
+function hasFireplace(ctx: SkipContext): boolean {
+  return s1Bool(ctx, "s1_fireplace", ctx.config?.fireplace);
+}
+
+// Type label for the n-th bathroom (1-indexed) from the S1 bath list.
+function bathTypeAt(ctx: SkipContext, n: number): string | undefined {
+  const list = ctx.answers?.s1_bathrooms?.choices;
+  if (Array.isArray(list) && list[n - 1]) return list[n - 1];
+  return undefined;
 }
 
 // ---------- section definitions ----------
 
 const S1: SectionDef = {
   index: 1,
-  name: "Arrival & Access",
-  resolve: () => [
-    {
-      id: "s1_lockbox_code",
-      sectionIndex: 1,
-      sectionName: "Arrival & Access",
-      label: "Lockbox code",
-      helper: "Enter the lockbox combination",
-      field: "text",
-      required: true,
-    },
-    {
-      id: "s1_lockbox_photo",
-      sectionIndex: 1,
-      sectionName: "Arrival & Access",
-      label: "Lockbox location photo",
-      helper: "Photograph the lockbox in context — show where it is attached so the next person can find it",
-      field: "photo",
-      required: true,
-      minPhotos: 1,
-      photoName: "LOCKBOX_LOCATION",
-    },
-    {
-      id: "s1_key_works",
-      sectionIndex: 1,
-      sectionName: "Arrival & Access",
-      label: "Key works in lock",
-      field: "yesno",
-      required: true,
-    },
-  ],
+  name: "Property Setup",
+  resolve: (ctx) => {
+    const garageYes = ctx.answers?.s1_garage?.bool === true;
+    const fenceYes = ctx.answers?.s1_fenced_yard?.bool === true;
+    const fireYes = ctx.answers?.s1_fireplace?.bool === true;
+    const out: QuestionDef[] = [
+      {
+        id: "s1_lockbox_code",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Lockbox code",
+        helper: "Enter the lockbox combination",
+        field: "text",
+        required: true,
+      },
+      {
+        id: "s1_lockbox_location",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Lockbox location",
+        helper: 'Where is it? e.g. "Front door handle", "Side gate"',
+        field: "text",
+        required: true,
+      },
+      {
+        id: "s1_stories",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Single story or two story?",
+        field: "choice",
+        options: ["Single Story", "Two Story"],
+        required: true,
+      },
+      {
+        id: "s1_bedrooms",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Number of bedrooms",
+        field: "choice",
+        options: ["1", "2", "3", "4", "5+"],
+        required: true,
+      },
+      {
+        id: "s1_bathrooms",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Bathrooms",
+        helper: "Add each bathroom one at a time and choose its type.",
+        field: "bathlist",
+        required: true,
+      },
+      {
+        id: "s1_garage",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Garage?",
+        field: "yesno",
+        required: true,
+      },
+      {
+        id: "s1_garage_size",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Garage size",
+        field: "choice",
+        options: ["Single", "Double"],
+        required: true,
+        visible: (c) => c.answers?.s1_garage?.bool === true,
+      },
+      {
+        id: "s1_garage_type",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Garage type",
+        field: "choice",
+        options: ["Attached", "Detached"],
+        required: true,
+        visible: (c) => c.answers?.s1_garage?.bool === true,
+      },
+      {
+        id: "s1_pool",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Pool?",
+        field: "yesno",
+        required: true,
+      },
+      {
+        id: "s1_spa",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Spa?",
+        field: "yesno",
+        required: true,
+      },
+      {
+        id: "s1_fenced_yard",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Fenced yard?",
+        field: "yesno",
+        required: true,
+      },
+      {
+        id: "s1_fence_type",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Fence type",
+        field: "choice",
+        options: ["Wood", "Block", "Wrought Iron", "Chain Link", "Other"],
+        required: true,
+        visible: (c) => c.answers?.s1_fenced_yard?.bool === true,
+      },
+      {
+        id: "s1_fireplace",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Fireplace?",
+        field: "yesno",
+        required: true,
+      },
+      {
+        id: "s1_fireplace_type",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Fireplace type",
+        field: "choice",
+        options: ["Wood Burning", "Electric", "Gas"],
+        required: true,
+        visible: (c) => c.answers?.s1_fireplace?.bool === true,
+      },
+      {
+        id: "s1_laundry",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Laundry location?",
+        field: "choice",
+        options: ["Inside (Dedicated Room)", "Inside (Closet)", "Garage", "None"],
+        required: true,
+      },
+      {
+        id: "s1_unusual_smells",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Any unusual smells?",
+        field: "yesno",
+        required: true,
+        followUp: {
+          when: (v) => v === true,
+          field: "text",
+          required: true,
+          label: "Describe the smell",
+        },
+      },
+      {
+        id: "s1_landscape",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Landscape condition?",
+        field: "choice",
+        options: ["Manicured", "Overgrown"],
+        required: true,
+      },
+      {
+        id: "s1_street_noise",
+        sectionIndex: 1,
+        sectionName: "Property Setup",
+        label: "Street noise?",
+        field: "choice",
+        options: ["Quiet Street", "Busy Street", "Major Street/Highway"],
+        required: true,
+      },
+    ];
+    // Suppress unused-var lint without changing behavior (these vars exist
+    // so the resolver re-runs whenever the gating answers change).
+    void garageYes; void fenceYes; void fireYes;
+    return out;
+  },
 };
 
 const S2: SectionDef = {
