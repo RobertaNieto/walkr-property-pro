@@ -136,7 +136,7 @@ function bathTypeAt(ctx: SkipContext, n: number): string | undefined {
 
 const S1: SectionDef = {
   index: 1,
-  name: "Property Setup",
+  name: "Property Overview",
   resolve: (ctx) => {
     const garageYes = ctx.answers?.s1_garage?.bool === true;
     const fenceYes = ctx.answers?.s1_fenced_yard?.bool === true;
@@ -145,7 +145,7 @@ const S1: SectionDef = {
       {
         id: "s1_lockbox_code",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Lockbox code",
         helper: "Enter the lockbox combination",
         field: "text",
@@ -154,7 +154,7 @@ const S1: SectionDef = {
       {
         id: "s1_lockbox_location",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Lockbox location",
         helper: 'Where is it? e.g. "Front door handle", "Side gate"',
         field: "text",
@@ -163,7 +163,7 @@ const S1: SectionDef = {
       {
         id: "s1_stories",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Single story or two story?",
         field: "choice",
         options: ["Single Story", "Two Story"],
@@ -172,7 +172,7 @@ const S1: SectionDef = {
       {
         id: "s1_bedrooms",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Number of bedrooms",
         field: "choice",
         options: ["1", "2", "3", "4", "5+"],
@@ -181,7 +181,7 @@ const S1: SectionDef = {
       {
         id: "s1_bathrooms",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Bathrooms",
         helper: "Add each bathroom one at a time and choose its type.",
         field: "bathlist",
@@ -190,7 +190,7 @@ const S1: SectionDef = {
       {
         id: "s1_garage",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Garage?",
         field: "yesno",
         required: true,
@@ -198,7 +198,7 @@ const S1: SectionDef = {
       {
         id: "s1_garage_size",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Garage size",
         field: "choice",
         options: ["Single", "Double"],
@@ -208,7 +208,7 @@ const S1: SectionDef = {
       {
         id: "s1_garage_type",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Garage type",
         field: "choice",
         options: ["Attached", "Detached"],
@@ -218,7 +218,7 @@ const S1: SectionDef = {
       {
         id: "s1_pool",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Pool?",
         field: "yesno",
         required: true,
@@ -226,7 +226,7 @@ const S1: SectionDef = {
       {
         id: "s1_spa",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Spa?",
         field: "yesno",
         required: true,
@@ -234,7 +234,7 @@ const S1: SectionDef = {
       {
         id: "s1_fenced_yard",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Fenced yard?",
         field: "yesno",
         required: true,
@@ -242,7 +242,7 @@ const S1: SectionDef = {
       {
         id: "s1_fence_type",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Fence type",
         field: "choice",
         options: ["Wood", "Block", "Wrought Iron", "Chain Link", "Other"],
@@ -252,7 +252,7 @@ const S1: SectionDef = {
       {
         id: "s1_fireplace",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Fireplace?",
         field: "yesno",
         required: true,
@@ -262,7 +262,7 @@ const S1: SectionDef = {
       {
         id: "s1_laundry",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Laundry location?",
         field: "choice",
         options: ["Inside (Dedicated Room)", "Inside (Closet)", "Garage", "None"],
@@ -271,7 +271,7 @@ const S1: SectionDef = {
       {
         id: "s1_unusual_smells",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Any unusual smells upon entry?",
         field: "yesno",
         required: true,
@@ -287,7 +287,7 @@ const S1: SectionDef = {
       {
         id: "s1_street_noise",
         sectionIndex: 1,
-        sectionName: "Property Setup",
+        sectionName: "Property Overview",
         label: "Street noise?",
         field: "choice",
         options: ["Quiet Street", "Busy Street", "Major Street/Highway"],
