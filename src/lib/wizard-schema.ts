@@ -1199,7 +1199,7 @@ const S11: SectionDef = {
     const total = bathCount(ctx);
     if (total === 0) return [];
     const out: QuestionDef[] = [];
-    for (let i = 1; i <= total; i++) out.push(...bathroomQuestions(i, total));
+    for (let i = 1; i <= total; i++) out.push(...bathroomQuestions(i, total, ctx));
     return out;
   },
 };
