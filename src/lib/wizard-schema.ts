@@ -1279,7 +1279,7 @@ const S12: SectionDef = {
   index: 12,
   name: "Bedrooms",
   resolve: (ctx) => {
-    const total = bedCount(ctx.config);
+    const total = bedCount(ctx);
     if (total === 0) return [];
     const out: QuestionDef[] = [];
     for (let i = 1; i <= total; i++) out.push(...bedroomQuestions(i, total));
