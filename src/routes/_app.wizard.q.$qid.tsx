@@ -421,7 +421,7 @@ function QuestionScreen() {
                 </h2>
                 {q.helper && <p className="mt-1.5 text-sm text-muted-foreground">{q.helper}</p>}
               </div>
-              {q.field === "rating" && (
+              {(q.field === "rating" || q.withRating === true) && (
                 <RatingButtons
                   value={draft.rating}
                   onChange={(r: Rating) =>
