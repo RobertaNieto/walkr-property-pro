@@ -132,28 +132,11 @@ function SectionScreen() {
   };
   const nextSidx = findNextSection();
 
-  const requiredQs = sectionQs.filter(
-    (q) => q.required || q.field === "rating",
-  );
-  const missingRequired = requiredQs.filter(
-    (q) => !isQuestionAnswered(q, ctx.answers[q.id]),
-  );
-  const valid = missingRequired.length === 0;
   const answeredCount = sectionQs.filter((q) =>
     hasUserAnswer(q, ctx.answers[q.id]),
   ).length;
 
   const handleContinue = () => {
-    if (!valid) {
-      setAttempted(true);
-      // Scroll to first missing
-      const firstMissing = missingRequired[0];
-      if (firstMissing) {
-        const el = document.getElementById(`q-${firstMissing.id}`);
-        el?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-      return;
-    }
     if (nextSidx) {
       void navigate({
         to: "/wizard/section/$sidx",
@@ -163,6 +146,7 @@ function SectionScreen() {
       void navigate({ to: "/wizard/checklist" });
     }
   };
+
 
   const setDraftFor = (
     qid: string,
