@@ -51,25 +51,62 @@ export function PhotoCapture({
   const localCache = useRef<Record<string, string>>({});
   const fileMeta = useRef<Record<string, { size: number; original: string }>>({});
   const [processing, setProcessing] = useState(false);
+  const [orientationError, setOrientationError] = useState<string | null>(null);
 
+  const getImageDims = (dataUrl: string) =>
+    new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => reject(new Error("decode"));
+      img.src = dataUrl;
+    });
+
+  const getVideoDims = (dataUrl: string) =>
+    new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const v = document.createElement("video");
+      v.preload = "metadata";
+      v.onloadedmetadata = () =>
+        resolve({ width: v.videoWidth, height: v.videoHeight });
+      v.onerror = () => reject(new Error("decode"));
+      v.src = dataUrl;
+    });
 
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
     setProcessing(true);
+    setOrientationError(null);
     try {
       const startIdx = photos.length;
       const newPhotos: string[] = [];
       const newNames: string[] = [];
+      let orientationFail = false;
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        // Read file as-is — no compression, no orientation check.
         const dataUrl = await new Promise<string>((res, rej) => {
           const r = new FileReader();
           r.onload = () => res(r.result as string);
           r.onerror = () => rej(r.error);
           r.readAsDataURL(file);
         });
+        // Orientation check — reject before saving.
+        try {
+          const { width, height } = isVideo
+            ? await getVideoDims(dataUrl)
+            : await getImageDims(dataUrl);
+          if (width && height) {
+            if (isVideo && width > height) {
+              orientationFail = true;
+              continue;
+            }
+            if (!isVideo && height > width) {
+              orientationFail = true;
+              continue;
+            }
+          }
+        } catch {
+          // If dimension probing fails, allow the file through.
+        }
         const name = baseName
           ? makeName(baseName, startIdx + i, !!isVideo)
           : `PHOTO_${Date.now()}_${i}.${isVideo ? "mp4" : "jpg"}`;
@@ -86,11 +123,19 @@ export function PhotoCapture({
       if (newPhotos.length > 0) {
         onChange([...photos, ...newPhotos], [...(filenames ?? photos), ...newNames]);
       }
+      if (orientationFail) {
+        setOrientationError(
+          isVideo
+            ? "This video is horizontal. Please retake it vertically (hold your phone upright) and reselect."
+            : "This photo is vertical. Please retake it horizontally (turn your phone sideways) and reselect.",
+        );
+      }
     } finally {
       setProcessing(false);
       if (inputRef.current) inputRef.current.value = "";
     }
   };
+
 
   const remove = (idx: number) => {
     const entry = photos[idx];
@@ -179,6 +224,26 @@ export function PhotoCapture({
           Photos are read-only in admin edit view.
         </p>
       )}
+
+      {orientationError && (
+        <div className="rounded-lg border-2 border-critical bg-critical/5 p-3">
+          <p className="text-sm font-medium text-critical">{orientationError}</p>
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={() => {
+                setOrientationError(null);
+                inputRef.current?.click();
+              }}
+              className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-md border border-critical bg-background px-3 text-[13px] font-medium text-critical hover:bg-critical/10"
+            >
+              Select Different {isVideo ? "Video" : "Photo"}
+            </button>
+          )}
+        </div>
+      )}
+
+
 
 
 
