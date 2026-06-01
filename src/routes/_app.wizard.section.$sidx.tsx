@@ -347,6 +347,7 @@ function SectionScreen() {
                           onChange={(v) => setDraftFor(q.id, v)}
                           attempted={false}
                           inlinePhotoLabel={isPhotoField}
+                          labelColor={isPhotoField && q.subSection ? subTextColor : undefined}
                         />
                       )}
                       {handledInline && hasInlineRating && (

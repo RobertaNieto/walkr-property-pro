@@ -21,6 +21,7 @@ interface PhotoCaptureProps {
   readOnly?: boolean;
   /** When provided, label is rendered on the left of the trigger button. */
   label?: string;
+  labelColor?: string;
   required?: boolean;
   storageContext?: StorageContext;
 }
@@ -39,6 +40,7 @@ export function PhotoCapture({
   error,
   readOnly: _readOnly,
   label,
+  labelColor,
   required: _required,
   storageContext,
 }: PhotoCaptureProps) {
@@ -209,7 +211,7 @@ export function PhotoCapture({
 
       {label !== undefined ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="block text-sm font-semibold text-foreground">
+          <label className="block text-sm font-semibold text-foreground" style={labelColor ? { color: labelColor } : undefined}>
             {label}
           </label>
 
