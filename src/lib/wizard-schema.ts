@@ -1378,9 +1378,9 @@ const S_LIVING_AREAS: SectionDef = {
       qs.map((q) => ({ ...q, sectionIndex: 8, sectionName: "Interior" }));
     return [
       ...remap(S8.resolve(ctx)),
+      ...remap(S12.resolve(ctx)),
       ...remap(S9.resolve(ctx)),
       ...remap(S10.resolve(ctx)),
-      ...remap(S12.resolve(ctx)),
       ...remap(S13.resolve(ctx)),
     ];
   },
