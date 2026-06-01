@@ -272,7 +272,7 @@ const S1: SectionDef = {
         id: "s1_unusual_smells",
         sectionIndex: 1,
         sectionName: "Property Setup",
-        label: "Any unusual smells?",
+        label: "Any unusual smells upon entry?",
         field: "yesno",
         required: true,
         followUp: {
