@@ -175,6 +175,7 @@ function SectionMenuScreen() {
   const totalSections = rows.length;
   const overallPct = totalSections > 0 ? (completedCount / totalSections) * 100 : 0;
   const anyComplete = completedCount > 0;
+  const propertySetupComplete = rows.find((r) => r.index === 1)?.status === "complete";
 
   if (!w) {
     return (
@@ -187,6 +188,11 @@ function SectionMenuScreen() {
   }
 
   const goToSection = (row: SectionRow) => {
+    if (row.index !== 1 && !propertySetupComplete && !adminEditing) {
+      // Redirect to Property Setup instead.
+      navigate({ to: "/wizard/section/$sidx", params: { sidx: "1" } });
+      return;
+    }
     navigate({ to: "/wizard/section/$sidx", params: { sidx: String(row.index) } });
   };
 
