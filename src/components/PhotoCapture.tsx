@@ -39,7 +39,7 @@ export function PhotoCapture({
   error,
   readOnly: _readOnly,
   label,
-  required,
+  required: _required,
   storageContext,
 }: PhotoCaptureProps) {
 
