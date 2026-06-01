@@ -257,16 +257,8 @@ const S1: SectionDef = {
         field: "yesno",
         required: true,
       },
-      {
-        id: "s1_fireplace_type",
-        sectionIndex: 1,
-        sectionName: "Property Setup",
-        label: "Fireplace type",
-        field: "choice",
-        options: ["Wood Burning", "Electric", "Gas"],
-        required: true,
-        visible: (c) => c.answers?.s1_fireplace?.bool === true,
-      },
+      // s1_fireplace_type removed — duplicate of s8_fireplace_type (Living Room)
+
       {
         id: "s1_laundry",
         sectionIndex: 1,
@@ -280,7 +272,7 @@ const S1: SectionDef = {
         id: "s1_unusual_smells",
         sectionIndex: 1,
         sectionName: "Property Setup",
-        label: "Any unusual smells?",
+        label: "Any unusual smells upon entry?",
         field: "yesno",
         required: true,
         followUp: {
@@ -290,15 +282,8 @@ const S1: SectionDef = {
           label: "Describe the smell",
         },
       },
-      {
-        id: "s1_landscape",
-        sectionIndex: 1,
-        sectionName: "Property Setup",
-        label: "Landscape condition?",
-        field: "choice",
-        options: ["Manicured", "Overgrown"],
-        required: true,
-      },
+      // s1_landscape removed — duplicate of s2_landscape (which has rating)
+
       {
         id: "s1_street_noise",
         sectionIndex: 1,
@@ -386,16 +371,8 @@ const S2: SectionDef = {
       required: true,
       withRating: true,
     },
-    {
-      id: "s2_additional",
-      sectionIndex: 2,
-      sectionName: "Exterior",
-      label: "Additional exterior front details",
-      helper:
-        "Note anything else relevant: mailbox type or location, irrigation system, gate access, easements, HOA restrictions, street parking, or anything a realtor should know about the exterior",
-      field: "longtext",
-      required: false,
-    },
+    // s2_additional merged into s3_additional below (single "Additional exterior details")
+
     // ---- Merged from former Section 3 (Exterior Sides & Back) ----
     photoQ("s3_left", 2, "Exterior", "Left side of house photo", "EXTERIOR_LEFT"),
     photoQ("s3_right", 2, "Exterior", "Right side of house photo", "EXTERIOR_RIGHT"),
@@ -428,9 +405,9 @@ const S2: SectionDef = {
       id: "s3_additional",
       sectionIndex: 2,
       sectionName: "Exterior",
-      label: "Additional backyard details",
+      label: "Additional exterior details",
       helper:
-        "Note anything relevant: fence material and condition, back irrigation, alley access, rear easements, or anything notable about the back of the property",
+        "Note anything relevant about the front or back exterior: mailbox, irrigation, gate access, fence material, alley access, easements, HOA restrictions, street parking, or anything else a realtor should know",
       field: "longtext",
       required: false,
     },
@@ -470,15 +447,8 @@ const S4: SectionDef = {
       photoQ("s4_exterior", 4, "Garage", "Garage exterior photo", "GARAGE_EXTERIOR"),
       photoQ("s4_interior", 4, "Garage", "Garage interior wide photo", "GARAGE_INTERIOR"),
       photoQ("s4_roofline", 4, "Garage", "Garage roof and fascia photo", "GARAGE_ROOFLINE"),
-      {
-        id: "s4_attached",
-        sectionIndex: 4,
-        sectionName: "Garage",
-        label: "Attached or detached",
-        field: "choice",
-        options: ["Attached", "Detached"],
-        required: true,
-      },
+      // s4_attached removed — duplicate of s1_garage_type
+
       {
         id: "s4_door_works",
         sectionIndex: 4,
@@ -768,7 +738,8 @@ const S9: SectionDef = {
       id: "s9_stove_present",
       sectionIndex: 9,
       sectionName: "Kitchen",
-      label: "Stove present?",
+      label: "Range/Oven present?",
+      helper: "Covers both cooktop and oven (combined range or separate units)",
       field: "yesno",
       required: true,
     },
@@ -776,28 +747,12 @@ const S9: SectionDef = {
       id: "s9_stove",
       sectionIndex: 9,
       sectionName: "Kitchen",
-      label: "Stove condition",
+      label: "Range/Oven condition",
       field: "rating",
       required: true,
       visible: (ctx) => ctx.answers["s9_stove_present"]?.bool === true,
     },
-    {
-      id: "s9_oven_present",
-      sectionIndex: 9,
-      sectionName: "Kitchen",
-      label: "Oven present?",
-      field: "yesno",
-      required: true,
-    },
-    {
-      id: "s9_oven",
-      sectionIndex: 9,
-      sectionName: "Kitchen",
-      label: "Oven condition",
-      field: "rating",
-      required: true,
-      visible: (ctx) => ctx.answers["s9_oven_present"]?.bool === true,
-    },
+    // s9_oven_present + s9_oven removed — merged into s9_stove (Range/Oven)
     {
       id: "s9_microwave",
       sectionIndex: 9,
@@ -1479,7 +1434,7 @@ const POOR_PHOTO_NAME_OVERRIDES: Record<string, string> = {
   s2_foundation_type: "FOUNDATION_POOR",
   s2_driveway_condition: "DRIVEWAY_POOR",
   s2_landscape: "LANDSCAPE_POOR",
-  s3_fence: "FENCE_POOR",
+  // s3_fence removed — no matching question definition
   s5_condition: "ROOF_POOR",
   s6_pool_condition: "POOL_POOR",
   s6_spa_condition: "SPA_POOR",
@@ -1488,15 +1443,16 @@ const POOR_PHOTO_NAME_OVERRIDES: Record<string, string> = {
   s8_lights: "LIVING_LIGHTS_POOR",
   s8_baseboards: "LIVING_BASEBOARDS_POOR",
   s8_paint: "LIVING_PAINT_POOR",
-  s9_stove: "KITCHEN_STOVE_POOR",
-  s9_oven: "KITCHEN_OVEN_POOR",
+  s9_stove: "KITCHEN_RANGE_POOR",
+  // s9_oven removed — merged into s9_stove (Range/Oven)
+
   s9_fridge: "KITCHEN_FRIDGE_POOR",
   s9_dishwasher: "KITCHEN_DISHWASHER_POOR",
   s9_microwave_rating: "KITCHEN_MICROWAVE_POOR",
   s9_cab_overall: "KITCHEN_CABINETS_POOR",
   s9_counters_cond: "KITCHEN_COUNTERS_POOR",
   s9_sink_cond: "KITCHEN_SINK_POOR",
-  s9_faucet_cond: "KITCHEN_FAUCET_POOR",
+  // s9_faucet_cond removed — no matching question definition
   s9_floor_cond: "KITCHEN_FLOOR_POOR",
   s9_lights: "KITCHEN_LIGHTS_POOR",
   s9_baseboards: "KITCHEN_BASEBOARDS_POOR",
@@ -1583,7 +1539,7 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     // Section 1 — garage size + type appear with garage Yes/No when applicable
     s1_garage: ["s1_garage_size", "s1_garage_type"],
     s1_fenced_yard: ["s1_fence_type"],
-    s1_fireplace: ["s1_fireplace_type"],
+    s1_fireplace: [],
     // Section 2
     s2_roofline: ["s2_exterior_paint"],
     s2_siding_photo: ["s2_siding_type"],
@@ -1591,7 +1547,7 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     // Section 3
     s3_fence_photo: [],
     // Section 4
-    s4_exterior: ["s4_attached"],
+    s4_exterior: [],
     s4_door_works: [],
     // Section 5
     s5_overall: ["s5_type", "s5_condition"],
@@ -1614,7 +1570,6 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
       "s9_fridge",
       "s9_dishwasher",
       "s9_stove",
-      "s9_oven",
       "s9_lights",
       "s9_baseboards",
     ],
