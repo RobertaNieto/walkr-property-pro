@@ -1160,6 +1160,14 @@ function bedroomQuestions(n: number, total: number): QuestionDef[] {
       required: true,
     },
     {
+      id: id("carpet"),
+      sectionIndex: 12,
+      sectionName: tag,
+      label: "Carpet condition",
+      field: "rating",
+      required: true,
+    },
+    {
       id: id("feature"),
       sectionIndex: 12,
       sectionName: tag,
