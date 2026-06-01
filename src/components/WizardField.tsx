@@ -269,13 +269,15 @@ export function FieldRenderer({
     case "choice":
       return (
         <>
-          <ChoiceGrid
-            label=""
-            options={q.options ?? []}
-            value={value.choice}
-            onChange={(v) => onChange((d) => ({ ...d, choice: v }))}
-            columns={Math.min(q.options?.length ?? 2, 4)}
-          />
+          {!suppressChoice && (
+            <ChoiceGrid
+              label=""
+              options={q.options ?? []}
+              value={value.choice}
+              onChange={(v) => onChange((d) => ({ ...d, choice: v }))}
+              columns={Math.min(q.options?.length ?? 2, 4)}
+            />
+          )}
           {q.withRating && !suppressRating && (
             <div className="mt-3">
               <p className="mb-2 text-sm font-semibold text-foreground">Condition rating</p>
