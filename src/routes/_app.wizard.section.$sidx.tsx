@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { NotesField } from "@/components/NotesField";
+import { InlinePillGroup } from "@/components/InlinePillGroup";
 import { RatingButtons } from "@/components/RatingButtons";
 import {
   clearPoorPhotosIfNeeded,
