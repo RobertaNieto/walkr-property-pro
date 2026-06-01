@@ -64,61 +64,34 @@ export function PhotoCapture({
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
     setProcessing(true);
-    setOrientationError(false);
-    const captured: { filename: string; dataUrl: string }[] = [];
     try {
       const startIdx = photos.length;
       const newPhotos: string[] = [];
       const newNames: string[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const compressed = isVideo
-          ? await new Promise<string>((res, rej) => {
-              const r = new FileReader();
-              r.onload = () => res(r.result as string);
-              r.onerror = () => rej(r.error);
-              r.readAsDataURL(file);
-            })
-          : await compressImage(file);
-        // Enforce landscape orientation for photos.
-        if (!isVideo) {
-          try {
-            const { width, height } = await getDimensions(compressed);
-            if (height > width) {
-              setOrientationError(true);
-              continue;
-            }
-          } catch {
-            // If dimension check fails, allow through.
-          }
-        }
+        // Read file as-is — no compression, no orientation check.
+        const dataUrl = await new Promise<string>((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result as string);
+          r.onerror = () => rej(r.error);
+          r.readAsDataURL(file);
+        });
         const name = baseName
           ? makeName(baseName, startIdx + i, !!isVideo)
           : `PHOTO_${Date.now()}_${i}.${isVideo ? "mp4" : "jpg"}`;
-        // Persist heavy data in IndexedDB photo bucket. Await ensures any
-        // failure surfaces before we tell the parent the photo exists.
         if (useStorage && storageContext) {
-          await saveStoragePhoto(storageContext, name, compressed);
+          await saveStoragePhoto(storageContext, name, dataUrl);
         } else {
-          await savePhoto(name, compressed);
+          await savePhoto(name, dataUrl);
         }
-        // Belt-and-suspenders: keep an instance-local copy so the thumbnail
-        // renders even if the IDB write or memCache lookup is somehow slow.
-        localCache.current[name] = compressed;
+        localCache.current[name] = dataUrl;
         fileMeta.current[name] = { size: file.size, original: file.name };
         newPhotos.push(name);
         newNames.push(name);
-        captured.push({ filename: name, dataUrl: compressed });
       }
       if (newPhotos.length > 0) {
         onChange([...photos, ...newPhotos], [...(filenames ?? photos), ...newNames]);
-      }
-      // Best-effort save to the agent's device camera roll / downloads so a
-      // browser cache wipe before upload doesn't lose the photo. Skipped in
-      // admin storage mode — admins must not get the agent's photos saved
-      // to their own device.
-      if (!useStorage && captured.length > 0) {
-        void backupToDevice(captured);
       }
     } finally {
       setProcessing(false);
