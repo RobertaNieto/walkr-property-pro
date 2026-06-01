@@ -1265,16 +1265,6 @@ const S14: SectionDef = {
       critical: true,
     },
     {
-      id: "s14_wh_strapped",
-      sectionIndex: 14,
-      sectionName: "Mechanical Systems",
-      label: "Water heater confirmed double-strapped",
-      
-      field: "yesno",
-      required: true,
-      critical: true,
-    },
-    {
       id: "s14_additional",
       sectionIndex: 14,
       sectionName: "Mechanical Systems",
