@@ -186,12 +186,9 @@ function SectionMenuScreen() {
   }
 
   const goToSection = (row: SectionRow) => {
-    if (row.isChecklist) {
-      navigate({ to: "/wizard/checklist" });
-      return;
-    }
     navigate({ to: "/wizard/section/$sidx", params: { sidx: String(row.index) } });
   };
+
 
   const startFromBeginning = () => {
     const first = navList[0];
