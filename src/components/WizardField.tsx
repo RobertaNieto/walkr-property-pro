@@ -168,6 +168,7 @@ export function FieldRenderer({
   onChange,
   attempted,
   suppressRating = false,
+  suppressChoice = false,
   inlinePhotoLabel = false,
 }: {
   q: QuestionDef;
@@ -175,6 +176,7 @@ export function FieldRenderer({
   onChange: (v: WizardAnswer | ((prev: WizardAnswer) => WizardAnswer)) => void;
   attempted: boolean;
   suppressRating?: boolean;
+  suppressChoice?: boolean;
   /** When true, photo/video fields render their own inline label+button row. */
   inlinePhotoLabel?: boolean;
 }) {
@@ -267,13 +269,15 @@ export function FieldRenderer({
     case "choice":
       return (
         <>
-          <ChoiceGrid
-            label=""
-            options={q.options ?? []}
-            value={value.choice}
-            onChange={(v) => onChange((d) => ({ ...d, choice: v }))}
-            columns={Math.min(q.options?.length ?? 2, 4)}
-          />
+          {!suppressChoice && (
+            <ChoiceGrid
+              label=""
+              options={q.options ?? []}
+              value={value.choice}
+              onChange={(v) => onChange((d) => ({ ...d, choice: v }))}
+              columns={Math.min(q.options?.length ?? 2, 4)}
+            />
+          )}
           {q.withRating && !suppressRating && (
             <div className="mt-3">
               <p className="mb-2 text-sm font-semibold text-foreground">Condition rating</p>

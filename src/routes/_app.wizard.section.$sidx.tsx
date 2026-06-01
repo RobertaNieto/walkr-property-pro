@@ -314,6 +314,7 @@ function SectionScreen() {
                         onChange={(v) => setDraftFor(q.id, v)}
                         attempted={false}
                         suppressRating
+                        suppressChoice={isInlineChoice}
                       />
                     )}
 
