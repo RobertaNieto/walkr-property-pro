@@ -421,7 +421,7 @@ function QuestionScreen() {
                 </h2>
                 {q.helper && <p className="mt-1.5 text-sm text-muted-foreground">{q.helper}</p>}
               </div>
-              {q.field === "rating" && (
+              {(q.field === "rating" || q.withRating === true) && (
                 <RatingButtons
                   value={draft.rating}
                   onChange={(r: Rating) =>
@@ -447,9 +447,8 @@ function QuestionScreen() {
               value={draft}
               onChange={setDraft}
               attempted={attempted}
-              suppressRating={_suppressRating || q.field === "rating"}
-            />
-          );
+              suppressRating={_suppressRating || q.field === "rating" || q.withRating === true}
+            />);
         })()}
 
         {q.followUp && q.followUp.when(pickValue(q, draft)) && (
@@ -710,8 +709,10 @@ function FieldRenderer({
                 onChange={(r: Rating) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
                 error={attempted && value.rating === undefined}
               />
-              <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
             </div>
+          )}
+          {q.withRating && (
+            <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
           )}
         </>
       );
@@ -789,8 +790,10 @@ function FieldRenderer({
                 onChange={(r: Rating) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
                 error={attempted && value.rating === undefined}
               />
-              <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
             </div>
+          )}
+          {q.withRating && (
+            <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
           )}
         </>
       );
