@@ -54,7 +54,7 @@ function SectionScreen() {
   const w: Walkthrough | null = useMemo(() => loadActive(), [tick]);
   const adminEditing = useMemo(() => isAdminEditing(), [tick]);
   const [leaveOpen, setLeaveOpen] = useState(false);
-  const [attempted, setAttempted] = useState(false);
+  
 
   // Local drafts keyed by question id, for snappy editing.
   const [drafts, setDrafts] = useState<Record<string, WizardAnswer>>({});
