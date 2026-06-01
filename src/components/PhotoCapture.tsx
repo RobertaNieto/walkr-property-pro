@@ -40,6 +40,7 @@ export function PhotoCapture({
   error,
   readOnly: _readOnly,
   label,
+  labelColor,
   required: _required,
   storageContext,
 }: PhotoCaptureProps) {
