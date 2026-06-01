@@ -244,21 +244,10 @@ function SectionScreen() {
             <div className="space-y-5 bg-card/60 px-4 py-5 sm:px-5">
               {sectionQs.map((q) => {
                 const value = drafts[q.id] ?? {};
-                const errored =
-                  attempted &&
-                  (q.required || q.field === "rating") &&
-                  !isQuestionAnswered(q, ctx.answers[q.id]);
                 return (
-                  <div
-                    key={q.id}
-                    id={`q-${q.id}`}
-                    className="scroll-mt-24"
-                  >
+                  <div key={q.id} id={`q-${q.id}`} className="scroll-mt-24">
                     <label className="mb-1.5 block text-sm font-semibold text-foreground">
                       {q.label}
-                      {(q.required || q.field === "rating") && (
-                        <span className="ml-1 text-critical">*</span>
-                      )}
                     </label>
                     {q.helper && q.field !== "text" && q.field !== "longtext" && (
                       <p className="mb-2 text-xs text-muted-foreground">
@@ -269,7 +258,7 @@ function SectionScreen() {
                       q={q}
                       value={value}
                       onChange={(v) => setDraftFor(q.id, v)}
-                      attempted={attempted}
+                      attempted={false}
                     />
                     {q.followUp && q.followUp.when(pickValue(q, value)) && (
                       <div className="mt-3">
@@ -277,11 +266,10 @@ function SectionScreen() {
                           q={q}
                           value={value}
                           onChange={(v) => setDraftFor(q.id, v)}
-                          attempted={attempted}
+                          attempted={false}
                         />
                       </div>
                     )}
-                    {/* Optional notes for questions that opt-in via companions */}
                     {q.companions && q.companions.length > 0 && q.field !== "longtext" && (
                       <div className="mt-3">
                         <label className="mb-1 block text-xs font-semibold text-muted-foreground">
@@ -295,11 +283,6 @@ function SectionScreen() {
                           placeholder="Add any notes or observations"
                         />
                       </div>
-                    )}
-                    {errored && (
-                      <p className="mt-1.5 text-xs font-medium text-critical">
-                        This field is required.
-                      </p>
                     )}
                   </div>
                 );
