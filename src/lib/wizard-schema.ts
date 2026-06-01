@@ -978,20 +978,33 @@ const S10: SectionDef = {
   ],
 };
 
-function bathroomQuestions(n: number, total: number): QuestionDef[] {
-  const tag = `Bathroom ${n} of ${total}`;
+function bathroomQuestions(n: number, total: number, ctx: SkipContext): QuestionDef[] {
+  const s1Type = bathTypeAt(ctx, n);
+  // Map S1 short types to the long types used elsewhere in the schema.
+  const mappedType =
+    s1Type === "Full" ? "Full bath" :
+    s1Type === "3/4" ? "Three-quarter bath" :
+    s1Type === "Half" ? "Half bath" :
+    s1Type ?? undefined;
+  const tag = mappedType
+    ? `Bathroom ${n} of ${total} — ${mappedType}`
+    : `Bathroom ${n} of ${total}`;
   const id = (k: string) => `s11_b${n}_${k}`;
   const pn = (k: string) => `BATHROOM${n}_${k}`;
+  // When S1 already declared the bath type, hide the redundant type question
+  // (but keep id present so downstream visibility predicates still match).
+  const typeQ: QuestionDef = {
+    id: id("type"),
+    sectionIndex: 11,
+    sectionName: tag,
+    label: "Bathroom type",
+    field: "choice",
+    options: ["Full bath", "Three-quarter bath", "Half bath"],
+    required: true,
+    visible: mappedType ? () => false : undefined,
+  };
   const questions: QuestionDef[] = [
-    {
-      id: id("type"),
-      sectionIndex: 11,
-      sectionName: tag,
-      label: "Bathroom type",
-      field: "choice",
-      options: ["Full bath", "Three-quarter bath", "Half bath"],
-      required: true,
-    },
+    typeQ,
     photoQ(id("mls"), 11, tag, "MLS-style wide photo", pn("MLS")),
     {
       ...photoQ(id("tub"), 11, tag, "Tub and surround photo", pn("TUB")),
