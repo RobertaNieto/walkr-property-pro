@@ -412,13 +412,11 @@ export function FieldRenderer({
             />
           )}
           {q.withPhoto && (
-            <div className="mt-4">
-              <p className="mb-2 text-sm font-semibold text-foreground">
-                Photo <span className="text-critical">*</span>
-              </p>
-              <LandscapeHint />
+            <div className="mt-3">
               <PhotoCapture
                 readOnly={isAdminEditing()}
+                label="Photo"
+                required
                 photos={value.photos ?? []}
                 filenames={value.photoNames ?? []}
                 baseName={q.withPhoto.name}
@@ -438,20 +436,20 @@ export function FieldRenderer({
     case "video": {
       const isVideo = q.field === "video";
       return (
-        <>
-          {!isVideo && <LandscapeHint />}
-          <PhotoCapture
-            readOnly={isAdminEditing()}
-            photos={value.photos ?? []}
-            filenames={value.photoNames ?? []}
-            baseName={q.photoName ?? q.id.toUpperCase()}
-            isVideo={isVideo}
-            storageContext={getAdminStorageContext()}
-            onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-            error={errored}
-          />
-        </>
+        <PhotoCapture
+          readOnly={isAdminEditing()}
+          label={inlinePhotoLabel ? q.label : undefined}
+          required={inlinePhotoLabel ? q.required : undefined}
+          photos={value.photos ?? []}
+          filenames={value.photoNames ?? []}
+          baseName={q.photoName ?? q.id.toUpperCase()}
+          isVideo={isVideo}
+          storageContext={getAdminStorageContext()}
+          onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
+          error={errored}
+        />
       );
     }
+
   }
 }
