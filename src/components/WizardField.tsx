@@ -43,9 +43,6 @@ export function LandscapeHint() {
   );
 }
 
-function isAnsweredLocal(q: QuestionDef, ans: WizardAnswer): boolean {
-  return isQuestionAnswered(q, ans as SkipContext["answers"][string]);
-}
 
 export function pickValue(q: QuestionDef, ans: WizardAnswer): unknown {
   switch (q.field) {
