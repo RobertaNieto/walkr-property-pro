@@ -651,6 +651,7 @@ function pickValue(q: QuestionDef, ans: WizardAnswer): unknown {
     case "choice":
       return ans.choice;
     case "multichoice":
+    case "bathlist":
       return ans.choices;
     case "text":
     case "longtext":
@@ -816,6 +817,71 @@ function FieldRenderer({
               </button>
             );
           })}
+        </div>
+      );
+    }
+
+    case "bathlist": {
+      const items = value.choices ?? [];
+      const types = ["Full", "3/4", "Half"] as const;
+      return (
+        <div className="space-y-3">
+          {items.length > 0 && (
+            <ol className="space-y-2">
+              {items.map((label, i) => (
+                <li
+                  key={`${label}-${i}`}
+                  className="flex items-center justify-between gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3"
+                >
+                  <span className="text-base font-semibold text-foreground">
+                    {i + 1}. {label} bath
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onChange((d) => ({
+                        ...d,
+                        choices: (d.choices ?? []).filter((_, j) => j !== i),
+                      }))
+                    }
+                    className="inline-flex h-9 items-center rounded-lg px-3 text-sm font-semibold text-critical hover:bg-critical/10"
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
+          <div>
+            <p className="mb-2 text-sm font-semibold text-foreground">
+              Add bathroom #{items.length + 1}
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {types.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() =>
+                    onChange((d) => ({
+                      ...d,
+                      choices: [...(d.choices ?? []), t],
+                    }))
+                  }
+                  className={cn(
+                    "min-h-14 rounded-2xl border-2 px-3 py-3 text-base font-semibold transition-all active:scale-95",
+                    "border-border bg-card text-foreground hover:border-accent/40",
+                  )}
+                >
+                  + {t}
+                </button>
+              ))}
+            </div>
+            {items.length === 0 && errored && (
+              <p className="mt-2 text-sm font-medium text-critical">
+                Add at least one bathroom to continue.
+              </p>
+            )}
+          </div>
         </div>
       );
     }

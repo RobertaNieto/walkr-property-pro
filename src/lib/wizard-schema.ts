@@ -978,29 +978,45 @@ const S10: SectionDef = {
   ],
 };
 
-function bathroomQuestions(n: number, total: number): QuestionDef[] {
-  const tag = `Bathroom ${n} of ${total}`;
+function bathroomQuestions(n: number, total: number, ctx: SkipContext): QuestionDef[] {
+  const s1Type = bathTypeAt(ctx, n);
+  // Map S1 short types to the long types used elsewhere in the schema.
+  const mappedType =
+    s1Type === "Full" ? "Full bath" :
+    s1Type === "3/4" ? "Three-quarter bath" :
+    s1Type === "Half" ? "Half bath" :
+    s1Type ?? undefined;
+  const tag = mappedType
+    ? `Bathroom ${n} of ${total} — ${mappedType}`
+    : `Bathroom ${n} of ${total}`;
   const id = (k: string) => `s11_b${n}_${k}`;
   const pn = (k: string) => `BATHROOM${n}_${k}`;
+  // When S1 already declared the bath type, hide the redundant type question
+  // (but keep id present so downstream visibility predicates still match).
+  const typeQ: QuestionDef = {
+    id: id("type"),
+    sectionIndex: 11,
+    sectionName: tag,
+    label: "Bathroom type",
+    field: "choice",
+    options: ["Full bath", "Three-quarter bath", "Half bath"],
+    required: true,
+    visible: mappedType ? () => false : undefined,
+  };
   const questions: QuestionDef[] = [
-    {
-      id: id("type"),
-      sectionIndex: 11,
-      sectionName: tag,
-      label: "Bathroom type",
-      field: "choice",
-      options: ["Full bath", "Three-quarter bath", "Half bath"],
-      required: true,
-    },
+    typeQ,
     photoQ(id("mls"), 11, tag, "MLS-style wide photo", pn("MLS")),
     {
       ...photoQ(id("tub"), 11, tag, "Tub and surround photo", pn("TUB")),
-      visible: (ctx) => ctx.answers[id("type")]?.choice === "Full bath",
+      visible: (c) => {
+        const t = mappedType ?? c.answers[id("type")]?.choice;
+        return t === "Full bath";
+      },
     },
     {
       ...photoQ(id("shower"), 11, tag, "Standing shower photo", pn("SHOWER")),
-      visible: (ctx) => {
-        const t = ctx.answers[id("type")]?.choice;
+      visible: (c) => {
+        const t = mappedType ?? c.answers[id("type")]?.choice;
         return t === "Full bath" || t === "Three-quarter bath";
       },
     },
@@ -1013,7 +1029,10 @@ function bathroomQuestions(n: number, total: number): QuestionDef[] {
       label: "Tub condition",
       field: "rating",
       required: true,
-      visible: (ctx) => ctx.answers[id("type")]?.choice === "Full bath",
+      visible: (c) => {
+        const t = mappedType ?? c.answers[id("type")]?.choice;
+        return t === "Full bath";
+      },
       followUp: {
         when: () => true,
         field: "multichoice",
@@ -1028,8 +1047,8 @@ function bathroomQuestions(n: number, total: number): QuestionDef[] {
       label: "Shower condition",
       field: "rating",
       required: true,
-      visible: (ctx) => {
-        const t = ctx.answers[id("type")]?.choice;
+      visible: (c) => {
+        const t = mappedType ?? c.answers[id("type")]?.choice;
         return t === "Full bath" || t === "Three-quarter bath";
       },
     },
@@ -1149,16 +1168,18 @@ function bathroomQuestions(n: number, total: number): QuestionDef[] {
     },
   ];
   if (n === 1) return questions;
-  // Bathrooms 2+ open with a "present" yes/no; if No, all loop questions hide.
+  // When S1 has a bath list, every n is already a confirmed bath — no gating
+  // question needed. Legacy drafts (no S1 list) keep the "exists" yes/no.
+  if (mappedType) return questions;
   const existsId = id("exists");
-  const isPresent = (ctx: SkipContext) =>
-    ctx.answers?.[existsId]?.bool === true;
+  const isPresent = (c: SkipContext) =>
+    c.answers?.[existsId]?.bool === true;
   const gated: QuestionDef[] = questions.map((q) => {
     const prev = q.visible;
     return {
       ...q,
-      visible: (ctx: SkipContext) =>
-        isPresent(ctx) && (prev ? prev(ctx) : true),
+      visible: (c: SkipContext) =>
+        isPresent(c) && (prev ? prev(c) : true),
     };
   });
   const existsQ: QuestionDef = {
@@ -1180,7 +1201,7 @@ const S11: SectionDef = {
     const total = bathCount(ctx);
     if (total === 0) return [];
     const out: QuestionDef[] = [];
-    for (let i = 1; i <= total; i++) out.push(...bathroomQuestions(i, total));
+    for (let i = 1; i <= total; i++) out.push(...bathroomQuestions(i, total, ctx));
     return out;
   },
 };
@@ -1767,6 +1788,9 @@ export function isQuestionAnswered(qIn: QuestionDef, ansMaybe: SkipContext["answ
     case "multichoice":
       if (q.required && (!ans.choices || ans.choices.length === 0)) return false;
       break;
+    case "bathlist":
+      if (q.required && (!Array.isArray(ans.choices) || ans.choices.length === 0)) return false;
+      break;
     case "rating":
       if (q.required && ans.rating === undefined) return false;
       if (ans.rating === 3 && q.poorPhotoName && (ans.poorPhotos?.length ?? 0) < 1) return false;
@@ -1835,6 +1859,7 @@ export function hasUserAnswer(qIn: QuestionDef, ansMaybe: SkipContext["answers"]
       if (q.withRating && ans.rating !== undefined) return true;
       return false;
     case "multichoice":
+    case "bathlist":
       return Array.isArray(ans.choices) && ans.choices.length > 0;
     case "rating":
       if (ans.rating !== undefined) return true;
