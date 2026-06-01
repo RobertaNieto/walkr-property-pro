@@ -80,13 +80,11 @@ export function PoorPhotoSection({
   attempted: boolean;
 }) {
   if (value.rating !== 3 || !q.poorPhotoName) return null;
-  const missing = (value.poorPhotos?.length ?? 0) < 1;
   return (
     <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
       <PhotoCapture
         readOnly={isAdminEditing()}
-        label="⚠️ Photo required for Poor rating"
-        required
+        label="Photo for Poor rating"
         photos={value.poorPhotos ?? []}
         filenames={value.poorPhotoNames ?? []}
         baseName={q.poorPhotoName}
@@ -94,11 +92,11 @@ export function PoorPhotoSection({
         onChange={(photos, photoNames) =>
           onChange((d) => ({ ...d, poorPhotos: photos, poorPhotoNames: photoNames }))
         }
-        error={attempted && missing}
       />
     </div>
   );
 }
+
 
 
 export function FollowUpRenderer({
