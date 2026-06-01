@@ -282,13 +282,14 @@ function SectionMenuScreen() {
               const color = getSectionColor(row.index);
               const isComplete = row.status === "complete";
               const inProgress = row.status === "in_progress";
-              const isLocked = row.index !== 1 && !propertySetupComplete && !adminEditing;
+              const isLocked = row.index !== 1 && row.index !== 0 && !propertySetupComplete && !adminEditing;
               const borderColor = isLocked ? "#D1D5DB" : (row.status === "todo" ? "#D1D5DB" : color);
               return (
                 <button
                   key={row.index}
                   type="button"
-                  onClick={() => goToSection(row)}
+                  onClick={() => { if (!isLocked) goToSection(row); }}
+                  disabled={isLocked}
                   aria-disabled={isLocked}
                   title={isLocked ? "Complete Property Setup first" : undefined}
                   className={cn(
