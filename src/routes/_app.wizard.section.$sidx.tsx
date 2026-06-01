@@ -245,7 +245,136 @@ function SectionScreen() {
 
             {/* Questions */}
             <div className="space-y-5 bg-card/60 px-4 py-5 sm:px-5">
-              {sectionQs.map((q) => {
+              {(() => {
+                // Color palette for Interior sub-sections.
+                const subColor = (sub: string | undefined): string => {
+                  if (!sub) return color;
+                  if (/^bedroom/i.test(sub)) return "#a855f7"; // purple
+                  switch (sub) {
+                    case "Living Room":
+                      return "#0ea5e9"; // sky blue
+                    case "Kitchen":
+                      return "#f97316"; // orange
+                    case "Hallways":
+                      return "#14b8a6"; // teal
+                    case "Laundry":
+                      return "#ec4899"; // pink
+                    default:
+                      return color;
+                  }
+                };
+                let lastSub: string | undefined = undefined;
+                const nodes: React.ReactNode[] = [];
+                sectionQs.forEach((q) => {
+                  if (q.subSection && q.subSection !== lastSub) {
+                    lastSub = q.subSection;
+                    const sc = subColor(q.subSection);
+                    nodes.push(
+                      <div
+                        key={`sub-${q.id}`}
+                        className="-mx-1 mt-2 first:mt-0 rounded-xl border-l-4 px-3 py-2"
+                        style={{ borderColor: sc, backgroundColor: `${sc}14` }}
+                      >
+                        <h2
+                          className="text-sm font-bold uppercase tracking-wide"
+                          style={{ color: sc }}
+                        >
+                          {q.subSection}
+                        </h2>
+                      </div>,
+                    );
+                  }
+                  const value = drafts[q.id] ?? {};
+                  const hasInlineRating = q.field === "rating" || q.withRating === true;
+                  const isInlineYesNo = q.field === "yesno";
+                  const isInlineChoice =
+                    q.field === "choice" &&
+                    Array.isArray(q.options) &&
+                    q.options.length >= 2 &&
+                    q.options.length <= 4;
+                  const isPhotoField = q.field === "photo" || q.field === "video";
+                  const handledInline = hasInlineRating || isInlineYesNo || isInlineChoice;
+                  const skipOuterLabel = isPhotoField;
+                  const subTextColor = subColor(q.subSection);
+                  nodes.push(
+                    <div key={q.id} id={`q-${q.id}`} className="scroll-mt-24">
+                      {!skipOuterLabel && (
+                        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-3">
+                          <label
+                            className="block text-sm font-semibold"
+                            style={{ color: q.subSection ? subTextColor : undefined }}
+                          >
+                            {q.label}
+                          </label>
+
+                          {hasInlineRating && (
+                            <RatingButtons
+                              value={value.rating}
+                              onChange={(r: import("@/lib/walkthrough").Rating) =>
+                                setDraftFor(q.id, (d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
+                              }
+                            />
+                          )}
+                          {isInlineYesNo && (
+                            <InlinePillGroup
+                              options={[
+                                { label: "Yes", selected: value.bool === true, onClick: () => setDraftFor(q.id, (d) => ({ ...d, bool: true })), tone: "good" },
+                                { label: "No", selected: value.bool === false, onClick: () => setDraftFor(q.id, (d) => ({ ...d, bool: false })), tone: "neutral" },
+                              ]}
+                            />
+                          )}
+                          {isInlineChoice && (
+                            <InlinePillGroup
+                              options={(q.options ?? []).map((opt) => ({
+                                label: opt,
+                                selected: value.choice === opt,
+                                onClick: () => setDraftFor(q.id, (d) => ({ ...d, choice: opt })),
+                                tone: "neutral",
+                              }))}
+                            />
+                          )}
+                        </div>
+                      )}
+                      {q.helper && q.field !== "text" && q.field !== "longtext" && (
+                        <p className="mb-2 text-xs text-muted-foreground">
+                          {q.helper}
+                        </p>
+                      )}
+                      {!handledInline && (
+                        <FieldRenderer
+                          q={q}
+                          value={value}
+                          onChange={(v) => setDraftFor(q.id, v)}
+                          attempted={false}
+                          inlinePhotoLabel={isPhotoField}
+                        />
+                      )}
+                      {handledInline && hasInlineRating && (
+                        <FieldRenderer
+                          q={q}
+                          value={value}
+                          onChange={(v) => setDraftFor(q.id, v)}
+                          attempted={false}
+                          suppressRating
+                          suppressChoice={isInlineChoice}
+                        />
+                      )}
+                      {q.followUp && q.followUp.when(pickValue(q, value)) && (
+                        <div className="mt-3">
+                          <FollowUpRenderer
+                            q={q}
+                            value={value}
+                            onChange={(v) => setDraftFor(q.id, v)}
+                            attempted={false}
+                          />
+                        </div>
+                      )}
+                    </div>,
+                  );
+                });
+                return nodes;
+              })()}
+              {false && sectionQs.map((q) => {
                 const value = drafts[q.id] ?? {};
                 const hasInlineRating = q.field === "rating" || q.withRating === true;
                 const isInlineYesNo = q.field === "yesno";
