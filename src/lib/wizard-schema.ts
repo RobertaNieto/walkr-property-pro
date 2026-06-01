@@ -1788,6 +1788,9 @@ export function isQuestionAnswered(qIn: QuestionDef, ansMaybe: SkipContext["answ
     case "multichoice":
       if (q.required && (!ans.choices || ans.choices.length === 0)) return false;
       break;
+    case "bathlist":
+      if (q.required && (!Array.isArray(ans.choices) || ans.choices.length === 0)) return false;
+      break;
     case "rating":
       if (q.required && ans.rating === undefined) return false;
       if (ans.rating === 3 && q.poorPhotoName && (ans.poorPhotos?.length ?? 0) < 1) return false;
