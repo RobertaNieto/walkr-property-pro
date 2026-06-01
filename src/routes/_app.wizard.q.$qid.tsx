@@ -447,7 +447,7 @@ function QuestionScreen() {
               value={draft}
               onChange={setDraft}
               attempted={attempted}
-              suppressRating={_suppressRating}
+              suppressRating={_suppressRating || q.field === "rating"}
             />
           );
         })()}
