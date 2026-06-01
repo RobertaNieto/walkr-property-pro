@@ -419,7 +419,7 @@ function QuestionScreen() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="text-2xl font-bold leading-tight text-foreground">
-                    {q.label} {q.required && <span className="text-critical">*</span>}
+                    {q.label} 
                   </h2>
                   {q.helper && <p className="mt-1.5 text-sm text-muted-foreground">{q.helper}</p>}
                 </div>
@@ -546,7 +546,7 @@ function QuestionScreen() {
                               )}
                             >
                               {primaryLabel}{" "}
-                              <span className="text-critical">*</span>
+                              
                             </p>
                             <CompactRatingRow
                               value={draft.rating}
@@ -583,7 +583,7 @@ function QuestionScreen() {
                                 errored ? "text-critical" : "text-foreground",
                               )}
                             >
-                              {c.label} {c.required && <span className="text-critical">*</span>}
+                              {c.label} 
                             </p>
                             <CompactRatingRow
                               value={cVal.rating}
@@ -626,7 +626,7 @@ function QuestionScreen() {
                   <div key={c.id} className="space-y-4">
                     <div className="border-t border-border pt-4">
                       <p className="text-base font-semibold text-foreground">
-                        {c.label} {c.required && <span className="text-critical">*</span>}
+                        {c.label} 
                       </p>
                       {c.helper && (
                         <p className="mt-1 text-sm text-muted-foreground">{c.helper}</p>
@@ -732,7 +732,7 @@ function FieldRenderer({
           {q.withRating && !suppressRating && (
             <div>
               <p className="mb-2 mt-4 text-sm font-semibold text-foreground">
-                Condition rating <span className="text-critical">*</span>
+                Condition rating 
               </p>
               <RatingButtons
                 value={value.rating}
@@ -813,7 +813,7 @@ function FieldRenderer({
           {q.withRating && !suppressRating && (
             <div>
               <p className="mb-2 mt-4 text-sm font-semibold text-foreground">
-                Condition rating <span className="text-critical">*</span>
+                Condition rating 
               </p>
               <RatingButtons
                 value={value.rating}
@@ -1052,7 +1052,7 @@ function FollowUpRenderer({
   return (
     <div className="rounded-2xl border-l-4 border-accent bg-accent/5 p-4">
       <p className="mb-2 text-sm font-semibold text-foreground">
-        {fu.label} {fu.required && <span className="text-critical">*</span>}
+        {fu.label} 
       </p>
       {fu.field === "text" && (
         <NotesField
