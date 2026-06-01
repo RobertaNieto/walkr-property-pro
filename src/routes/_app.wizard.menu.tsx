@@ -167,16 +167,6 @@ function SectionMenuScreen() {
         firstQuestionId,
       });
     }
-    // Section 17 — Final Checklist (own route)
-    out.push({
-      index: 17,
-      name: "Final Checklist",
-      icon: SECTION_ICONS[17],
-      total: 0,
-      answered: 0,
-      status: "todo",
-      isChecklist: true,
-    });
     return out;
   }, [navList, ctx.answers]);
 
