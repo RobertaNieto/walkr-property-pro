@@ -211,7 +211,7 @@ export function PhotoCapture({
 
       {label !== undefined ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="block text-sm font-semibold text-foreground">
+          <label className="block text-sm font-semibold text-foreground" style={labelColor ? { color: labelColor } : undefined}>
             {label}
           </label>
 
