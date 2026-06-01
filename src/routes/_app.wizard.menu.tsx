@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ArrowLeft,
+  Lock,
   KeyRound,
   Home as HomeIcon,
   ArrowLeftRight,
@@ -174,6 +175,7 @@ function SectionMenuScreen() {
   const totalSections = rows.length;
   const overallPct = totalSections > 0 ? (completedCount / totalSections) * 100 : 0;
   const anyComplete = completedCount > 0;
+  const propertySetupComplete = rows.find((r) => r.index === 1)?.status === "complete";
 
   if (!w) {
     return (
@@ -186,6 +188,11 @@ function SectionMenuScreen() {
   }
 
   const goToSection = (row: SectionRow) => {
+    if (row.index !== 1 && !propertySetupComplete && !adminEditing) {
+      // Redirect to Property Setup instead.
+      navigate({ to: "/wizard/section/$sidx", params: { sidx: "1" } });
+      return;
+    }
     navigate({ to: "/wizard/section/$sidx", params: { sidx: String(row.index) } });
   };
 
@@ -273,21 +280,28 @@ function SectionMenuScreen() {
               const color = getSectionColor(row.index);
               const isComplete = row.status === "complete";
               const inProgress = row.status === "in_progress";
-              const borderColor = row.status === "todo" ? "#D1D5DB" : color;
+              const isLocked = row.index !== 1 && !propertySetupComplete && !adminEditing;
+              const borderColor = isLocked ? "#D1D5DB" : (row.status === "todo" ? "#D1D5DB" : color);
               return (
                 <button
                   key={row.index}
                   type="button"
                   onClick={() => goToSection(row)}
+                  aria-disabled={isLocked}
+                  title={isLocked ? "Complete Property Setup first" : undefined}
                   className={cn(
                     "group relative flex min-h-[90px] w-full items-start gap-3 rounded-2xl bg-card p-4 text-left shadow-sm transition-all active:scale-[0.99] hover:shadow-md",
                     isComplete && "bg-accent/5",
+                    isLocked && "opacity-60",
                   )}
                   style={{ borderLeft: `6px solid ${borderColor}` }}
                 >
                   <div
                     className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: `${color}15`, color }}
+                    style={{
+                      backgroundColor: isLocked ? "#E5E7EB" : `${color}15`,
+                      color: isLocked ? "#6B7280" : color,
+                    }}
                   >
                     <Icon className="h-5 w-5" />
                   </div>
@@ -299,12 +313,21 @@ function SectionMenuScreen() {
                       {row.name}
                     </p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      {`${row.total} question${row.total === 1 ? "" : "s"}`}
+                      {isLocked
+                        ? "Locked — finish Property Setup"
+                        : `${row.total} question${row.total === 1 ? "" : "s"}`}
                     </p>
 
                   </div>
                   <div className="flex flex-shrink-0 items-center justify-center">
-                    {isComplete ? (
+                    {isLocked ? (
+                      <span
+                        aria-label="Locked"
+                        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-muted text-muted-foreground"
+                      >
+                        <Lock className="h-3.5 w-3.5" />
+                      </span>
+                    ) : isComplete ? (
                       <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground">
                         <Check className="h-4 w-4" />
                       </span>
