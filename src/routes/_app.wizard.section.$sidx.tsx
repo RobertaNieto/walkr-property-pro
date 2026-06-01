@@ -244,11 +244,22 @@ function SectionScreen() {
             <div className="space-y-5 bg-card/60 px-4 py-5 sm:px-5">
               {sectionQs.map((q) => {
                 const value = drafts[q.id] ?? {};
+                const hasInlineRating = q.field === "rating" || q.withRating === true;
                 return (
                   <div key={q.id} id={`q-${q.id}`} className="scroll-mt-24">
-                    <label className="mb-1.5 block text-sm font-semibold text-foreground">
-                      {q.label}
-                    </label>
+                    <div className="mb-1.5 flex flex-wrap items-center justify-between gap-3">
+                      <label className="block text-sm font-semibold text-foreground">
+                        {q.label}
+                      </label>
+                      {hasInlineRating && (
+                        <RatingButtons
+                          value={value.rating}
+                          onChange={(r) =>
+                            setDraftFor(q.id, (d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
+                          }
+                        />
+                      )}
+                    </div>
                     {q.helper && q.field !== "text" && q.field !== "longtext" && (
                       <p className="mb-2 text-xs text-muted-foreground">
                         {q.helper}
@@ -259,7 +270,9 @@ function SectionScreen() {
                       value={value}
                       onChange={(v) => setDraftFor(q.id, v)}
                       attempted={false}
+                      suppressRating={hasInlineRating}
                     />
+
                     {q.followUp && q.followUp.when(pickValue(q, value)) && (
                       <div className="mt-3">
                         <FollowUpRenderer
