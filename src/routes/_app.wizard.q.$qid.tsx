@@ -943,13 +943,12 @@ function FieldRenderer({
               <PhotoCapture
                 readOnly={isAdminEditing()}
                 label="Photo"
-                required
                 photos={value.photos ?? []}
                 filenames={value.photoNames ?? []}
                 baseName={q.withPhoto.name}
                 storageContext={getAdminStorageContext()}
                 onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-                error={false && (value.photos?.length ?? 0) < (q.withPhoto.min ?? 1)}
+
               />
             </div>
           )}
