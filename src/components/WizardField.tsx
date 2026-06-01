@@ -82,13 +82,11 @@ export function PoorPhotoSection({
   if (value.rating !== 3 || !q.poorPhotoName) return null;
   const missing = (value.poorPhotos?.length ?? 0) < 1;
   return (
-    <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
-      <p className="mb-2 text-sm font-semibold text-critical">
-        ⚠️ Photo required for Poor rating
-      </p>
-      <LandscapeHint />
+    <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
       <PhotoCapture
         readOnly={isAdminEditing()}
+        label="⚠️ Photo required for Poor rating"
+        required
         photos={value.poorPhotos ?? []}
         filenames={value.poorPhotoNames ?? []}
         baseName={q.poorPhotoName}
@@ -101,6 +99,7 @@ export function PoorPhotoSection({
     </div>
   );
 }
+
 
 export function FollowUpRenderer({
   q,
