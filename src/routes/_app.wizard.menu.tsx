@@ -353,7 +353,7 @@ function SectionMenuScreen() {
               {anyComplete && (
                 <button
                   type="button"
-                  onClick={() => navigate({ to: "/wizard/checklist" })}
+                  onClick={() => navigate({ to: "/wizard/complete" })}
                   className="inline-flex h-12 w-full items-center justify-center rounded-2xl border-2 border-border bg-card text-sm font-semibold text-foreground transition-all hover:border-accent/40 active:scale-[0.99]"
                 >
                   Review & Submit
