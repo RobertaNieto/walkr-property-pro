@@ -1253,14 +1253,6 @@ const S14: SectionDef = {
       required: true,
     },
     {
-      id: "s14_wh_loc",
-      sectionIndex: 14,
-      sectionName: "Mechanical Systems",
-      label: "Water heater location",
-      field: "text",
-      required: true,
-    },
-    {
       id: "s14_wh_photo",
       sectionIndex: 14,
       sectionName: "Mechanical Systems",
