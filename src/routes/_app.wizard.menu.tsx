@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ArrowLeft,
+  Lock,
   KeyRound,
   Home as HomeIcon,
   ArrowLeftRight,
