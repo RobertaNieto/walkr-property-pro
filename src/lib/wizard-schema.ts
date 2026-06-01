@@ -565,10 +565,7 @@ const S8: SectionDef = {
   resolve: (ctx) => {
     const hasFp = hasFireplace(ctx);
     const out: QuestionDef[] = [
-      {
-        ...photoQ("s8_mls", 8, "Living Room", "MLS-style wide photo", "LIVING_MLS"),
-        helper: "Wide angle shot mimicking professional real estate photography — capture as much of the room as possible",
-      },
+      photoQ("s8_mls", 8, "Living Room", "MLS-style wide photo", "LIVING_MLS"),
       photoQ("s8_floor_photo", 8, "Living Room", "Flooring detail photo", "LIVING_FLOOR"),
     ];
     if (hasFp) {
