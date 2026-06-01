@@ -176,9 +176,10 @@ function QuestionScreen() {
       void navigate({ to: "/wizard/q/$qid", params: { qid: owner.id }, replace: true });
       return null;
     }
-    // Unknown question id — fall through to checklist (defensive).
-    void navigate({ to: "/wizard/checklist" });
+    // Unknown question id — fall through to complete (defensive).
+    void navigate({ to: "/wizard/complete" });
     return null;
+
   }
 
   const ctxWithDraft: SkipContext = {
