@@ -1434,7 +1434,7 @@ const POOR_PHOTO_NAME_OVERRIDES: Record<string, string> = {
   s2_foundation_type: "FOUNDATION_POOR",
   s2_driveway_condition: "DRIVEWAY_POOR",
   s2_landscape: "LANDSCAPE_POOR",
-  s3_fence: "FENCE_POOR",
+  // s3_fence removed — no matching question definition
   s5_condition: "ROOF_POOR",
   s6_pool_condition: "POOL_POOR",
   s6_spa_condition: "SPA_POOR",
