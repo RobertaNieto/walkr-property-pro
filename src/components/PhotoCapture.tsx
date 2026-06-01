@@ -127,44 +127,51 @@ export function PhotoCapture({
     };
   }, [useStorage, storageContext, photos]);
 
+  const hasPhotos = photos.length > 0;
+  const triggerLabel = processing
+    ? "Loading…"
+    : isVideo
+      ? hasPhotos ? "📹 Add Video" : "📹 Select Video"
+      : hasPhotos ? "📷 Add Photo" : "📷 Select Photo";
+
+  const triggerButton = !readOnly ? (
+    <button
+      type="button"
+      disabled={processing}
+      onClick={() => inputRef.current?.click()}
+      className={cn(
+        "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border bg-background px-3 text-[13px] font-medium transition-colors active:scale-[0.98] disabled:opacity-60",
+        error
+          ? "field-error border-critical bg-critical/5 text-critical"
+          : "border-input text-foreground hover:bg-muted"
+      )}
+    >
+      {processing && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+      <span>{triggerLabel}</span>
+    </button>
+  ) : null;
+
   return (
     <div className="space-y-2">
-      {!readOnly && (
-        <>
-          <input
-            ref={inputRef}
-            type="file"
-            accept={isVideo ? "video/*" : "image/*"}
-            multiple
-            className="hidden"
-            onChange={handleFiles}
-          />
-          <button
-            type="button"
-            disabled={processing}
-            onClick={() => inputRef.current?.click()}
-            className={cn(
-              "inline-flex h-9 items-center gap-1.5 rounded-md border bg-background px-3 text-[13px] font-medium transition-colors active:scale-[0.98] disabled:opacity-60",
-              error
-                ? "field-error border-critical bg-critical/5 text-critical"
-                : "border-input text-foreground hover:bg-muted"
-            )}
-          >
-            {processing ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Loading…
-              </>
-            ) : isVideo ? (
-              <>
-                <Camera className="h-3.5 w-3.5" />
-                Select Video
-              </>
-            ) : (
-              <span>📷 Select Photo</span>
-            )}
-          </button>
-        </>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={isVideo ? "video/*" : "image/*"}
+        multiple
+        className="hidden"
+        onChange={handleFiles}
+      />
+
+      {label !== undefined ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="block text-sm font-semibold text-foreground">
+            {label}
+            {required && <span className="ml-0.5 text-critical">*</span>}
+          </label>
+          {triggerButton}
+        </div>
+      ) : (
+        triggerButton
       )}
 
       {readOnly && (
@@ -172,6 +179,8 @@ export function PhotoCapture({
           Photos are read-only in admin edit view.
         </p>
       )}
+
+
 
       {photos.length > 0 && (
         <div className="flex flex-wrap gap-2">
