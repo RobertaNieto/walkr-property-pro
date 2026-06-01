@@ -790,8 +790,10 @@ function FieldRenderer({
                 onChange={(r: Rating) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
                 error={attempted && value.rating === undefined}
               />
-              <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
             </div>
+          )}
+          {q.withRating && (
+            <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
           )}
         </>
       );
