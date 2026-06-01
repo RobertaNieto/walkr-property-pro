@@ -447,15 +447,8 @@ const S4: SectionDef = {
       photoQ("s4_exterior", 4, "Garage", "Garage exterior photo", "GARAGE_EXTERIOR"),
       photoQ("s4_interior", 4, "Garage", "Garage interior wide photo", "GARAGE_INTERIOR"),
       photoQ("s4_roofline", 4, "Garage", "Garage roof and fascia photo", "GARAGE_ROOFLINE"),
-      {
-        id: "s4_attached",
-        sectionIndex: 4,
-        sectionName: "Garage",
-        label: "Attached or detached",
-        field: "choice",
-        options: ["Attached", "Detached"],
-        required: true,
-      },
+      // s4_attached removed — duplicate of s1_garage_type
+
       {
         id: "s4_door_works",
         sectionIndex: 4,
