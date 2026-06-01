@@ -329,7 +329,7 @@ function SectionScreen() {
                         />
                       </div>
                     )}
-                    {q.companions && q.companions.length > 0 && q.field !== "longtext" && (
+                    {q.companions && q.companions.length > 0 && q.field !== "longtext" && !isPhotoField && (
                       <div className="mt-3">
                         <label className="mb-1 block text-xs font-semibold text-muted-foreground">
                           Notes (optional)
