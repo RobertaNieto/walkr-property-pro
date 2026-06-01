@@ -447,7 +447,7 @@ const S4: SectionDef = {
   index: 4,
   name: "Garage",
   resolve: (ctx) => {
-    if (!ctx.config.garage || ctx.config.garage === "None") return [];
+    if (!hasGarage(ctx)) return [];
     return [
       photoQ("s4_exterior", 4, "Garage", "Garage exterior photo", "GARAGE_EXTERIOR"),
       photoQ("s4_interior", 4, "Garage", "Garage interior wide photo", "GARAGE_INTERIOR"),
