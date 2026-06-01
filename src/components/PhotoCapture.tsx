@@ -19,9 +19,9 @@ interface PhotoCaptureProps {
   onChange: (photos: string[], filenames: string[]) => void;
   error?: boolean;
   readOnly?: boolean;
-  // When set, all photo I/O bypasses local IndexedDB and goes to Supabase
-  // Storage at walkthrough-photos/{agentId}/{walkthroughId}/... — used for
-  // admin edit/fix-missing flows so the admin's device cache is never touched.
+  /** When provided, label is rendered on the left of the trigger button. */
+  label?: string;
+  required?: boolean;
   storageContext?: StorageContext;
 }
 
@@ -38,8 +38,11 @@ export function PhotoCapture({
   onChange,
   error,
   readOnly: _readOnly,
+  label,
+  required,
   storageContext,
 }: PhotoCaptureProps) {
+
   const readOnly = false;
   const useStorage = !!storageContext;
   // Cached signed URLs for filenames being viewed in storage mode.
