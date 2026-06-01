@@ -247,11 +247,19 @@ function SectionScreen() {
               {sectionQs.map((q) => {
                 const value = drafts[q.id] ?? {};
                 const hasInlineRating = q.field === "rating" || q.withRating === true;
+                const isInlineYesNo = q.field === "yesno";
+                const isInlineChoice =
+                  q.field === "choice" &&
+                  Array.isArray(q.options) &&
+                  q.options.length >= 2 &&
+                  q.options.length <= 4;
+                const handledInline = hasInlineRating || isInlineYesNo || isInlineChoice;
                 return (
                   <div key={q.id} id={`q-${q.id}`} className="scroll-mt-24">
                     <div className="mb-1.5 flex flex-wrap items-center justify-between gap-3">
                       <label className="block text-sm font-semibold text-foreground">
                         {q.label}
+                        {q.required && <span className="ml-0.5 text-critical">*</span>}
                       </label>
                       {hasInlineRating && (
                         <RatingButtons
@@ -261,19 +269,48 @@ function SectionScreen() {
                           }
                         />
                       )}
+                      {isInlineYesNo && (
+                        <InlinePillGroup
+                          options={[
+                            { label: "Yes", selected: value.bool === true, onClick: () => setDraftFor(q.id, (d) => ({ ...d, bool: true })), tone: "good" },
+                            { label: "No", selected: value.bool === false, onClick: () => setDraftFor(q.id, (d) => ({ ...d, bool: false })), tone: "neutral" },
+                          ]}
+                        />
+                      )}
+                      {isInlineChoice && (
+                        <InlinePillGroup
+                          options={(q.options ?? []).map((opt) => ({
+                            label: opt,
+                            selected: value.choice === opt,
+                            onClick: () => setDraftFor(q.id, (d) => ({ ...d, choice: opt })),
+                            tone: "neutral",
+                          }))}
+                        />
+                      )}
                     </div>
                     {q.helper && q.field !== "text" && q.field !== "longtext" && (
                       <p className="mb-2 text-xs text-muted-foreground">
                         {q.helper}
                       </p>
                     )}
-                    <FieldRenderer
-                      q={q}
-                      value={value}
-                      onChange={(v) => setDraftFor(q.id, v)}
-                      attempted={false}
-                      suppressRating={hasInlineRating}
-                    />
+                    {!handledInline && (
+                      <FieldRenderer
+                        q={q}
+                        value={value}
+                        onChange={(v) => setDraftFor(q.id, v)}
+                        attempted={false}
+                      />
+                    )}
+                    {handledInline && hasInlineRating && (
+                      <FieldRenderer
+                        q={q}
+                        value={value}
+                        onChange={(v) => setDraftFor(q.id, v)}
+                        attempted={false}
+                        suppressRating
+                      />
+                    )}
+
 
                     {q.followUp && q.followUp.when(pickValue(q, value)) && (
                       <div className="mt-3">
