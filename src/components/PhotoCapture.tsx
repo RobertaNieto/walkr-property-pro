@@ -2,7 +2,6 @@ import { Camera, CheckCircle2, Loader2, Play, X } from "lucide-react";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
-  compressImage,
   getStorageSignedUrl,
   removePhoto,
   removeStoragePhoto,
@@ -11,7 +10,6 @@ import {
   saveStoragePhoto,
   type StorageContext,
 } from "@/lib/photo-store";
-import { backupToDevice } from "@/lib/photo-backup";
 
 interface PhotoCaptureProps {
   photos: string[];
@@ -50,75 +48,40 @@ export function PhotoCapture({
   const localCache = useRef<Record<string, string>>({});
   const fileMeta = useRef<Record<string, { size: number; original: string }>>({});
   const [processing, setProcessing] = useState(false);
-  const [orientationError, setOrientationError] = useState(false);
 
-  const getDimensions = (dataUrl: string) =>
-    new Promise<{ width: number; height: number }>((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-      img.onerror = () => reject(new Error("decode failed"));
-      img.src = dataUrl;
-    });
 
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
     setProcessing(true);
-    setOrientationError(false);
-    const captured: { filename: string; dataUrl: string }[] = [];
     try {
       const startIdx = photos.length;
       const newPhotos: string[] = [];
       const newNames: string[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const compressed = isVideo
-          ? await new Promise<string>((res, rej) => {
-              const r = new FileReader();
-              r.onload = () => res(r.result as string);
-              r.onerror = () => rej(r.error);
-              r.readAsDataURL(file);
-            })
-          : await compressImage(file);
-        // Enforce landscape orientation for photos.
-        if (!isVideo) {
-          try {
-            const { width, height } = await getDimensions(compressed);
-            if (height > width) {
-              setOrientationError(true);
-              continue;
-            }
-          } catch {
-            // If dimension check fails, allow through.
-          }
-        }
+        // Read file as-is — no compression, no orientation check.
+        const dataUrl = await new Promise<string>((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result as string);
+          r.onerror = () => rej(r.error);
+          r.readAsDataURL(file);
+        });
         const name = baseName
           ? makeName(baseName, startIdx + i, !!isVideo)
           : `PHOTO_${Date.now()}_${i}.${isVideo ? "mp4" : "jpg"}`;
-        // Persist heavy data in IndexedDB photo bucket. Await ensures any
-        // failure surfaces before we tell the parent the photo exists.
         if (useStorage && storageContext) {
-          await saveStoragePhoto(storageContext, name, compressed);
+          await saveStoragePhoto(storageContext, name, dataUrl);
         } else {
-          await savePhoto(name, compressed);
+          await savePhoto(name, dataUrl);
         }
-        // Belt-and-suspenders: keep an instance-local copy so the thumbnail
-        // renders even if the IDB write or memCache lookup is somehow slow.
-        localCache.current[name] = compressed;
+        localCache.current[name] = dataUrl;
         fileMeta.current[name] = { size: file.size, original: file.name };
         newPhotos.push(name);
         newNames.push(name);
-        captured.push({ filename: name, dataUrl: compressed });
       }
       if (newPhotos.length > 0) {
         onChange([...photos, ...newPhotos], [...(filenames ?? photos), ...newNames]);
-      }
-      // Best-effort save to the agent's device camera roll / downloads so a
-      // browser cache wipe before upload doesn't lose the photo. Skipped in
-      // admin storage mode — admins must not get the agent's photos saved
-      // to their own device.
-      if (!useStorage && captured.length > 0) {
-        void backupToDevice(captured);
       }
     } finally {
       setProcessing(false);
@@ -187,34 +150,20 @@ export function PhotoCapture({
             {processing ? (
               <>
                 <Loader2 className="h-6 w-6 animate-spin" />
-                Processing photo…
+                Loading…
               </>
             ) : isVideo ? (
               <>
                 <Camera className="h-6 w-6" />
-                Add Video
+                Select Video
               </>
             ) : (
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-base font-bold">📷 Add Photo</span>
-                <span className="text-xs font-normal opacity-75">
-                  🔄 Landscape orientation required
-                </span>
-              </div>
+              <span className="text-base font-bold">📷 Select Photo</span>
             )}
           </button>
-
-          {orientationError && !isVideo && (
-            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm font-medium text-destructive">
-              <span className="text-lg">📱➡️</span>
-              <span>
-                Portrait photo detected.<br />
-                <strong>Please rotate your phone sideways</strong> and retake.
-              </span>
-            </div>
-          )}
         </>
       )}
+
 
       {readOnly && (
         <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground">
