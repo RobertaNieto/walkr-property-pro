@@ -1539,7 +1539,7 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     // Section 1 — garage size + type appear with garage Yes/No when applicable
     s1_garage: ["s1_garage_size", "s1_garage_type"],
     s1_fenced_yard: ["s1_fence_type"],
-    s1_fireplace: ["s1_fireplace_type"],
+    s1_fireplace: [],
     // Section 2
     s2_roofline: ["s2_exterior_paint"],
     s2_siding_photo: ["s2_siding_type"],
@@ -1547,7 +1547,7 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
     // Section 3
     s3_fence_photo: [],
     // Section 4
-    s4_exterior: ["s4_attached"],
+    s4_exterior: [],
     s4_door_works: [],
     // Section 5
     s5_overall: ["s5_type", "s5_condition"],
@@ -1570,7 +1570,6 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
       "s9_fridge",
       "s9_dishwasher",
       "s9_stove",
-      "s9_oven",
       "s9_lights",
       "s9_baseboards",
     ],
