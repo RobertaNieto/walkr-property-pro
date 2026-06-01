@@ -35,7 +35,7 @@ import {
 import {
   buildQuestionList,
   hasUserAnswer,
-  isQuestionAnswered,
+  
   SECTIONS,
   type QuestionDef,
   type SkipContext,
