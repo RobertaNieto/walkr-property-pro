@@ -11,7 +11,8 @@ export type FieldKind =
   | "number" // numeric input
   | "yesno" // tap-select Yes/No
   | "choice" // single-select from options
-  | "multichoice" // multi-select chips
+  | "multichoice" // multi-select chips (unique set)
+  | "bathlist" // ordered list of bathroom types (allows duplicates)
   | "rating" // 1-2-3 rating buttons
   | "photo" // photo capture
   | "video"; // video upload (uses photo storage with .mp4 name)
