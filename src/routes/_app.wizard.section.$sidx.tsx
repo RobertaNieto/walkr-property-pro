@@ -35,9 +35,9 @@ import {
 import {
   buildQuestionList,
   hasUserAnswer,
-  isQuestionAnswered,
+  
   SECTIONS,
-  type QuestionDef,
+  
   type SkipContext,
 } from "@/lib/wizard-schema";
 
@@ -54,7 +54,7 @@ function SectionScreen() {
   const w: Walkthrough | null = useMemo(() => loadActive(), [tick]);
   const adminEditing = useMemo(() => isAdminEditing(), [tick]);
   const [leaveOpen, setLeaveOpen] = useState(false);
-  const [attempted, setAttempted] = useState(false);
+  
 
   // Local drafts keyed by question id, for snappy editing.
   const [drafts, setDrafts] = useState<Record<string, WizardAnswer>>({});
@@ -132,28 +132,11 @@ function SectionScreen() {
   };
   const nextSidx = findNextSection();
 
-  const requiredQs = sectionQs.filter(
-    (q) => q.required || q.field === "rating",
-  );
-  const missingRequired = requiredQs.filter(
-    (q) => !isQuestionAnswered(q, ctx.answers[q.id]),
-  );
-  const valid = missingRequired.length === 0;
   const answeredCount = sectionQs.filter((q) =>
     hasUserAnswer(q, ctx.answers[q.id]),
   ).length;
 
   const handleContinue = () => {
-    if (!valid) {
-      setAttempted(true);
-      // Scroll to first missing
-      const firstMissing = missingRequired[0];
-      if (firstMissing) {
-        const el = document.getElementById(`q-${firstMissing.id}`);
-        el?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-      return;
-    }
     if (nextSidx) {
       void navigate({
         to: "/wizard/section/$sidx",
@@ -163,6 +146,7 @@ function SectionScreen() {
       void navigate({ to: "/wizard/checklist" });
     }
   };
+
 
   const setDraftFor = (
     qid: string,
@@ -260,21 +244,10 @@ function SectionScreen() {
             <div className="space-y-5 bg-card/60 px-4 py-5 sm:px-5">
               {sectionQs.map((q) => {
                 const value = drafts[q.id] ?? {};
-                const errored =
-                  attempted &&
-                  (q.required || q.field === "rating") &&
-                  !isQuestionAnswered(q, ctx.answers[q.id]);
                 return (
-                  <div
-                    key={q.id}
-                    id={`q-${q.id}`}
-                    className="scroll-mt-24"
-                  >
+                  <div key={q.id} id={`q-${q.id}`} className="scroll-mt-24">
                     <label className="mb-1.5 block text-sm font-semibold text-foreground">
                       {q.label}
-                      {(q.required || q.field === "rating") && (
-                        <span className="ml-1 text-critical">*</span>
-                      )}
                     </label>
                     {q.helper && q.field !== "text" && q.field !== "longtext" && (
                       <p className="mb-2 text-xs text-muted-foreground">
@@ -285,7 +258,7 @@ function SectionScreen() {
                       q={q}
                       value={value}
                       onChange={(v) => setDraftFor(q.id, v)}
-                      attempted={attempted}
+                      attempted={false}
                     />
                     {q.followUp && q.followUp.when(pickValue(q, value)) && (
                       <div className="mt-3">
@@ -293,11 +266,10 @@ function SectionScreen() {
                           q={q}
                           value={value}
                           onChange={(v) => setDraftFor(q.id, v)}
-                          attempted={attempted}
+                          attempted={false}
                         />
                       </div>
                     )}
-                    {/* Optional notes for questions that opt-in via companions */}
                     {q.companions && q.companions.length > 0 && q.field !== "longtext" && (
                       <div className="mt-3">
                         <label className="mb-1 block text-xs font-semibold text-muted-foreground">
@@ -311,11 +283,6 @@ function SectionScreen() {
                           placeholder="Add any notes or observations"
                         />
                       </div>
-                    )}
-                    {errored && (
-                      <p className="mt-1.5 text-xs font-medium text-critical">
-                        This field is required.
-                      </p>
                     )}
                   </div>
                 );
@@ -333,12 +300,6 @@ function SectionScreen() {
       {/* Sticky footer */}
       <footer className="sticky bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
         <div className="mx-auto w-full max-w-2xl px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-3">
-          {attempted && !valid && (
-            <p className="mb-2 text-center text-xs font-medium text-critical">
-              {missingRequired.length} required field
-              {missingRequired.length === 1 ? "" : "s"} still needed
-            </p>
-          )}
           <button
             onClick={handleContinue}
             className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-[var(--shadow-elevated)] transition-all hover:bg-primary/90 active:scale-[0.99]"
