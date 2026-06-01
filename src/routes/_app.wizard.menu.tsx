@@ -175,7 +175,7 @@ function SectionMenuScreen() {
   const totalSections = rows.length;
   const overallPct = totalSections > 0 ? (completedCount / totalSections) * 100 : 0;
   const anyComplete = completedCount > 0;
-  const propertySetupComplete = rows.find((r) => r.index === 1)?.status === "complete";
+  const propertySetupComplete = rows.find((r) => r.index === 1 || r.index === 0)?.status === "complete";
 
   if (!w) {
     return (
