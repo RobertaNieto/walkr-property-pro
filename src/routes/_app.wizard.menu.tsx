@@ -299,10 +299,9 @@ function SectionMenuScreen() {
                       {row.name}
                     </p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      {row.isChecklist
-                        ? "Final checks before submit"
-                        : `${row.total} question${row.total === 1 ? "" : "s"}`}
+                      {`${row.total} question${row.total === 1 ? "" : "s"}`}
                     </p>
+
                   </div>
                   <div className="flex flex-shrink-0 items-center justify-center">
                     {isComplete ? (
