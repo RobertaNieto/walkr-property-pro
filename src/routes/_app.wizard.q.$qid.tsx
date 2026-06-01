@@ -460,6 +460,14 @@ function QuestionScreen() {
           const _primaryHasRating =
             q.field === "rating" || (q.withRating === true && (q.field === "text" || q.field === "choice"));
           const _suppressRating = _primaryHasRating && _ratingComps.length >= 2;
+          const _inlineChoiceHandled =
+            q.field === "choice" &&
+            Array.isArray(q.options) &&
+            q.options.length >= 2 &&
+            q.options.length <= 4 &&
+            q.withRating !== true;
+          const _skipPrimaryField = q.field === "yesno" || _inlineChoiceHandled;
+          if (_skipPrimaryField) return null;
           return (
             <FieldRenderer
               q={q}
