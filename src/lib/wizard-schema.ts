@@ -344,7 +344,7 @@ const S2: SectionDef = {
       id: "s2_foundation_type",
       sectionIndex: 2,
       sectionName: "Exterior",
-      label: "Foundation type",
+      label: "Foundation type + condition",
       field: "choice",
       options: ["Slab", "Raised"],
       required: true,
