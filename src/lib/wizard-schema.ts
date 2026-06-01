@@ -318,37 +318,37 @@ const S1: SectionDef = {
 
 const S2: SectionDef = {
   index: 2,
-  name: "Exterior Front",
+  name: "Exterior",
   resolve: () => [
     {
       id: "s2_trash_cleared",
       sectionIndex: 2,
-      sectionName: "Exterior Front",
+      sectionName: "Exterior",
       label: "Obstructions cleared from front of house",
       helper: "Move trash cans, hoses, vehicles, or anything that would appear in exterior photos before continuing",
       field: "yesno",
       required: true,
     },
-    photoQ("s2_front_straight", 2, "Exterior Front", "Straight-on front photo", "EXTERIOR_FRONT"),
-    photoQ("s2_front_left", 2, "Exterior Front", "Front left angle photo", "EXTERIOR_FRONT_LEFT"),
-    photoQ("s2_front_right", 2, "Exterior Front", "Front right angle photo", "EXTERIOR_FRONT_RIGHT"),
-    photoQ("s2_frontdoor", 2, "Exterior Front", "Front door close-up", "EXTERIOR_FRONTDOOR"),
-    photoQ("s2_roofline", 2, "Exterior Front", "Roofline and fascia close-up", "EXTERIOR_ROOFLINE"),
+    photoQ("s2_front_straight", 2, "Exterior", "Straight-on front photo", "EXTERIOR_FRONT"),
+    photoQ("s2_front_left", 2, "Exterior", "Front left angle photo", "EXTERIOR_FRONT_LEFT"),
+    photoQ("s2_front_right", 2, "Exterior", "Front right angle photo", "EXTERIOR_FRONT_RIGHT"),
+    photoQ("s2_frontdoor", 2, "Exterior", "Front door close-up", "EXTERIOR_FRONTDOOR"),
+    photoQ("s2_roofline", 2, "Exterior", "Roofline and fascia close-up", "EXTERIOR_ROOFLINE"),
     {
       id: "s2_exterior_paint",
       sectionIndex: 2,
-      sectionName: "Exterior Front",
+      sectionName: "Exterior",
       label: "Exterior paint condition",
       helper: "Note any water damage, cracking, or peeling",
       field: "rating",
       required: true,
       notes: "optional",
     },
-    photoQ("s2_siding_photo", 2, "Exterior Front", "Siding photo", "EXTERIOR_SIDING"),
+    photoQ("s2_siding_photo", 2, "Exterior", "Siding photo", "EXTERIOR_SIDING"),
     {
       id: "s2_siding_type",
       sectionIndex: 2,
-      sectionName: "Exterior Front",
+      sectionName: "Exterior",
       label: "Siding type",
       field: "choice",
       options: ["Stucco", "Wood", "Combo"],
@@ -358,18 +358,18 @@ const S2: SectionDef = {
     {
       id: "s2_foundation_type",
       sectionIndex: 2,
-      sectionName: "Exterior Front",
+      sectionName: "Exterior",
       label: "Foundation type",
       field: "choice",
       options: ["Slab", "Raised"],
       required: true,
       withRating: true,
     },
-    photoQ("s2_driveway_photo", 2, "Exterior Front", "Driveway full view", "EXTERIOR_DRIVEWAY"),
+    photoQ("s2_driveway_photo", 2, "Exterior", "Driveway full view", "EXTERIOR_DRIVEWAY"),
     {
       id: "s2_driveway_condition",
       sectionIndex: 2,
-      sectionName: "Exterior Front",
+      sectionName: "Exterior",
       label: "Driveway condition",
       field: "rating",
       required: true,
@@ -379,7 +379,7 @@ const S2: SectionDef = {
     {
       id: "s2_landscape",
       sectionIndex: 2,
-      sectionName: "Exterior Front",
+      sectionName: "Exterior",
       label: "Landscape condition",
       field: "choice",
       options: ["Overgrown", "Manicured"],
@@ -389,36 +389,30 @@ const S2: SectionDef = {
     {
       id: "s2_additional",
       sectionIndex: 2,
-      sectionName: "Exterior Front",
-      label: "Additional exterior details",
+      sectionName: "Exterior",
+      label: "Additional exterior front details",
       helper:
         "Note anything else relevant: mailbox type or location, irrigation system, gate access, easements, HOA restrictions, street parking, or anything a realtor should know about the exterior",
       field: "longtext",
       required: false,
     },
-  ],
-};
-
-const S3: SectionDef = {
-  index: 3,
-  name: "Exterior Sides & Back",
-  resolve: () => [
-    photoQ("s3_left", 3, "Exterior Sides & Back", "Left side of house photo", "EXTERIOR_LEFT"),
-    photoQ("s3_right", 3, "Exterior Sides & Back", "Right side of house photo", "EXTERIOR_RIGHT"),
-    photoQ("s3_back", 3, "Exterior Sides & Back", "Back of house straight-on photo", "EXTERIOR_BACK"),
+    // ---- Merged from former Section 3 (Exterior Sides & Back) ----
+    photoQ("s3_left", 2, "Exterior", "Left side of house photo", "EXTERIOR_LEFT"),
+    photoQ("s3_right", 2, "Exterior", "Right side of house photo", "EXTERIOR_RIGHT"),
+    photoQ("s3_back", 2, "Exterior", "Back of house straight-on photo", "EXTERIOR_BACK"),
     {
-      ...photoQ("s3_yard_outview", 3, "Exterior Sides & Back", "Backyard looking away from house", "BACKYARD_OUTVIEW"),
+      ...photoQ("s3_yard_outview", 2, "Exterior", "Backyard looking away from house", "BACKYARD_OUTVIEW"),
       helper: "Stand at the house, photograph the yard looking outward",
     },
     {
-      ...photoQ("s3_yard_houseview", 3, "Exterior Sides & Back", "Backyard looking at house", "BACKYARD_HOUSEVIEW"),
+      ...photoQ("s3_yard_houseview", 2, "Exterior", "Backyard looking at house", "BACKYARD_HOUSEVIEW"),
       helper: "Stand at the back of the yard, photograph back toward the house",
     },
-    photoQ("s3_fence_photo", 3, "Exterior Sides & Back", "Fence photo", "EXTERIOR_FENCE"),
+    photoQ("s3_fence_photo", 2, "Exterior", "Fence photo", "EXTERIOR_FENCE"),
     {
       id: "s3_outbuildings",
-      sectionIndex: 3,
-      sectionName: "Exterior Sides & Back",
+      sectionIndex: 2,
+      sectionName: "Exterior",
       label: "Outbuildings or sheds present",
       field: "yesno",
       required: true,
@@ -432,13 +426,37 @@ const S3: SectionDef = {
     },
     {
       id: "s3_additional",
-      sectionIndex: 3,
-      sectionName: "Exterior Sides & Back",
+      sectionIndex: 2,
+      sectionName: "Exterior",
       label: "Additional backyard details",
       helper:
         "Note anything relevant: fence material and condition, back irrigation, alley access, rear easements, or anything notable about the back of the property",
       field: "longtext",
       required: false,
+    },
+    // ---- Merged from former Section 5 (Roof) ----
+    {
+      ...photoQ("s5_overall", 2, "Exterior", "Overall roof photo", "ROOF_OVERALL"),
+      helper: "From ground level or drone if available",
+    },
+    {
+      id: "s5_type",
+      sectionIndex: 2,
+      sectionName: "Exterior",
+      label: "Roof type",
+      field: "choice",
+      options: ["Composition", "Tile", "Rock", "Flat"],
+      required: true,
+    },
+    {
+      id: "s5_condition",
+      sectionIndex: 2,
+      sectionName: "Exterior",
+      label: "Roof overall condition",
+      field: "rating",
+      required: true,
+      notes: "optional",
+      notesPlaceholder: "Describe damage or wear",
     },
   ],
 };
@@ -483,36 +501,6 @@ const S4: SectionDef = {
   },
 };
 
-const S5: SectionDef = {
-  index: 5,
-  name: "Roof",
-  resolve: () => [
-    {
-      ...photoQ("s5_overall", 5, "Roof", "Overall roof photo", "ROOF_OVERALL"),
-      helper: "From ground level or drone if available",
-    },
-    
-    {
-      id: "s5_type",
-      sectionIndex: 5,
-      sectionName: "Roof",
-      label: "Roof type",
-      field: "choice",
-      options: ["Composition", "Tile", "Rock", "Flat"],
-      required: true,
-    },
-    {
-      id: "s5_condition",
-      sectionIndex: 5,
-      sectionName: "Roof",
-      label: "Roof overall condition",
-      field: "rating",
-      required: true,
-      notes: "optional",
-      notesPlaceholder: "Describe damage or wear",
-    },
-  ],
-};
 
 const S6: SectionDef = {
   index: 6,
@@ -1491,7 +1479,7 @@ function photoQ(
   };
 }
 
-export const SECTIONS: SectionDef[] = [S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15];
+export const SECTIONS: SectionDef[] = [S1, S2, S4, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15];
 
 
 // Final checklist (Section 17) is rendered by its own dedicated route.
