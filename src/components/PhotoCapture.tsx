@@ -125,7 +125,7 @@ export function PhotoCapture({
   }, [useStorage, storageContext, photos]);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {!readOnly && (
         <>
           <input
@@ -141,29 +141,28 @@ export function PhotoCapture({
             disabled={processing}
             onClick={() => inputRef.current?.click()}
             className={cn(
-              "flex min-h-16 w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-3 py-2 text-base font-semibold transition-colors active:scale-[0.99] disabled:opacity-60",
+              "inline-flex h-9 items-center gap-1.5 rounded-md border bg-background px-3 text-[13px] font-medium transition-colors active:scale-[0.98] disabled:opacity-60",
               error
                 ? "field-error border-critical bg-critical/5 text-critical"
-                : "border-accent/40 bg-accent/5 text-accent hover:border-accent hover:bg-accent/10"
+                : "border-input text-foreground hover:bg-muted"
             )}
           >
             {processing ? (
               <>
-                <Loader2 className="h-6 w-6 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Loading…
               </>
             ) : isVideo ? (
               <>
-                <Camera className="h-6 w-6" />
+                <Camera className="h-3.5 w-3.5" />
                 Select Video
               </>
             ) : (
-              <span className="text-base font-bold">📷 Select Photo</span>
+              <span>📷 Select Photo</span>
             )}
           </button>
         </>
       )}
-
 
       {readOnly && (
         <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground">
@@ -172,73 +171,54 @@ export function PhotoCapture({
       )}
 
       {photos.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="flex flex-wrap gap-2">
           {photos.map((entry, i) => {
-            // In storage mode, NEVER look at the local IDB / memCache —
-            // those would be the admin's own photos, not the agent's.
             const src = useStorage
               ? signedUrls[entry] ?? localCache.current[entry] ?? null
               : resolvePhotoSrc(entry) ?? localCache.current[entry];
             const meta = fileMeta.current[entry];
             const displayName = meta?.original ?? entry;
-            const sizeMb = meta ? Math.max(1, Math.round(meta.size / (1024 * 1024))) : null;
             const loaded = !!src || !!meta;
             return (
-              <div
-                key={i}
-                className="relative aspect-square overflow-hidden rounded-xl bg-secondary"
-              >
-                {isVideo ? (
-                  // Always show a clear video confirmation card, even when the
-                  // <video> poster fails to render on iOS Safari.
-                  <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-zinc-900 px-2 text-center">
-                    {loaded ? (
-                      <>
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm">
-                          <Play className="h-5 w-5 fill-white text-white" />
-                        </div>
-                        <p className="line-clamp-1 max-w-full text-[10px] font-medium text-white/90">
-                          {displayName}
-                        </p>
-                        {sizeMb !== null && (
-                          <p className="text-[10px] text-white/60">{sizeMb} MB</p>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <Loader2 className="h-6 w-6 animate-spin text-white/80" />
-                        <p className="text-[10px] text-white/70">Loading…</p>
-                      </>
-                    )}
-                  </div>
-                ) : src ? (
-                  <img src={src} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-zinc-800 text-center">
-                    <Camera className="h-6 w-6 text-white/80" />
-                    <p className="text-[10px] font-medium text-white/90">Photo added ✓</p>
-                  </div>
-                )}
-
-                {loaded && (
-                  <div
-                    className="absolute left-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow"
-                    aria-label="Attached"
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                  </div>
-                )}
-
-                {!readOnly && (
-                  <button
-                    type="button"
-                    onClick={() => remove(i)}
-                    aria-label="Remove"
-                    className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-foreground/70 text-background backdrop-blur-sm transition-colors hover:bg-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
+              <div key={i} className="flex w-[60px] flex-col gap-0.5">
+                <div className="relative h-[60px] w-[60px] overflow-hidden rounded-md bg-secondary">
+                  {isVideo ? (
+                    <div className="flex h-full w-full items-center justify-center bg-zinc-900">
+                      {loaded ? (
+                        <Play className="h-4 w-4 fill-white text-white" />
+                      ) : (
+                        <Loader2 className="h-4 w-4 animate-spin text-white/80" />
+                      )}
+                    </div>
+                  ) : src ? (
+                    <img src={src} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-zinc-800">
+                      <Camera className="h-4 w-4 text-white/80" />
+                    </div>
+                  )}
+                  {loaded && (
+                    <div
+                      className="absolute left-0.5 top-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white"
+                      aria-label="Attached"
+                    >
+                      <CheckCircle2 className="h-2.5 w-2.5" />
+                    </div>
+                  )}
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => remove(i)}
+                      aria-label="Remove"
+                      className="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground/75 text-background hover:bg-foreground"
+                    >
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  )}
+                </div>
+                <p className="line-clamp-1 text-[11px] text-muted-foreground" title={displayName}>
+                  {displayName}
+                </p>
               </div>
             );
           })}
@@ -247,3 +227,4 @@ export function PhotoCapture({
     </div>
   );
 }
+
