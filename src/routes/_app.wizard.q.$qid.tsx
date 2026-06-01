@@ -1018,9 +1018,10 @@ function PoorPhotoSection({
   const missing = (value.poorPhotos?.length ?? 0) < 1;
   return (
     <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
-      <p className="mb-2 text-sm font-semibold text-critical">
-        ⚠️ Photo required for Poor rating
+      <p className="mb-2 text-sm font-semibold text-foreground">
+        Photo for Poor rating
       </p>
+
       <LandscapeHint />
       <PhotoCapture readOnly={isAdminEditing()}
         photos={value.poorPhotos ?? []}
