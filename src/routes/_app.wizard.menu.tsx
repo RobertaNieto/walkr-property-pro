@@ -268,7 +268,7 @@ function SectionMenuScreen() {
       <main className="flex-1">
         <div className="mx-auto w-full max-w-2xl px-4 py-5">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {rows.map((row) => {
+            {rows.map((row, displayIdx) => {
               const Icon = row.icon;
               const color = getSectionColor(row.index);
               const isComplete = row.status === "complete";
