@@ -1269,7 +1269,7 @@ const S14: SectionDef = {
       sectionIndex: 14,
       sectionName: "Mechanical Systems",
       label: "Water heater confirmed double-strapped",
-      helper: "Confirm both upper and lower straps are present and secured",
+      
       field: "yesno",
       required: true,
       critical: true,
