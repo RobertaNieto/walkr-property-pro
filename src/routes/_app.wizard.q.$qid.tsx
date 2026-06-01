@@ -161,6 +161,14 @@ function QuestionScreen() {
   }, [compDrafts, qid]);
 
   if (!w) {
+    if (!remoteLoading && editingFromReview && !search?.reviewId) {
+      void navigate({ to: "/wizard/menu", replace: true });
+      return null;
+    }
+    if (!remoteLoading && !getActiveId() && !search?.reviewId) {
+      void navigate({ to: "/wizard/menu", replace: true });
+      return null;
+    }
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-6 text-center">
         <p className="text-sm text-muted-foreground">
@@ -393,10 +401,14 @@ function QuestionScreen() {
             type="button"
             onClick={() => {
               persistDraft();
-              navigate({
-                to: "/review/$id",
-                params: { id: search.reviewId! },
-              });
+              if (search?.reviewId) {
+                navigate({
+                  to: "/review/$id",
+                  params: { id: search.reviewId },
+                });
+              } else {
+                navigate({ to: "/wizard/menu" });
+              }
             }}
             className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-card px-3 text-xs font-semibold text-foreground ring-1 ring-border hover:bg-secondary"
           >

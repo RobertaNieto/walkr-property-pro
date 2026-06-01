@@ -175,7 +175,7 @@ function SectionMenuScreen() {
   const totalSections = rows.length;
   const overallPct = totalSections > 0 ? (completedCount / totalSections) * 100 : 0;
   const anyComplete = completedCount > 0;
-  const propertySetupComplete = rows.find((r) => r.index === 1)?.status === "complete";
+  const propertySetupComplete = rows.find((r) => r.index === 1 || r.index === 0)?.status === "complete";
 
   if (!w) {
     return (
@@ -188,9 +188,11 @@ function SectionMenuScreen() {
   }
 
   const goToSection = (row: SectionRow) => {
-    if (row.index !== 1 && !propertySetupComplete && !adminEditing) {
-      // Redirect to Property Setup instead.
-      navigate({ to: "/wizard/section/$sidx", params: { sidx: "1" } });
+    const isLocked = row.index !== 1 && row.index !== 0 && !propertySetupComplete && !adminEditing;
+    if (isLocked) {
+      const setupRow = rows.find((r) => r.index === 1 || r.index === 0);
+      const targetSidx = String(setupRow?.index ?? 1);
+      navigate({ to: "/wizard/section/$sidx", params: { sidx: targetSidx } });
       return;
     }
     navigate({ to: "/wizard/section/$sidx", params: { sidx: String(row.index) } });
@@ -280,13 +282,14 @@ function SectionMenuScreen() {
               const color = getSectionColor(row.index);
               const isComplete = row.status === "complete";
               const inProgress = row.status === "in_progress";
-              const isLocked = row.index !== 1 && !propertySetupComplete && !adminEditing;
+              const isLocked = row.index !== 1 && row.index !== 0 && !propertySetupComplete && !adminEditing;
               const borderColor = isLocked ? "#D1D5DB" : (row.status === "todo" ? "#D1D5DB" : color);
               return (
                 <button
                   key={row.index}
                   type="button"
-                  onClick={() => goToSection(row)}
+                  onClick={() => { if (!isLocked) goToSection(row); }}
+                  disabled={isLocked}
                   aria-disabled={isLocked}
                   title={isLocked ? "Complete Property Setup first" : undefined}
                   className={cn(
