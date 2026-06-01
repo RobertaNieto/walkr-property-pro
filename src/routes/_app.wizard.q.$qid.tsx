@@ -419,7 +419,7 @@ function QuestionScreen() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="text-2xl font-bold leading-tight text-foreground">
-                    {q.label} {q.required && <span className="text-critical">*</span>}
+                    {q.label} 
                   </h2>
                   {q.helper && <p className="mt-1.5 text-sm text-muted-foreground">{q.helper}</p>}
                 </div>
@@ -429,7 +429,7 @@ function QuestionScreen() {
                     onChange={(r: Rating) =>
                       setDraft((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
                     }
-                    error={attempted && draft.rating === undefined}
+                    error={false && draft.rating === undefined}
                   />
                 )}
                 {q.field === "yesno" && (
@@ -533,7 +533,7 @@ function QuestionScreen() {
                   <p className="text-base font-semibold text-foreground">Room Conditions</p>
                   <div className="overflow-hidden rounded-2xl border border-border bg-card">
                     {includePrimaryInGrid && (() => {
-                      const errored = attempted && draft.rating === undefined;
+                      const errored = false && draft.rating === undefined;
                       const primaryLabel =
                         q.field === "rating" ? q.label : `${q.label} — Condition rating`;
                       return (
@@ -546,7 +546,7 @@ function QuestionScreen() {
                               )}
                             >
                               {primaryLabel}{" "}
-                              <span className="text-critical">*</span>
+                              
                             </p>
                             <CompactRatingRow
                               value={draft.rating}
@@ -572,7 +572,7 @@ function QuestionScreen() {
                     {gridComps.map((c, i) => {
                       const cVal = compDrafts[c.id] ?? {};
                       const setCVal = setCValFor(c.id);
-                      const errored = attempted && cVal.rating === undefined;
+                      const errored = false && cVal.rating === undefined;
                       return (
                         <div key={c.id}>
                           {i > 0 && <div className="h-px bg-border" />}
@@ -583,7 +583,7 @@ function QuestionScreen() {
                                 errored ? "text-critical" : "text-foreground",
                               )}
                             >
-                              {c.label} {c.required && <span className="text-critical">*</span>}
+                              {c.label} 
                             </p>
                             <CompactRatingRow
                               value={cVal.rating}
@@ -626,7 +626,7 @@ function QuestionScreen() {
                   <div key={c.id} className="space-y-4">
                     <div className="border-t border-border pt-4">
                       <p className="text-base font-semibold text-foreground">
-                        {c.label} {c.required && <span className="text-critical">*</span>}
+                        {c.label} 
                       </p>
                       {c.helper && (
                         <p className="mt-1 text-sm text-muted-foreground">{c.helper}</p>
@@ -714,7 +714,7 @@ function FieldRenderer({
   attempted: boolean;
   suppressRating?: boolean;
 }) {
-  const errored = attempted && !isAnsweredLocal(q, value);
+  const errored = false && !isAnsweredLocal(q, value);
 
   switch (q.field) {
     case "text":
@@ -726,18 +726,18 @@ function FieldRenderer({
             placeholder={q.helper ?? ""}
             className={cn(
               "h-14 w-full rounded-2xl border-2 bg-card px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-              errored && q.required ? "field-error" : "border-input",
+              "border-input",
             )}
           />
           {q.withRating && !suppressRating && (
             <div>
               <p className="mb-2 mt-4 text-sm font-semibold text-foreground">
-                Condition rating <span className="text-critical">*</span>
+                Condition rating 
               </p>
               <RatingButtons
                 value={value.rating}
                 onChange={(r: Rating) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
-                error={attempted && value.rating === undefined}
+                error={false && value.rating === undefined}
               />
             </div>
           )}
@@ -813,12 +813,12 @@ function FieldRenderer({
           {q.withRating && !suppressRating && (
             <div>
               <p className="mb-2 mt-4 text-sm font-semibold text-foreground">
-                Condition rating <span className="text-critical">*</span>
+                Condition rating 
               </p>
               <RatingButtons
                 value={value.rating}
                 onChange={(r: Rating) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
-                error={attempted && value.rating === undefined}
+                error={false && value.rating === undefined}
               />
             </div>
           )}
@@ -935,7 +935,7 @@ function FieldRenderer({
             <RatingButtons
               value={value.rating}
               onChange={(r) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
-              error={attempted && value.rating === undefined}
+              error={false && value.rating === undefined}
             />
           )}
           {q.withPhoto && (
@@ -943,13 +943,12 @@ function FieldRenderer({
               <PhotoCapture
                 readOnly={isAdminEditing()}
                 label="Photo"
-                required
                 photos={value.photos ?? []}
                 filenames={value.photoNames ?? []}
                 baseName={q.withPhoto.name}
                 storageContext={getAdminStorageContext()}
                 onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-                error={attempted && (value.photos?.length ?? 0) < (q.withPhoto.min ?? 1)}
+
               />
             </div>
           )}
@@ -965,7 +964,7 @@ function FieldRenderer({
         <PhotoCapture
           readOnly={isAdminEditing()}
           label={q.label}
-          required={q.required}
+          
           photos={value.photos ?? []}
           filenames={value.photoNames ?? []}
           baseName={q.photoName ?? q.id.toUpperCase()}
@@ -1019,9 +1018,10 @@ function PoorPhotoSection({
   const missing = (value.poorPhotos?.length ?? 0) < 1;
   return (
     <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
-      <p className="mb-2 text-sm font-semibold text-critical">
-        ⚠️ Photo required for Poor rating
+      <p className="mb-2 text-sm font-semibold text-foreground">
+        Photo for Poor rating
       </p>
+
       <LandscapeHint />
       <PhotoCapture readOnly={isAdminEditing()}
         photos={value.poorPhotos ?? []}
@@ -1031,7 +1031,7 @@ function PoorPhotoSection({
         onChange={(photos, photoNames) =>
           onChange((d) => ({ ...d, poorPhotos: photos, poorPhotoNames: photoNames }))
         }
-        error={attempted && missing}
+        error={false && missing}
       />
     </div>
   );
@@ -1052,7 +1052,7 @@ function FollowUpRenderer({
   return (
     <div className="rounded-2xl border-l-4 border-accent bg-accent/5 p-4">
       <p className="mb-2 text-sm font-semibold text-foreground">
-        {fu.label} {fu.required && <span className="text-critical">*</span>}
+        {fu.label} 
       </p>
       {fu.field === "text" && (
         <NotesField
@@ -1070,7 +1070,7 @@ function FollowUpRenderer({
             baseName={fu.photoName ?? "FOLLOWUP"}
             storageContext={getAdminStorageContext()}
             onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-            error={attempted && fu.required && (value.photos?.length ?? 0) < 1}
+            error={false && fu.required && (value.photos?.length ?? 0) < 1}
           />
         </>
       )}

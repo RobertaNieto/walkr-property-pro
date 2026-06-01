@@ -39,7 +39,7 @@ export function PhotoCapture({
   error,
   readOnly: _readOnly,
   label,
-  required,
+  required: _required,
   storageContext,
 }: PhotoCaptureProps) {
 
@@ -211,8 +211,8 @@ export function PhotoCapture({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <label className="block text-sm font-semibold text-foreground">
             {label}
-            {required && <span className="ml-0.5 text-critical">*</span>}
           </label>
+
           {triggerButton}
         </div>
       ) : (

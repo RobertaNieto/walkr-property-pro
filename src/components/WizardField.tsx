@@ -10,11 +10,9 @@ import {
   type WizardAnswer,
 } from "@/lib/walkthrough";
 import type { StorageContext } from "@/lib/photo-store";
-import {
-  isQuestionAnswered,
-  type QuestionDef,
-  type SkipContext,
-} from "@/lib/wizard-schema";
+import { type QuestionDef } from "@/lib/wizard-schema";
+
+
 
 export function getAdminStorageContext(): StorageContext | undefined {
   const a = getAdminEditing();
@@ -43,9 +41,6 @@ export function LandscapeHint() {
   );
 }
 
-function isAnsweredLocal(q: QuestionDef, ans: WizardAnswer): boolean {
-  return isQuestionAnswered(q, ans as SkipContext["answers"][string]);
-}
 
 export function pickValue(q: QuestionDef, ans: WizardAnswer): unknown {
   switch (q.field) {
@@ -80,13 +75,11 @@ export function PoorPhotoSection({
   attempted: boolean;
 }) {
   if (value.rating !== 3 || !q.poorPhotoName) return null;
-  const missing = (value.poorPhotos?.length ?? 0) < 1;
   return (
     <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
       <PhotoCapture
         readOnly={isAdminEditing()}
-        label="⚠️ Photo required for Poor rating"
-        required
+        label="Photo for Poor rating"
         photos={value.poorPhotos ?? []}
         filenames={value.poorPhotoNames ?? []}
         baseName={q.poorPhotoName}
@@ -94,11 +87,11 @@ export function PoorPhotoSection({
         onChange={(photos, photoNames) =>
           onChange((d) => ({ ...d, poorPhotos: photos, poorPhotoNames: photoNames }))
         }
-        error={attempted && missing}
       />
     </div>
   );
 }
+
 
 
 export function FollowUpRenderer({
@@ -115,9 +108,7 @@ export function FollowUpRenderer({
   const fu = q.followUp!;
   return (
     <div className="rounded-2xl border-l-4 border-accent bg-accent/5 p-4">
-      <p className="mb-2 text-sm font-semibold text-foreground">
-        {fu.label} {fu.required && <span className="text-critical">*</span>}
-      </p>
+      <p className="mb-2 text-sm font-semibold text-foreground">{fu.label}</p>
       {fu.field === "text" && (
         <NotesField
           value={value.notes ?? ""}
@@ -133,9 +124,9 @@ export function FollowUpRenderer({
           baseName={fu.photoName ?? "FOLLOWUP"}
           storageContext={getAdminStorageContext()}
           onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-          error={attempted && fu.required && (value.photos?.length ?? 0) < 1}
         />
       )}
+
 
       {fu.field === "multichoice" && (
         <div className="grid grid-cols-2 gap-2">
@@ -187,8 +178,10 @@ export function FieldRenderer({
   /** When true, photo/video fields render their own inline label+button row. */
   inlinePhotoLabel?: boolean;
 }) {
+  // All required-field validation has been disabled app-wide. Fields never
+  // render error styles, asterisks, or "required" hints.
+  void attempted;
 
-  const errored = attempted && !isAnsweredLocal(q, value);
 
   switch (q.field) {
     case "text":
@@ -200,25 +193,22 @@ export function FieldRenderer({
             placeholder={q.helper ?? ""}
             className={cn(
               "h-12 w-full rounded-xl border-2 bg-card px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-              errored && q.required ? "field-error" : "border-input",
+              "border-input",
             )}
           />
           {q.withRating && !suppressRating && (
             <div className="mt-3">
-              <p className="mb-2 text-sm font-semibold text-foreground">
-                Condition rating <span className="text-critical">*</span>
-              </p>
+              <p className="mb-2 text-sm font-semibold text-foreground">Condition rating</p>
               <RatingButtons
                 value={value.rating}
                 onChange={(r: Rating) =>
                   onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
                 }
-                error={attempted && value.rating === undefined}
               />
             </div>
           )}
           {q.withRating && (
-            <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
+            <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={false} />
           )}
         </>
       );
@@ -244,7 +234,7 @@ export function FieldRenderer({
           }}
           className={cn(
             "h-12 w-full rounded-xl border-2 bg-card px-4 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-            errored ? "field-error" : "border-input",
+            "border-input",
           )}
         />
       );
@@ -264,9 +254,7 @@ export function FieldRenderer({
                   "min-h-12 rounded-xl border-2 px-4 py-2.5 text-base font-semibold transition-all active:scale-95",
                   selected
                     ? "border-accent bg-accent text-accent-foreground shadow-[var(--shadow-soft)]"
-                    : errored
-                      ? "field-error border-input bg-card text-foreground"
-                      : "border-border bg-card text-foreground hover:border-accent/40",
+                    : "border-border bg-card text-foreground hover:border-accent/40",
                 )}
               >
                 {label}
@@ -288,20 +276,17 @@ export function FieldRenderer({
           />
           {q.withRating && !suppressRating && (
             <div className="mt-3">
-              <p className="mb-2 text-sm font-semibold text-foreground">
-                Condition rating <span className="text-critical">*</span>
-              </p>
+              <p className="mb-2 text-sm font-semibold text-foreground">Condition rating</p>
               <RatingButtons
                 value={value.rating}
                 onChange={(r: Rating) =>
                   onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
                 }
-                error={attempted && value.rating === undefined}
               />
             </div>
           )}
           {q.withRating && (
-            <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
+            <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={false} />
           )}
         </>
       );
@@ -389,11 +374,6 @@ export function FieldRenderer({
                 </button>
               ))}
             </div>
-            {items.length === 0 && errored && (
-              <p className="mt-2 text-sm font-medium text-critical">
-                Add at least one bathroom to continue.
-              </p>
-            )}
           </div>
         </div>
       );
@@ -408,7 +388,6 @@ export function FieldRenderer({
               onChange={(r) =>
                 onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
               }
-              error={attempted && value.rating === undefined}
             />
           )}
           {q.withPhoto && (
@@ -416,7 +395,6 @@ export function FieldRenderer({
               <PhotoCapture
                 readOnly={isAdminEditing()}
                 label="Photo"
-                required
                 photos={value.photos ?? []}
                 filenames={value.photoNames ?? []}
                 baseName={q.withPhoto.name}
@@ -424,11 +402,10 @@ export function FieldRenderer({
                 onChange={(photos, photoNames) =>
                   onChange((d) => ({ ...d, photos, photoNames }))
                 }
-                error={attempted && (value.photos?.length ?? 0) < (q.withPhoto.min ?? 1)}
               />
             </div>
           )}
-          <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
+          <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={false} />
         </>
       );
 
@@ -439,17 +416,16 @@ export function FieldRenderer({
         <PhotoCapture
           readOnly={isAdminEditing()}
           label={inlinePhotoLabel ? q.label : undefined}
-          required={inlinePhotoLabel ? q.required : undefined}
           photos={value.photos ?? []}
           filenames={value.photoNames ?? []}
           baseName={q.photoName ?? q.id.toUpperCase()}
           isVideo={isVideo}
           storageContext={getAdminStorageContext()}
           onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-          error={errored}
         />
       );
     }
 
   }
+
 }

@@ -66,12 +66,12 @@ function ExteriorPaintScreen() {
       <div className="mt-6 space-y-6">
         <div>
           <p className="mb-2 text-sm font-semibold text-foreground">
-            Condition rating <span className="text-critical">*</span>
+            Condition rating
           </p>
           <RatingButtons
             value={rating}
             onChange={setRating}
-            error={attempted && !valid}
+            error={false && !valid}
           />
         </div>
 

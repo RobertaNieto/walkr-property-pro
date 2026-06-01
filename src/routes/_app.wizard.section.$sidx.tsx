@@ -263,8 +263,8 @@ function SectionScreen() {
                       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-3">
                         <label className="block text-sm font-semibold text-foreground">
                           {q.label}
-                          {q.required && <span className="ml-0.5 text-critical">*</span>}
                         </label>
+
                         {hasInlineRating && (
                           <RatingButtons
                             value={value.rating}
