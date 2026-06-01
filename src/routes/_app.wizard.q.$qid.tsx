@@ -429,7 +429,7 @@ function QuestionScreen() {
                     onChange={(r: Rating) =>
                       setDraft((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
                     }
-                    error={attempted && draft.rating === undefined}
+                    error={false && draft.rating === undefined}
                   />
                 )}
                 {q.field === "yesno" && (
@@ -533,7 +533,7 @@ function QuestionScreen() {
                   <p className="text-base font-semibold text-foreground">Room Conditions</p>
                   <div className="overflow-hidden rounded-2xl border border-border bg-card">
                     {includePrimaryInGrid && (() => {
-                      const errored = attempted && draft.rating === undefined;
+                      const errored = false && draft.rating === undefined;
                       const primaryLabel =
                         q.field === "rating" ? q.label : `${q.label} — Condition rating`;
                       return (
@@ -572,7 +572,7 @@ function QuestionScreen() {
                     {gridComps.map((c, i) => {
                       const cVal = compDrafts[c.id] ?? {};
                       const setCVal = setCValFor(c.id);
-                      const errored = attempted && cVal.rating === undefined;
+                      const errored = false && cVal.rating === undefined;
                       return (
                         <div key={c.id}>
                           {i > 0 && <div className="h-px bg-border" />}
@@ -714,7 +714,7 @@ function FieldRenderer({
   attempted: boolean;
   suppressRating?: boolean;
 }) {
-  const errored = attempted && !isAnsweredLocal(q, value);
+  const errored = false && !isAnsweredLocal(q, value);
 
   switch (q.field) {
     case "text":
@@ -737,7 +737,7 @@ function FieldRenderer({
               <RatingButtons
                 value={value.rating}
                 onChange={(r: Rating) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
-                error={attempted && value.rating === undefined}
+                error={false && value.rating === undefined}
               />
             </div>
           )}
@@ -818,7 +818,7 @@ function FieldRenderer({
               <RatingButtons
                 value={value.rating}
                 onChange={(r: Rating) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
-                error={attempted && value.rating === undefined}
+                error={false && value.rating === undefined}
               />
             </div>
           )}
@@ -935,7 +935,7 @@ function FieldRenderer({
             <RatingButtons
               value={value.rating}
               onChange={(r) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
-              error={attempted && value.rating === undefined}
+              error={false && value.rating === undefined}
             />
           )}
           {q.withPhoto && (
@@ -949,7 +949,7 @@ function FieldRenderer({
                 baseName={q.withPhoto.name}
                 storageContext={getAdminStorageContext()}
                 onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-                error={attempted && (value.photos?.length ?? 0) < (q.withPhoto.min ?? 1)}
+                error={false && (value.photos?.length ?? 0) < (q.withPhoto.min ?? 1)}
               />
             </div>
           )}
@@ -1031,7 +1031,7 @@ function PoorPhotoSection({
         onChange={(photos, photoNames) =>
           onChange((d) => ({ ...d, poorPhotos: photos, poorPhotoNames: photoNames }))
         }
-        error={attempted && missing}
+        error={false && missing}
       />
     </div>
   );
@@ -1070,7 +1070,7 @@ function FollowUpRenderer({
             baseName={fu.photoName ?? "FOLLOWUP"}
             storageContext={getAdminStorageContext()}
             onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-            error={attempted && fu.required && (value.photos?.length ?? 0) < 1}
+            error={false && fu.required && (value.photos?.length ?? 0) < 1}
           />
         </>
       )}
