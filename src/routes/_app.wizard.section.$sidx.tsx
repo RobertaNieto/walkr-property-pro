@@ -329,20 +329,6 @@ function SectionScreen() {
                         />
                       </div>
                     )}
-                    {q.companions && q.companions.length > 0 && q.field !== "longtext" && !isPhotoField && (
-                      <div className="mt-3">
-                        <label className="mb-1 block text-xs font-semibold text-muted-foreground">
-                          Notes (optional)
-                        </label>
-                        <NotesField
-                          value={value.notes ?? ""}
-                          onChange={(v) =>
-                            setDraftFor(q.id, (d) => ({ ...d, notes: v }))
-                          }
-                          placeholder="Add any notes or observations"
-                        />
-                      </div>
-                    )}
                   </div>
                 );
               })}
