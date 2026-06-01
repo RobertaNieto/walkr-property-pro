@@ -5,6 +5,7 @@ import { ChoiceGrid } from "@/components/ChoiceGrid";
 import { NotesField } from "@/components/NotesField";
 import { PhotoCapture } from "@/components/PhotoCapture";
 import { RatingButtons } from "@/components/RatingButtons";
+import { InlinePillGroup } from "@/components/InlinePillGroup";
 import { SectionNav, type SectionMeta, type SectionStatus } from "@/components/SectionNav";
 import { WizardLayout } from "@/components/WizardLayout";
 import { cn } from "@/lib/utils";
@@ -430,6 +431,24 @@ function QuestionScreen() {
                   error={attempted && draft.rating === undefined}
                 />
               )}
+              {q.field === "yesno" && (
+                <InlinePillGroup
+                  options={[
+                    { label: "Yes", selected: draft.bool === true, onClick: () => setDraft((d) => ({ ...d, bool: true })), tone: "good" },
+                    { label: "No", selected: draft.bool === false, onClick: () => setDraft((d) => ({ ...d, bool: false })), tone: "neutral" },
+                  ]}
+                />
+              )}
+              {q.field === "choice" && Array.isArray(q.options) && q.options.length >= 2 && q.options.length <= 4 && q.withRating !== true && (
+                <InlinePillGroup
+                  options={q.options.map((opt) => ({
+                    label: opt,
+                    selected: draft.choice === opt,
+                    onClick: () => setDraft((d) => ({ ...d, choice: opt })),
+                    tone: "neutral",
+                  }))}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -441,6 +460,14 @@ function QuestionScreen() {
           const _primaryHasRating =
             q.field === "rating" || (q.withRating === true && (q.field === "text" || q.field === "choice"));
           const _suppressRating = _primaryHasRating && _ratingComps.length >= 2;
+          const _inlineChoiceHandled =
+            q.field === "choice" &&
+            Array.isArray(q.options) &&
+            q.options.length >= 2 &&
+            q.options.length <= 4 &&
+            q.withRating !== true;
+          const _skipPrimaryField = q.field === "yesno" || _inlineChoiceHandled;
+          if (_skipPrimaryField) return null;
           return (
             <FieldRenderer
               q={q}
