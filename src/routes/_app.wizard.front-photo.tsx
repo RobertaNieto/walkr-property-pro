@@ -77,7 +77,7 @@ function FrontPhotoScreen() {
             readOnly={isAdminEditing()}
             photos={photos}
             onChange={setPhotos}
-            error={attempted && !photosOk}
+            error={false && !photosOk}
           />
         </div>
 
@@ -88,7 +88,7 @@ function FrontPhotoScreen() {
           <RatingButtons
             value={rating}
             onChange={setRating}
-            error={attempted && !ratingOk}
+            error={false && !ratingOk}
           />
         </div>
 
@@ -99,7 +99,7 @@ function FrontPhotoScreen() {
           <NotesField value={notes} onChange={setNotes} placeholder="Add any notes or observations here (optional)" />
         </div>
 
-        {attempted && !valid && (
+        {false && !valid && (
           <p className="text-sm font-medium text-critical">
             {!photosOk && !ratingOk
               ? "Add at least one photo and select a condition rating to continue."

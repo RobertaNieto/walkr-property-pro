@@ -71,7 +71,7 @@ function ExteriorPaintScreen() {
           <RatingButtons
             value={rating}
             onChange={setRating}
-            error={attempted && !valid}
+            error={false && !valid}
           />
         </div>
 

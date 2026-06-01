@@ -52,7 +52,7 @@ function AddressScreen() {
   const fieldClass = (val: string) =>
     cn(
       "h-14 w-full rounded-2xl border-2 bg-card px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-      attempted && !val.trim() ? "field-error" : "border-input"
+      false && !val.trim() ? "field-error" : "border-input"
     );
 
   return (
@@ -131,7 +131,7 @@ function AddressScreen() {
                 }
                 className={cn(
                   fieldClass(address.zipCode),
-                  attempted && address.zipCode.trim().length !== 5 ? "field-error" : ""
+                  false && address.zipCode.trim().length !== 5 ? "field-error" : ""
                 )}
               />
             </div>
