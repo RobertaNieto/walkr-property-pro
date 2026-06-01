@@ -25,7 +25,6 @@ import { Route as AppWizardFrontPhotoRouteImport } from './routes/_app.wizard.fr
 import { Route as AppWizardFixMissingRouteImport } from './routes/_app.wizard.fix-missing'
 import { Route as AppWizardExteriorPaintRouteImport } from './routes/_app.wizard.exterior-paint'
 import { Route as AppWizardCompleteRouteImport } from './routes/_app.wizard.complete'
-import { Route as AppWizardChecklistRouteImport } from './routes/_app.wizard.checklist'
 import { Route as AppReviewIdRouteImport } from './routes/_app.review.$id'
 import { Route as AppWizardSectionSidxRouteImport } from './routes/_app.wizard.section.$sidx'
 import { Route as AppWizardQQidRouteImport } from './routes/_app.wizard.q.$qid'
@@ -109,11 +108,6 @@ const AppWizardCompleteRoute = AppWizardCompleteRouteImport.update({
   path: '/wizard/complete',
   getParentRoute: () => AppRoute,
 } as any)
-const AppWizardChecklistRoute = AppWizardChecklistRouteImport.update({
-  id: '/wizard/checklist',
-  path: '/wizard/checklist',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppReviewIdRoute = AppReviewIdRouteImport.update({
   id: '/review/$id',
   path: '/review/$id',
@@ -141,7 +135,6 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AppProfileRoute
   '/walkthroughs': typeof AppWalkthroughsRoute
   '/review/$id': typeof AppReviewIdRoute
-  '/wizard/checklist': typeof AppWizardChecklistRoute
   '/wizard/complete': typeof AppWizardCompleteRoute
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/wizard/fix-missing': typeof AppWizardFixMissingRoute
@@ -162,7 +155,6 @@ export interface FileRoutesByTo {
   '/profile': typeof AppProfileRoute
   '/walkthroughs': typeof AppWalkthroughsRoute
   '/review/$id': typeof AppReviewIdRoute
-  '/wizard/checklist': typeof AppWizardChecklistRoute
   '/wizard/complete': typeof AppWizardCompleteRoute
   '/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/wizard/fix-missing': typeof AppWizardFixMissingRoute
@@ -185,7 +177,6 @@ export interface FileRoutesById {
   '/_app/profile': typeof AppProfileRoute
   '/_app/walkthroughs': typeof AppWalkthroughsRoute
   '/_app/review/$id': typeof AppReviewIdRoute
-  '/_app/wizard/checklist': typeof AppWizardChecklistRoute
   '/_app/wizard/complete': typeof AppWizardCompleteRoute
   '/_app/wizard/exterior-paint': typeof AppWizardExteriorPaintRoute
   '/_app/wizard/fix-missing': typeof AppWizardFixMissingRoute
@@ -208,7 +199,6 @@ export interface FileRouteTypes {
     | '/profile'
     | '/walkthroughs'
     | '/review/$id'
-    | '/wizard/checklist'
     | '/wizard/complete'
     | '/wizard/exterior-paint'
     | '/wizard/fix-missing'
@@ -229,7 +219,6 @@ export interface FileRouteTypes {
     | '/profile'
     | '/walkthroughs'
     | '/review/$id'
-    | '/wizard/checklist'
     | '/wizard/complete'
     | '/wizard/exterior-paint'
     | '/wizard/fix-missing'
@@ -251,7 +240,6 @@ export interface FileRouteTypes {
     | '/_app/profile'
     | '/_app/walkthroughs'
     | '/_app/review/$id'
-    | '/_app/wizard/checklist'
     | '/_app/wizard/complete'
     | '/_app/wizard/exterior-paint'
     | '/_app/wizard/fix-missing'
@@ -384,13 +372,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWizardCompleteRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/wizard/checklist': {
-      id: '/_app/wizard/checklist'
-      path: '/wizard/checklist'
-      fullPath: '/wizard/checklist'
-      preLoaderRoute: typeof AppWizardChecklistRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/review/$id': {
       id: '/_app/review/$id'
       path: '/review/$id'
@@ -422,7 +403,6 @@ interface AppRouteChildren {
   AppProfileRoute: typeof AppProfileRoute
   AppWalkthroughsRoute: typeof AppWalkthroughsRoute
   AppReviewIdRoute: typeof AppReviewIdRoute
-  AppWizardChecklistRoute: typeof AppWizardChecklistRoute
   AppWizardCompleteRoute: typeof AppWizardCompleteRoute
   AppWizardExteriorPaintRoute: typeof AppWizardExteriorPaintRoute
   AppWizardFixMissingRoute: typeof AppWizardFixMissingRoute
@@ -440,7 +420,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppProfileRoute: AppProfileRoute,
   AppWalkthroughsRoute: AppWalkthroughsRoute,
   AppReviewIdRoute: AppReviewIdRoute,
-  AppWizardChecklistRoute: AppWizardChecklistRoute,
   AppWizardCompleteRoute: AppWizardCompleteRoute,
   AppWizardExteriorPaintRoute: AppWizardExteriorPaintRoute,
   AppWizardFixMissingRoute: AppWizardFixMissingRoute,
@@ -463,3 +442,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
