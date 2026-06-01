@@ -45,8 +45,8 @@ function AddressScreen() {
       setAttempted(true);
       return;
     }
-    updateWalkthrough({ address, lastRoute: "/config" });
-    navigate({ to: "/config" });
+    updateWalkthrough({ address, lastRoute: "/wizard/menu" });
+    navigate({ to: "/wizard/menu" });
   };
 
   const fieldClass = (val: string) =>
