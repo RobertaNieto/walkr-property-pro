@@ -170,6 +170,7 @@ export function FieldRenderer({
   suppressRating = false,
   suppressChoice = false,
   inlinePhotoLabel = false,
+  labelColor,
 }: {
   q: QuestionDef;
   value: WizardAnswer;
@@ -179,6 +180,7 @@ export function FieldRenderer({
   suppressChoice?: boolean;
   /** When true, photo/video fields render their own inline label+button row. */
   inlinePhotoLabel?: boolean;
+  labelColor?: string;
 }) {
   // All required-field validation has been disabled app-wide. Fields never
   // render error styles, asterisks, or "required" hints.
