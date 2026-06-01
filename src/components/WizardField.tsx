@@ -11,10 +11,10 @@ import {
 } from "@/lib/walkthrough";
 import type { StorageContext } from "@/lib/photo-store";
 import {
-  isQuestionAnswered,
   type QuestionDef,
   type SkipContext,
 } from "@/lib/wizard-schema";
+
 
 export function getAdminStorageContext(): StorageContext | undefined {
   const a = getAdminEditing();
