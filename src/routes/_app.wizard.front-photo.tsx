@@ -71,7 +71,7 @@ function FrontPhotoScreen() {
       <div className="mt-6 space-y-6">
         <div>
           <p className="mb-2 text-sm font-semibold text-foreground">
-            Photos <span className="text-critical">*</span>
+            Photos
           </p>
           <PhotoCapture
             readOnly={isAdminEditing()}
@@ -83,7 +83,7 @@ function FrontPhotoScreen() {
 
         <div>
           <p className="mb-2 text-sm font-semibold text-foreground">
-            Condition rating <span className="text-critical">*</span>
+            Condition rating
           </p>
           <RatingButtons
             value={rating}
