@@ -123,11 +123,15 @@ export type Database = {
           config: Json
           created_at: string
           drive_folder_url: string | null
+          fence_type: string | null
+          fenced_yard: boolean | null
           house_number: string
           id: string
           last_route: string | null
           state: string
+          stories: string | null
           street_name: string
+          street_noise: string | null
           updated_at: string
           upload_status: string
           uploaded_at: string | null
@@ -141,11 +145,15 @@ export type Database = {
           config?: Json
           created_at?: string
           drive_folder_url?: string | null
+          fence_type?: string | null
+          fenced_yard?: boolean | null
           house_number?: string
           id?: string
           last_route?: string | null
           state?: string
+          stories?: string | null
           street_name?: string
+          street_noise?: string | null
           updated_at?: string
           upload_status?: string
           uploaded_at?: string | null
@@ -159,11 +167,15 @@ export type Database = {
           config?: Json
           created_at?: string
           drive_folder_url?: string | null
+          fence_type?: string | null
+          fenced_yard?: boolean | null
           house_number?: string
           id?: string
           last_route?: string | null
           state?: string
+          stories?: string | null
           street_name?: string
+          street_noise?: string | null
           updated_at?: string
           upload_status?: string
           uploaded_at?: string | null
