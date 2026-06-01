@@ -430,6 +430,24 @@ function QuestionScreen() {
                   error={attempted && draft.rating === undefined}
                 />
               )}
+              {q.field === "yesno" && (
+                <InlinePillGroup
+                  options={[
+                    { label: "Yes", selected: draft.bool === true, onClick: () => setDraft((d) => ({ ...d, bool: true })), tone: "good" },
+                    { label: "No", selected: draft.bool === false, onClick: () => setDraft((d) => ({ ...d, bool: false })), tone: "neutral" },
+                  ]}
+                />
+              )}
+              {q.field === "choice" && Array.isArray(q.options) && q.options.length >= 2 && q.options.length <= 4 && q.withRating !== true && (
+                <InlinePillGroup
+                  options={q.options.map((opt) => ({
+                    label: opt,
+                    selected: draft.choice === opt,
+                    onClick: () => setDraft((d) => ({ ...d, choice: opt })),
+                    tone: "neutral",
+                  }))}
+                />
+              )}
             </div>
           </div>
         </div>
