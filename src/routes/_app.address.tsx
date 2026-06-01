@@ -33,21 +33,13 @@ function AddressScreen() {
     return () => clearTimeout(t);
   }, [address]);
 
-  const valid =
-    address.houseNumber.trim() &&
-    address.streetName.trim() &&
-    address.city.trim() &&
-    address.zipCode.trim().length === 5 &&
-    address.state.trim().length === 2;
+  const valid = true;
 
   const handleNext = () => {
-    if (!valid) {
-      setAttempted(true);
-      return;
-    }
     updateWalkthrough({ address, lastRoute: "/wizard/menu" });
     navigate({ to: "/wizard/menu" });
   };
+
 
   const fieldClass = (val: string) =>
     cn(
