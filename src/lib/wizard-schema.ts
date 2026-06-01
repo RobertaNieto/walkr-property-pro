@@ -405,9 +405,9 @@ const S2: SectionDef = {
       id: "s3_additional",
       sectionIndex: 2,
       sectionName: "Exterior",
-      label: "Additional backyard details",
+      label: "Additional exterior details",
       helper:
-        "Note anything relevant: fence material and condition, back irrigation, alley access, rear easements, or anything notable about the back of the property",
+        "Note anything relevant about the front or back exterior: mailbox, irrigation, gate access, fence material, alley access, easements, HOA restrictions, street parking, or anything else a realtor should know",
       field: "longtext",
       required: false,
     },
