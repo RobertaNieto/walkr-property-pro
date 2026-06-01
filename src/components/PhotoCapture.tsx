@@ -21,6 +21,7 @@ interface PhotoCaptureProps {
   readOnly?: boolean;
   /** When provided, label is rendered on the left of the trigger button. */
   label?: string;
+  labelColor?: string;
   required?: boolean;
   storageContext?: StorageContext;
 }
