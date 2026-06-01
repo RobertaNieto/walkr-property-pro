@@ -447,9 +447,8 @@ function QuestionScreen() {
               value={draft}
               onChange={setDraft}
               attempted={attempted}
-              suppressRating={_suppressRating || q.field === "rating"}
-            />
-          );
+              suppressRating={_suppressRating || q.field === "rating" || q.withRating === true}
+            />);
         })()}
 
         {q.followUp && q.followUp.when(pickValue(q, draft)) && (
