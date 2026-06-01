@@ -250,6 +250,12 @@ function SectionScreen() {
                 const subColor = (sub: string | undefined): string => {
                   if (!sub) return color;
                   if (/^bedroom/i.test(sub)) return "#a855f7"; // purple
+                  if (/^bathroom/i.test(sub)) {
+                    if (/full bath/i.test(sub)) return "#0d9488"; // teal
+                    if (/3\/4 bath|three-quarter/i.test(sub)) return "#6366f1"; // indigo
+                    if (/half bath/i.test(sub)) return "#f59e0b"; // amber
+                    return "#0891b2"; // cyan fallback
+                  }
                   switch (sub) {
                     case "Living Room":
                       return "#0ea5e9"; // sky blue

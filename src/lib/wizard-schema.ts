@@ -875,9 +875,15 @@ function bathroomQuestions(n: number, total: number, ctx: SkipContext): Question
     s1Type === "3/4" ? "Three-quarter bath" :
     s1Type === "Half" ? "Half bath" :
     s1Type ?? undefined;
+  const shortType =
+    mappedType === "Full bath" ? "Full bath" :
+    mappedType === "Three-quarter bath" ? "3/4 bath" :
+    mappedType === "Half bath" ? "Half bath" :
+    mappedType;
   const tag = mappedType
     ? `Bathroom ${n} of ${total} — ${mappedType}`
     : `Bathroom ${n} of ${total}`;
+  const sub = shortType ? `Bathroom ${n} — ${shortType}` : `Bathroom ${n}`;
   const id = (k: string) => `s11_b${n}_${k}`;
   const pn = (k: string) => `BATHROOM${n}_${k}`;
   // When S1 already declared the bath type, hide the redundant type question
@@ -886,6 +892,7 @@ function bathroomQuestions(n: number, total: number, ctx: SkipContext): Question
     id: id("type"),
     sectionIndex: 11,
     sectionName: tag,
+    subSection: sub,
     label: "Bathroom type",
     field: "choice",
     options: ["Full bath", "Three-quarter bath", "Half bath"],
@@ -1056,14 +1063,16 @@ function bathroomQuestions(n: number, total: number, ctx: SkipContext): Question
       required: false,
     },
   ];
-  if (n === 1) return questions;
+  // Tag every question with its sub-section so the UI can color-code per bath.
+  const tagged = questions.map((q) => ({ ...q, subSection: q.subSection ?? sub }));
+  if (n === 1) return tagged;
   // When S1 has a bath list, every n is already a confirmed bath — no gating
   // question needed. Legacy drafts (no S1 list) keep the "exists" yes/no.
-  if (mappedType) return questions;
+  if (mappedType) return tagged;
   const existsId = id("exists");
   const isPresent = (c: SkipContext) =>
     c.answers?.[existsId]?.bool === true;
-  const gated: QuestionDef[] = questions.map((q) => {
+  const gated: QuestionDef[] = tagged.map((q) => {
     const prev = q.visible;
     return {
       ...q,
@@ -1075,6 +1084,7 @@ function bathroomQuestions(n: number, total: number, ctx: SkipContext): Question
     id: existsId,
     sectionIndex: 11,
     sectionName: tag,
+    subSection: sub,
     label: `Bathroom ${n} present`,
     helper: `Does this property have a Bathroom ${n}?`,
     field: "yesno",
