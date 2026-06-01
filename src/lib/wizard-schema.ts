@@ -1008,12 +1008,15 @@ function bathroomQuestions(n: number, total: number, ctx: SkipContext): Question
     photoQ(id("mls"), 11, tag, "MLS-style wide photo", pn("MLS")),
     {
       ...photoQ(id("tub"), 11, tag, "Tub and surround photo", pn("TUB")),
-      visible: (ctx) => ctx.answers[id("type")]?.choice === "Full bath",
+      visible: (c) => {
+        const t = mappedType ?? c.answers[id("type")]?.choice;
+        return t === "Full bath";
+      },
     },
     {
       ...photoQ(id("shower"), 11, tag, "Standing shower photo", pn("SHOWER")),
-      visible: (ctx) => {
-        const t = ctx.answers[id("type")]?.choice;
+      visible: (c) => {
+        const t = mappedType ?? c.answers[id("type")]?.choice;
         return t === "Full bath" || t === "Three-quarter bath";
       },
     },
@@ -1026,7 +1029,10 @@ function bathroomQuestions(n: number, total: number, ctx: SkipContext): Question
       label: "Tub condition",
       field: "rating",
       required: true,
-      visible: (ctx) => ctx.answers[id("type")]?.choice === "Full bath",
+      visible: (c) => {
+        const t = mappedType ?? c.answers[id("type")]?.choice;
+        return t === "Full bath";
+      },
       followUp: {
         when: () => true,
         field: "multichoice",
@@ -1041,8 +1047,8 @@ function bathroomQuestions(n: number, total: number, ctx: SkipContext): Question
       label: "Shower condition",
       field: "rating",
       required: true,
-      visible: (ctx) => {
-        const t = ctx.answers[id("type")]?.choice;
+      visible: (c) => {
+        const t = mappedType ?? c.answers[id("type")]?.choice;
         return t === "Full bath" || t === "Three-quarter bath";
       },
     },
