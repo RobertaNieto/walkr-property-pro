@@ -518,18 +518,17 @@ const S6: SectionDef = {
   index: 6,
   name: "Pool & Spa",
   resolve: (ctx) => {
-    const poolYes = ctx.answers["s6_has_pool"]?.bool === true;
-    const spaYes = ctx.answers["s6_has_spa"]?.bool === true;
-    const out: QuestionDef[] = [
-      {
-        id: "s6_has_pool",
-        sectionIndex: 6,
-        sectionName: "Pool & Spa",
-        label: "Does the property have a pool?",
-        field: "yesno",
-        required: true,
-      },
-    ];
+    // Pool/spa presence is set in Section 1 (s1_pool, s1_spa). Fall back to
+    // legacy config + legacy s6_has_pool/s6_has_spa for older drafts.
+    const poolYes =
+      ctx.answers["s1_pool"]?.bool === true ||
+      ctx.answers["s6_has_pool"]?.bool === true ||
+      ctx.config?.pool === "Yes";
+    const spaYes =
+      ctx.answers["s1_spa"]?.bool === true ||
+      ctx.answers["s6_has_spa"]?.bool === true ||
+      ctx.config?.spa === "Yes";
+    const out: QuestionDef[] = [];
     if (poolYes) {
       out.push(
         {
@@ -543,14 +542,6 @@ const S6: SectionDef = {
         photoQ("s6_pool_photo", 6, "Pool & Spa", "Add Pool Photo", "POOL"),
       );
     }
-    out.push({
-      id: "s6_has_spa",
-      sectionIndex: 6,
-      sectionName: "Pool & Spa",
-      label: "Does the property have a spa?",
-      field: "yesno",
-      required: true,
-    });
     if (spaYes) {
       out.push(
         {
