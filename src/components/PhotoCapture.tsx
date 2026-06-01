@@ -225,6 +225,26 @@ export function PhotoCapture({
         </p>
       )}
 
+      {orientationError && (
+        <div className="rounded-lg border-2 border-critical bg-critical/5 p-3">
+          <p className="text-sm font-medium text-critical">{orientationError}</p>
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={() => {
+                setOrientationError(null);
+                inputRef.current?.click();
+              }}
+              className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-md border border-critical bg-background px-3 text-[13px] font-medium text-critical hover:bg-critical/10"
+            >
+              Select Different {isVideo ? "Video" : "Photo"}
+            </button>
+          )}
+        </div>
+      )}
+
+
+
 
 
       {photos.length > 0 && (
