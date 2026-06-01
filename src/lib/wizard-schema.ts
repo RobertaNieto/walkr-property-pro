@@ -1452,7 +1452,7 @@ const POOR_PHOTO_NAME_OVERRIDES: Record<string, string> = {
   s9_cab_overall: "KITCHEN_CABINETS_POOR",
   s9_counters_cond: "KITCHEN_COUNTERS_POOR",
   s9_sink_cond: "KITCHEN_SINK_POOR",
-  s9_faucet_cond: "KITCHEN_FAUCET_POOR",
+  // s9_faucet_cond removed — no matching question definition
   s9_floor_cond: "KITCHEN_FLOOR_POOR",
   s9_lights: "KITCHEN_LIGHTS_POOR",
   s9_baseboards: "KITCHEN_BASEBOARDS_POOR",
