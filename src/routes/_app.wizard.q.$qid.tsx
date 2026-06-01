@@ -414,10 +414,23 @@ function QuestionScreen() {
         <div className="flex items-start gap-2">
           {q.critical && <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-critical" />}
           <div className="flex-1">
-            <h2 className="text-2xl font-bold leading-tight text-foreground">
-              {q.label} {q.required && <span className="text-critical">*</span>}
-            </h2>
-            {q.helper && <p className="mt-1.5 text-sm text-muted-foreground">{q.helper}</p>}
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-2xl font-bold leading-tight text-foreground">
+                  {q.label} {q.required && <span className="text-critical">*</span>}
+                </h2>
+                {q.helper && <p className="mt-1.5 text-sm text-muted-foreground">{q.helper}</p>}
+              </div>
+              {q.field === "rating" && (
+                <RatingButtons
+                  value={draft.rating}
+                  onChange={(r: Rating) =>
+                    setDraft((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))
+                  }
+                  error={attempted && draft.rating === undefined}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -434,7 +447,7 @@ function QuestionScreen() {
               value={draft}
               onChange={setDraft}
               attempted={attempted}
-              suppressRating={_suppressRating}
+              suppressRating={_suppressRating || q.field === "rating"}
             />
           );
         })()}
@@ -881,15 +894,17 @@ function FieldRenderer({
       );
     }
 
-    case "rating":
-      if (suppressRating) return null;
+    case "rating": {
+      const hideRating = suppressRating;
       return (
         <>
-          <RatingButtons
-            value={value.rating}
-            onChange={(r) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
-            error={attempted && value.rating === undefined}
-          />
+          {!hideRating && (
+            <RatingButtons
+              value={value.rating}
+              onChange={(r) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
+              error={attempted && value.rating === undefined}
+            />
+          )}
           {q.withPhoto && (
             <div className="mt-4">
               <p className="mb-2 text-sm font-semibold text-foreground">
@@ -909,6 +924,7 @@ function FieldRenderer({
           <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
         </>
       );
+    }
 
     case "photo":
     case "video": {
