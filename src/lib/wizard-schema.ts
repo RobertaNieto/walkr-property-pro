@@ -1633,8 +1633,12 @@ function applyPoorPhotoNames(list: QuestionDef[]): void {
 // per-bathroom loops are expanded dynamically below.
 function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
   const groups: Record<string, string[]> = {
-    // Section 1
-    s1_lockbox_code: ["s1_lockbox_photo"],
+    // Section 1 — lockbox code + location render together
+    s1_lockbox_code: ["s1_lockbox_location"],
+    // Section 1 — garage size + type appear with garage Yes/No when applicable
+    s1_garage: ["s1_garage_size", "s1_garage_type"],
+    s1_fenced_yard: ["s1_fence_type"],
+    s1_fireplace: ["s1_fireplace_type"],
     // Section 2
     s2_roofline: ["s2_exterior_paint"],
     s2_siding_photo: ["s2_siding_type"],
