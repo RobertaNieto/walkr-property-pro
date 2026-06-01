@@ -180,13 +180,17 @@ export function FieldRenderer({
   onChange,
   attempted,
   suppressRating = false,
+  inlinePhotoLabel = false,
 }: {
   q: QuestionDef;
   value: WizardAnswer;
   onChange: (v: WizardAnswer | ((prev: WizardAnswer) => WizardAnswer)) => void;
   attempted: boolean;
   suppressRating?: boolean;
+  /** When true, photo/video fields render their own inline label+button row. */
+  inlinePhotoLabel?: boolean;
 }) {
+
   const errored = attempted && !isAnsweredLocal(q, value);
 
   switch (q.field) {
