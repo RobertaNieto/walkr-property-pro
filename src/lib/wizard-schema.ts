@@ -34,6 +34,9 @@ export interface QuestionDef {
   id: string;
   sectionIndex: number; // 1-18
   sectionName: string;
+  /** Optional sub-section label used to group/colorize questions inside a
+   * combined section (e.g. "Living Room", "Bedroom 1 of 3", "Kitchen"). */
+  subSection?: string;
   label: string;
   helper?: string;
   field: FieldKind;
@@ -1382,14 +1385,26 @@ const S_LIVING_AREAS: SectionDef = {
   index: 8,
   name: "Interior",
   resolve: (ctx) => {
-    const remap = (qs: QuestionDef[]): QuestionDef[] =>
-      qs.map((q) => ({ ...q, sectionIndex: 8, sectionName: "Interior" }));
+    const remap = (qs: QuestionDef[], sub: string): QuestionDef[] =>
+      qs.map((q) => ({
+        ...q,
+        sectionIndex: 8,
+        sectionName: "Interior",
+        subSection: q.subSection ?? sub,
+      }));
+    // Tag bedroom questions with their per-bedroom sub-section (e.g.
+    // "Bedroom 1 of 3") before remapping so each bedroom block gets its own
+    // colored header.
+    const bedroomQs = S12.resolve(ctx).map((q) => ({
+      ...q,
+      subSection: q.sectionName, // "Bedroom N of M"
+    }));
     return [
-      ...remap(S8.resolve(ctx)),
-      ...remap(S12.resolve(ctx)),
-      ...remap(S9.resolve(ctx)),
-      ...remap(S10.resolve(ctx)),
-      ...remap(S13.resolve(ctx)),
+      ...remap(S8.resolve(ctx), "Living Room"),
+      ...remap(bedroomQs, "Bedrooms"),
+      ...remap(S9.resolve(ctx), "Kitchen"),
+      ...remap(S10.resolve(ctx), "Hallways"),
+      ...remap(S13.resolve(ctx), "Laundry"),
     ];
   },
 };
