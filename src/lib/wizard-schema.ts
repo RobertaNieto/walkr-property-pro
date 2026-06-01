@@ -1684,7 +1684,7 @@ function buildCompanionGroups(ctx: SkipContext): Record<string, string[]> {
   };
 
   // Bathrooms (section 11) per-loop
-  const bTotal = bathCount(ctx.config);
+  const bTotal = bathCount(ctx);
   for (let n = 1; n <= bTotal; n++) {
     const id = (k: string) => `s11_b${n}_${k}`;
     groups[id("tub")] = [id("tub_cond")];
