@@ -168,6 +168,7 @@ export function FieldRenderer({
   onChange,
   attempted,
   suppressRating = false,
+  suppressChoice = false,
   inlinePhotoLabel = false,
 }: {
   q: QuestionDef;
@@ -175,6 +176,7 @@ export function FieldRenderer({
   onChange: (v: WizardAnswer | ((prev: WizardAnswer) => WizardAnswer)) => void;
   attempted: boolean;
   suppressRating?: boolean;
+  suppressChoice?: boolean;
   /** When true, photo/video fields render their own inline label+button row. */
   inlinePhotoLabel?: boolean;
 }) {
