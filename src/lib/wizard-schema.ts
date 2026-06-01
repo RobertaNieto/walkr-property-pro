@@ -558,60 +558,6 @@ const S6: SectionDef = {
   },
 };
 
-const S7: SectionDef = {
-  index: 7,
-  name: "Entry & First Impressions",
-  resolve: () => [
-    {
-      id: "s7_hot_water",
-      sectionIndex: 7,
-      sectionName: "Entry & First Impressions",
-      label: "Hot water confirmed working within 60 seconds at kitchen sink",
-      helper: "Run the kitchen faucet on hot — confirm it reaches hot temperature within 60 seconds",
-      field: "yesno",
-      required: true,
-      critical: true,
-    },
-    {
-      id: "s7_gas_stove",
-      sectionIndex: 7,
-      sectionName: "Entry & First Impressions",
-      label: "Gas stove flame confirmed working",
-      helper: "Turn on each burner and confirm flame ignites properly",
-      field: "yesno",
-      required: true,
-      critical: true,
-    },
-    {
-      id: "s7_smells",
-      sectionIndex: 7,
-      sectionName: "Entry & First Impressions",
-      label: "Any unusual smells detected",
-      field: "yesno",
-      required: true,
-      followUp: {
-        when: (v) => v === true,
-        field: "text",
-        required: true,
-        label: "Location and description",
-      },
-    },
-    {
-      id: "s7_noises",
-      sectionIndex: 7,
-      sectionName: "Entry & First Impressions",
-      label: "Any unusual noises detected",
-      field: "yesno",
-      required: true,
-      followUp: {
-        when: (v) => v === true,
-        field: "text",
-        required: true,
-        label: "Location and description",
-      },
-    },
-  ],
-};
 
 const S8: SectionDef = {
   index: 8,
