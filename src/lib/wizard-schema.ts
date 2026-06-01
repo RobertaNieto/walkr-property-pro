@@ -34,6 +34,9 @@ export interface QuestionDef {
   id: string;
   sectionIndex: number; // 1-18
   sectionName: string;
+  /** Optional sub-section label used to group/colorize questions inside a
+   * combined section (e.g. "Living Room", "Bedroom 1 of 3", "Kitchen"). */
+  subSection?: string;
   label: string;
   helper?: string;
   field: FieldKind;
