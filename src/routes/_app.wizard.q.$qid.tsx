@@ -894,15 +894,17 @@ function FieldRenderer({
       );
     }
 
-    case "rating":
-      if (suppressRating) return null;
+    case "rating": {
+      const hideRating = suppressRating;
       return (
         <>
-          <RatingButtons
-            value={value.rating}
-            onChange={(r) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
-            error={attempted && value.rating === undefined}
-          />
+          {!hideRating && (
+            <RatingButtons
+              value={value.rating}
+              onChange={(r) => onChange((d) => clearPoorPhotosIfNeeded({ ...d, rating: r }, r))}
+              error={attempted && value.rating === undefined}
+            />
+          )}
           {q.withPhoto && (
             <div className="mt-4">
               <p className="mb-2 text-sm font-semibold text-foreground">
@@ -922,6 +924,7 @@ function FieldRenderer({
           <PoorPhotoSection q={q} value={value} onChange={onChange} attempted={attempted} />
         </>
       );
+    }
 
     case "photo":
     case "video": {
