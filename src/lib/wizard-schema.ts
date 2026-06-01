@@ -629,7 +629,7 @@ const S8: SectionDef = {
   index: 8,
   name: "Living Room",
   resolve: (ctx) => {
-    const hasFireplace = ctx.config.fireplace === "Yes";
+    const hasFp = hasFireplace(ctx);
     const out: QuestionDef[] = [
       {
         ...photoQ("s8_mls", 8, "Living Room", "MLS-style wide photo", "LIVING_MLS"),
