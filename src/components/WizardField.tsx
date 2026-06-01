@@ -10,10 +10,8 @@ import {
   type WizardAnswer,
 } from "@/lib/walkthrough";
 import type { StorageContext } from "@/lib/photo-store";
-import {
-  type QuestionDef,
-  type SkipContext,
-} from "@/lib/wizard-schema";
+import { type QuestionDef } from "@/lib/wizard-schema";
+
 
 
 export function getAdminStorageContext(): StorageContext | undefined {
