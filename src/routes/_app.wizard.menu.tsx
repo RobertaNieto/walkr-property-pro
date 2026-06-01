@@ -293,7 +293,7 @@ function SectionMenuScreen() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Section {row.index}
+                      Section {displayIdx + 1}
                     </p>
                     <p className="mt-0.5 text-[15px] font-bold leading-tight text-foreground">
                       {row.name}
