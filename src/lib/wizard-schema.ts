@@ -282,15 +282,8 @@ const S1: SectionDef = {
           label: "Describe the smell",
         },
       },
-      {
-        id: "s1_landscape",
-        sectionIndex: 1,
-        sectionName: "Property Setup",
-        label: "Landscape condition?",
-        field: "choice",
-        options: ["Manicured", "Overgrown"],
-        required: true,
-      },
+      // s1_landscape removed — duplicate of s2_landscape (which has rating)
+
       {
         id: "s1_street_noise",
         sectionIndex: 1,
