@@ -37,7 +37,7 @@ import {
   hasUserAnswer,
   
   SECTIONS,
-  type QuestionDef,
+  
   type SkipContext,
 } from "@/lib/wizard-schema";
 
