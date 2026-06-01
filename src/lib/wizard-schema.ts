@@ -371,16 +371,8 @@ const S2: SectionDef = {
       required: true,
       withRating: true,
     },
-    {
-      id: "s2_additional",
-      sectionIndex: 2,
-      sectionName: "Exterior",
-      label: "Additional exterior front details",
-      helper:
-        "Note anything else relevant: mailbox type or location, irrigation system, gate access, easements, HOA restrictions, street parking, or anything a realtor should know about the exterior",
-      field: "longtext",
-      required: false,
-    },
+    // s2_additional merged into s3_additional below (single "Additional exterior details")
+
     // ---- Merged from former Section 3 (Exterior Sides & Back) ----
     photoQ("s3_left", 2, "Exterior", "Left side of house photo", "EXTERIOR_LEFT"),
     photoQ("s3_right", 2, "Exterior", "Right side of house photo", "EXTERIOR_RIGHT"),
