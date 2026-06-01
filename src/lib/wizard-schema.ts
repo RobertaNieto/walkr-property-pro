@@ -257,16 +257,8 @@ const S1: SectionDef = {
         field: "yesno",
         required: true,
       },
-      {
-        id: "s1_fireplace_type",
-        sectionIndex: 1,
-        sectionName: "Property Setup",
-        label: "Fireplace type",
-        field: "choice",
-        options: ["Wood Burning", "Electric", "Gas"],
-        required: true,
-        visible: (c) => c.answers?.s1_fireplace?.bool === true,
-      },
+      // s1_fireplace_type removed — duplicate of s8_fireplace_type (Living Room)
+
       {
         id: "s1_laundry",
         sectionIndex: 1,
