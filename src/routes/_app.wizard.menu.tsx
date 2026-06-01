@@ -200,14 +200,17 @@ function SectionMenuScreen() {
       navigate({ to: "/wizard/checklist" });
       return;
     }
-    if (row.firstQuestionId) {
-      navigate({ to: "/wizard/q/$qid", params: { qid: row.firstQuestionId } });
-    }
+    navigate({ to: "/wizard/section/$sidx", params: { sidx: String(row.index) } });
   };
 
   const startFromBeginning = () => {
     const first = navList[0];
-    if (first) navigate({ to: "/wizard/q/$qid", params: { qid: first.id } });
+    if (first) {
+      navigate({
+        to: "/wizard/section/$sidx",
+        params: { sidx: String(first.sectionIndex) },
+      });
+    }
   };
 
   return (
