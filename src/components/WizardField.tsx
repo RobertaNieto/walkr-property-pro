@@ -113,9 +113,7 @@ export function FollowUpRenderer({
   const fu = q.followUp!;
   return (
     <div className="rounded-2xl border-l-4 border-accent bg-accent/5 p-4">
-      <p className="mb-2 text-sm font-semibold text-foreground">
-        {fu.label} {fu.required && <span className="text-critical">*</span>}
-      </p>
+      <p className="mb-2 text-sm font-semibold text-foreground">{fu.label}</p>
       {fu.field === "text" && (
         <NotesField
           value={value.notes ?? ""}
@@ -131,9 +129,9 @@ export function FollowUpRenderer({
           baseName={fu.photoName ?? "FOLLOWUP"}
           storageContext={getAdminStorageContext()}
           onChange={(photos, photoNames) => onChange((d) => ({ ...d, photos, photoNames }))}
-          error={attempted && fu.required && (value.photos?.length ?? 0) < 1}
         />
       )}
+
 
       {fu.field === "multichoice" && (
         <div className="grid grid-cols-2 gap-2">
